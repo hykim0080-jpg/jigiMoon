@@ -101,19 +101,34 @@ export function init(node, d, openPin) {
   svg.addEventListener('pointerdown', e => {
     const d = e.target.dataset || {};
     if (e.button !== 0 || d.id || d.lander || d.expo || state.view === 'compare') return;
-    drag = { x: e.clientX, y: e.clientY, cx: vp.cx, cy: vp.cy, moved: false, id: e.pointerId };
+    drag = { x: e.clientX, y: e.clientY, cx: vp.cx, cy: vp.cy, moved: false, id: e.pointerId, held: false };
+    // press and hold: zoom out x2 about the point after 500 ms, then every 400 ms down to Region
+    const pt = { clientX: e.clientX, clientY: e.clientY }, dg = drag;
+    holdRing(state.zoom > 1.001 ? pt : null);
+    const out = () => {
+      if (drag !== dg || state.zoom <= 1.001) { holdRing(null); return; }
+      dg.held = true; clearTimeout(clickTimer);
+      const w = world(pt), z = state.zoom / 2, h = R_KM / Math.max(z, 1);
+      setState(z <= 1.001 ? { zoom: 1, pan: '' } : { zoom: z, pan: `${(w.x - w.u * h).toFixed(2)},${(w.y + w.v * h).toFixed(2)}` });
+      dg.cx = vp.cx; dg.cy = vp.cy;
+      if (state.zoom > 1.001) holdTimer = setTimeout(out, 400); else holdRing(null);
+    };
+    clearTimeout(holdTimer); holdTimer = setTimeout(out, 500);
   });
+  svg.addEventListener('contextmenu', e => { if (drag) e.preventDefault(); });
   svg.addEventListener('pointermove', e => {
     if (!drag) return;
     const r = svg.getBoundingClientRect(), k = 2 * vp.h / r.width, dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-    if (!drag.moved && (Math.hypot(dx, dy) < 4 || state.zoom <= 1.001)) return;
+    if (!drag.moved && Math.hypot(dx, dy) >= 5) { clearTimeout(holdTimer); holdRing(null); }
+    if (drag.held || (!drag.moved && (Math.hypot(dx, dy) < 5 || state.zoom <= 1.001))) return;
 
     if (!drag.moved) { drag.moved = true; svg.setPointerCapture(drag.id); svg.classList.add('grabbing'); }
     instant = true; setState({ pan: `${(drag.cx - dx * k).toFixed(2)},${(drag.cy + dy * k).toFixed(2)}` });
   });
   const endDrag = e => {
+    clearTimeout(holdTimer); holdRing(null);
     if (!drag) return;
-    const click = !drag.moved && e.type === 'pointerup';
+    const click = !drag.moved && !drag.held && e.type === 'pointerup';
     svg.classList.remove('grabbing'); drag = null;
     if (click) { const w = world(e); clearTimeout(clickTimer); clickTimer = setTimeout(() => openSpot(w), 250); }
   };
@@ -421,7 +436,7 @@ function draw(st) {
   document.dispatchEvent(new Event('mapframe'));
 }
 
-let lastLanders = [], pinOpener = null, clickTimer = 0;
+let lastLanders = [], pinOpener = null, clickTimer = 0, holdTimer = 0;
 
 // spacecraft card: name, what happened, when, what it was for
 function landerCard(id, e) {
@@ -452,4 +467,15 @@ function landerCard(id, e) {
 function openSpot(w) {
   if (!w || Math.abs(w.x) > R_KM || Math.abs(w.y) > R_KM || !pinOpener) return;
   pinOpener(Math.round(w.x * 1000), Math.round(w.y * 1000));
+}
+
+// shrinking ring under a held pointer (zoom-out cue); appears only once the press lasts
+function holdRing(pt) {
+  const panel = document.getElementById('map-panel');
+  let r = document.getElementById('hold-ring');
+  if (!pt) { if (r) r.remove(); return; }
+  if (r) r.remove();
+  r = document.createElement('div'); r.id = 'hold-ring'; panel.appendChild(r);
+  const b = panel.getBoundingClientRect();
+  r.style.left = (pt.clientX - b.left) + 'px'; r.style.top = (pt.clientY - b.top) + 'px';
 }

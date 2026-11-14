@@ -212,3 +212,6 @@ main[data-view="compare"] #expo{display:none}
 main[data-zoomed="1"]:not([data-view="compare"]) #map{cursor:grab}
 #map.grabbing{cursor:grabbing}
 #map{user-select:none;-webkit-user-select:none}
+#map{touch-action:none}
+#hold-ring{position:absolute;z-index:4;width:56px;height:56px;margin:-28px 0 0 -28px;border:2px solid #fff;border-radius:50%;pointer-events:none;opacity:0;animation:holdring .5s linear .15s infinite;box-shadow:0 0 0 1px rgba(0,0,0,.4)}
+@keyframes holdring{0%{transform:scale(1);opacity:.9}100%{transform:scale(.25);opacity:.2}}
