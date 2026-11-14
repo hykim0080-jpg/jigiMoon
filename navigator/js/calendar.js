@@ -20,16 +20,12 @@ export function init(panel, d) {
   Object.assign(sel.style, { width: '1px', background: 'var(--ink)', top: AXIS + 'px', height: 12 * ROW + 'px' });
   Object.assign(hoverLine.style, { width: '1px', background: 'var(--muted)', top: AXIS + 'px', height: 12 * ROW + 'px', display: 'none' });
   Object.assign(bracket.style, { height: '2px', background: 'var(--ink)' });
-  Object.assign(baseMark.style, { fontSize: '8px', color: 'var(--muted)', top: '8px', lineHeight: '8px', transform: 'translateX(-50%)' });
-  baseMark.textContent = '▼';
+  Object.assign(baseMark.style, { fontSize: '10px', fontWeight: '600', color: 'var(--ink)', top: '0px', lineHeight: '18px', transform: 'translateX(-5px)', whiteSpace: 'nowrap' });
 
   canvas.addEventListener('pointerdown', onDown);
   canvas.addEventListener('pointermove', onMove);
   canvas.addEventListener('pointerleave', () => { hoverLine.style.display = 'none'; hideTip(); setHover(null); });
   addEventListener('pointerup', () => { dragging = false; });
-  canvas.addEventListener('dblclick', e => {
-    if (hit(e).row < 0 && hit(e).y < AXIS) setState({ baseline: hit(e).day });
-  });
   new ResizeObserver(() => render(state, data)).observe(canvas);
 }
 
@@ -43,6 +39,7 @@ function hit(e) {
 
 function onDown(e) {
   const h = hit(e);
+  if (h.row < 0 && h.y < AXIS && h.x >= GUT_L) { setState({ baseline: h.day }); return; }
   if (h.row < 0) return;
   const id = order[h.row];
   if (e.shiftKey || h.x < 14) { togglePin(id); return; }
@@ -56,6 +53,9 @@ function onMove(e) {
   if (dragging) setState({ day: h.day });
   const { cw } = geom();
   setHover(h.row < 0 ? null : order[h.row]);
+  const onAxis = h.row < 0 && h.y < AXIS && h.x >= GUT_L;
+  canvas.style.cursor = onAxis ? 'pointer' : '';
+  if (onAxis) { hoverLine.style.display = 'none'; showTip(`${t('planAxisTip')} · ${shortDate(h.day)}`, e); return; }
   if (h.row < 0 || h.x < GUT_L) { hoverLine.style.display = 'none'; hideTip(); return; }
   hoverLine.style.display = 'block';
   hoverLine.style.left = (GUT_L + (h.day + 0.5) * cw) + 'px';
@@ -146,6 +146,7 @@ export function render(st, d) {
   bracket.style.width = Math.min(span, 365 * cw - st.day * cw) + 'px';
   bracket.style.top = (AXIS + r * ROW - 3) + 'px';
   baseMark.style.left = (GUT_L + (st.baseline + 0.5) * cw) + 'px';
+  baseMark.textContent = '▼ ' + t('planMark');
 }
 
 export const rowOrder = () => order;

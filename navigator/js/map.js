@@ -156,6 +156,13 @@ function draw(st) {
   const iw = 2 * R_KM * ppk;
     el('image', { href: 'data/hillshade.jpg', x: px(-R_KM), y: py(R_KM), width: iw, height: iw }, svg);
   if (hill !== 'data/hillshade.jpg') el('image', { href: hill, x: px(-R_KM), y: py(R_KM), width: iw, height: iw }, svg);
+  // 20 m LOLA hillshade patches (+-4.5 km) around each site, faded in as you zoom past Site
+  const sharp = Math.max(0, Math.min(1, (14 - vp.h) / 8));
+  if (sharp > 0.01) for (const s of data.index.sites) {
+    const x = s.x_m / 1000, y = s.y_m / 1000;
+    if (Math.abs(x - vp.cx) > vp.h + 5 || Math.abs(y - vp.cy) > vp.h + 5) continue;
+    el('image', { href: `data/spot/${s.id}.jpg`, x: px(x - 4.5), y: py(y + 4.5), width: 9 * ppk, height: 9 * ppk, opacity: sharp, preserveAspectRatio: 'none' }, svg);
+  }
   const sg = el('g', { id: 'shadow-layer' }, svg), sh = st.expo ? expoFor(st, data) : shadowFor(st, data);
   // the mask grid is 800 px of 500 m, pixel centres from -199.75 km: it spans exactly +-200 km
   const fade = Math.max(0, Math.min(1, (vp.h - 3.5) / 11.5));   // 500 m mask: gone at Spot
