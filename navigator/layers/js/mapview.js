@@ -25,6 +25,7 @@ export function cellFromEvent(e) {
 export const setPick = fn => { pickFn = fn; };
 export function initMap(el, d, compCanvas) {
   panel = el; data = d; comp = compCanvas;
+  if (shade && data.hill) data.hill.fill(255);
   canvas = Object.assign(document.createElement('canvas'), { className: 'lyr-raster' });
   svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('class', 'lyr-vec');
   badge = Object.assign(document.createElement('div'), { className: 'lyr-badge n' });
@@ -51,10 +52,26 @@ export function resize() {
   svg.setAttribute('viewBox', `0 0 ${W} ${W}`);
   setState({ view: clampView(state.view) }, 'view');
 }
+// sharper terrain: 100 m/px LOLA hillshade (shared with Compare). Once it loads, the composite is built on a flat
+// white base and this shade multiplies it (base pixels come out as the hillshade itself; colours keep the terrain).
+let shade = null;
+const sharp = new Image();
+sharp.onload = () => {
+  const n = sharp.naturalWidth, c = Object.assign(document.createElement('canvas'), { width: n, height: n }), x = c.getContext('2d');
+  x.drawImage(sharp, 0, 0);
+  shade = c;
+  if (data && data.hill) { data.hill.fill(255); setState({}, 'pixels'); }
+};
+sharp.src = '../data/hillshade_4000.jpg';
 export function blit() {
   const { k, cx, cy } = state.view, w = N / k;
   ctx.imageSmoothingEnabled = (W * dpr * k / N) < 1.5;
   ctx.drawImage(comp, cx - w / 2, cy - w / 2, w, w, 0, 0, canvas.width, canvas.height);
+  if (shade) {
+    const f = shade.width / N;
+    ctx.save(); ctx.imageSmoothingEnabled = true; ctx.globalCompositeOperation = 'multiply';
+    ctx.drawImage(shade, (cx - w / 2) * f, (cy - w / 2) * f, w * f, w * f, 0, 0, canvas.width, canvas.height); ctx.restore();
+  }
   if (!state.adv && state.mode === 'mask') {
     const ga = SIMPLE.haloA * Math.max(0, Math.min(1, (6 - k) / 4));
     if (ga > 0) { ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = ga; ctx.drawImage(haloCanvas(), cx - w / 2, cy - w / 2, w, w, 0, 0, canvas.width, canvas.height); ctx.restore(); }
