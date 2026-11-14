@@ -55,6 +55,8 @@ const R_KM = 200, EDGE = 14;
 const rho = deg => 2 * 1737.4 * Math.tan((deg * Math.PI / 180) / 2); // km at colatitude deg
 let svg, data, S = 588, ppk = 1.47;
 const vp = { cx: 0, cy: 0, h: R_KM };
+// sites with a PGDA 5 m tile (data/spot5); the rest use the 20 m patch (data/spot)
+const SPOT5 = new Set(['haworth', 'malapert-massif', 'mons-mouton', 'nobile-rim-1', 'nobile-rim-2', 'de-gerlache-rim-2', 'shackleton-rim', 'connecting-ridge']);
 let anim = null, hill = 'data/hillshade.jpg';
 const px = x => (x - vp.cx + vp.h) / (2 * vp.h) * S;
 const py = y => (vp.cy + vp.h - y) / (2 * vp.h) * S;
@@ -65,8 +67,8 @@ export function init(node, d) {
   svg = node; data = d;
   // sharp hillshade when present, the 700 px one otherwise
   const im = new Image();
-  im.onload = () => { hill = 'data/hillshade_2800.jpg'; render(state, data); };
-  im.src = 'data/hillshade_2800.jpg';
+  im.onload = () => { hill = 'data/hillshade_4000.jpg'; render(state, data); };
+  im.src = 'data/hillshade_4000.jpg';
   shadow.load().then(() => render(state, data));
   const eb = document.getElementById('expo');
   eb.addEventListener('click', () => setState({ expo: state.expo ? 0 : 1 }));
@@ -88,6 +90,8 @@ export function init(node, d) {
   svg.addEventListener('pointerleave', () => { setHover(null); hideTip(); });
   // pick on pointerdown: during playback the map is redrawn every tick, so a click's target is gone by pointerup
   svg.addEventListener('pointerdown', e => {
+    if (e.target.dataset.lander) { landerCard(e.target.dataset.lander, e); return; }
+    landerCard(null);
     const id = e.target.dataset.id;
     if (!id || e.button !== 0) return;
     if (e.shiftKey) togglePin(id); else setState({ site: id });
@@ -161,12 +165,12 @@ function draw(st) {
   if (sharp > 0.01) for (const s of data.index.sites) {
     const x = s.x_m / 1000, y = s.y_m / 1000;
     if (Math.abs(x - vp.cx) > vp.h + 5 || Math.abs(y - vp.cy) > vp.h + 5) continue;
-    el('image', { href: `data/spot/${s.id}.jpg`, x: px(x - 4.5), y: py(y + 4.5), width: 9 * ppk, height: 9 * ppk, opacity: sharp, preserveAspectRatio: 'none' }, svg);
+    el('image', { href: `data/${SPOT5.has(s.id) ? 'spot5' : 'spot'}/${s.id}.jpg`, x: px(x - 4.5), y: py(y + 4.5), width: 9 * ppk, height: 9 * ppk, opacity: sharp, preserveAspectRatio: 'none' }, svg);
   }
   const sg = el('g', { id: 'shadow-layer' }, svg), sh = st.expo ? expoFor(st, data) : shadowFor(st, data);
   // the mask grid is 800 px of 500 m, pixel centres from -199.75 km: it spans exactly +-200 km
   const fade = Math.max(0, Math.min(1, (vp.h - 3.5) / 11.5));   // 500 m mask: gone at Spot
-  if (sh && fade > 0.01) el('image', { opacity: fade, href: sh, x: px(-R_KM), y: py(R_KM), width: iw, height: iw, preserveAspectRatio: 'none', style: 'image-rendering:pixelated' }, sg);
+  if (sh && fade > 0.01) el('image', { opacity: fade, href: sh, x: px(-R_KM), y: py(R_KM), width: iw, height: iw, preserveAspectRatio: 'none' }, sg);
 
   // graticule and the Earth line (0 deg spoke)
   const g = el('g', { stroke: '#fff', 'stroke-opacity': .5, fill: 'none', 'stroke-width': 1 }, svg);
@@ -197,13 +201,16 @@ function draw(st) {
   // MOVE grid on the map when zoomed in: where you could land today
   if (vp.h < 10 && data.site && !compare) {
     const site0 = data.index.byId[st.site], cell = data.site.stepKm * ppk;
+    // landable today: green outline; too steep: thin hatch; the terrain stays visible underneath
+    const defs = el('defs', {}, svg), pat = el('pattern', { id: 'steep', width: 6, height: 6, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, defs);
+    el('line', { x1: 0, y1: 0, x2: 0, y2: 6, stroke: '#fff', 'stroke-opacity': .35, 'stroke-width': 1 }, pat);
+    const g = el('g', { 'pointer-events': 'none' }, svg);
     for (const c of data.site.grid) {
       const ok = c.ok[st.day] === '1';
       if (c.landable && !ok) continue;
-      el('rect', {
-        x: px(site0.x_m / 1000 + c.dx) - cell / 2, y: py(site0.y_m / 1000 + c.dy) - cell / 2, width: cell, height: cell,
-        fill: ok ? 'var(--move)' : 'var(--none)', 'fill-opacity': ok ? .55 : .25, 'pointer-events': 'none'
-      }, svg);
+      const x = px(site0.x_m / 1000 + c.dx) - cell / 2, y = py(site0.y_m / 1000 + c.dy) - cell / 2;
+      if (ok) el('rect', { x: x + 1, y: y + 1, width: cell - 2, height: cell - 2, fill: 'var(--move)', 'fill-opacity': .12, stroke: 'var(--move)', 'stroke-width': 1.5 }, g);
+      else el('rect', { x, y, width: cell, height: cell, fill: 'url(#steep)' }, g);
     }
   }
 
@@ -247,6 +254,7 @@ function draw(st) {
   // spacecraft: white diamonds and crosses, never status-coloured
   const kindWord = k => t('kinds')[k] || k;
   const scs = [];
+  lastLanders = data.index.landers;
   for (const l of data.index.landers) {
     if (!['landed', 'planned', 'impact', 'crash'].includes(l.kind)) continue;
     if (l.x_m == null || Math.abs(l.x_m) > R_KM * 1000 || Math.abs(l.y_m) > R_KM * 1000) continue;
@@ -262,7 +270,7 @@ function draw(st) {
     else if (l.kind === 'planned') mk({ d: dia, stroke: '#fff', 'stroke-width': 1.5, fill: 'none' }, gl);
     else mk({ d: `M${x - a},${y - a}L${x + a},${y + a}M${x + a},${y - a}L${x - a},${y + a}`, stroke: '#fff', 'stroke-width': 1.5, fill: 'none' }, gl);
     const tp = `${l.verify ? '≈ ' : ''}${siteName(l)} · ${(l.mission || '').split('(')[0].trim()} · ${l.year} · ${kindWord(l.kind)}`;
-    el('circle', { cx: x, cy: y, r: 8, fill: 'transparent', 'data-tip': tp }, svg);
+    el('circle', { cx: x, cy: y, r: 9, fill: 'transparent', 'data-tip': tp, 'data-lander': l.id, style: 'cursor:pointer' }, svg);
     scs.push({ l, x, y });
   }
 
@@ -353,9 +361,9 @@ function draw(st) {
   for (const l of lms) if (l.tier === 1 && onScreen(px(l.x), py(l.y))) lmLabel(l, true);
   for (const id of marked) if (id !== st.site) siteLabel(dotOf(id), 13, 600, 1, true);
   if (ui.hover && !marked.has(ui.hover)) siteLabel(dotOf(ui.hover), 12, 600, 1, true);
+  for (const q of scs) if (q.l.short && onScreen(q.x, q.y)) place(q.l.short, `${halo}font-size:10px;fill:#fff;fill-opacity:.75`, [[q.x + 9, q.y + 3, 'start'], [q.x - 9, q.y + 3, 'end']]);
   if (siteLevel) {
     for (const l of lms) if (l.tier === 2 && onScreen(px(l.x), py(l.y))) lmLabel(l, false);
-    for (const q of scs) if (onScreen(q.x, q.y)) place(siteName(q.l), `${halo}font-size:10px;fill:#fff;fill-opacity:.7`, [[q.x + 9, q.y + 3, 'start'], [q.x - 9, q.y + 3, 'end']]);
     for (const id of rowOrder()) if (!marked.has(id) && id !== ui.hover && dotOf(id) && onScreen(dotOf(id).x, dotOf(id).y)) siteLabel(dotOf(id), 11, 400, .85, false);
   }
 
@@ -370,4 +378,31 @@ function draw(st) {
   el('path', { d: `M${S / 2 - 4},${9} L${S / 2},${5} L${S / 2 + 4},${9}`, fill: 'none', stroke: '#fff', 'stroke-width': 1.5 }, em);
   if (!compare) text(em, t('earthWord'), { x: S / 2 + 12, y: 20, class: 'tick', style: `fill:#fff;${halo}letter-spacing:.08em` });
   document.dispatchEvent(new Event('mapframe'));
+}
+
+let lastLanders = [];
+
+// spacecraft card: name, what happened, when, what it was for
+function landerCard(id, e) {
+  const panel = document.getElementById('map-panel');
+  let card = document.getElementById('lander-card');
+  if (!id) { if (card) card.hidden = true; return; }
+  const l0 = lastLanders.find(q => q.id === id); if (!l0) return;
+  const group = lastLanders.filter(q => q.mission === l0.mission && q.x_m != null && Math.hypot(q.x_m - l0.x_m, q.y_m - l0.y_m) < 3000);
+  hideTip();
+  if (!card) {
+    card = document.createElement('div'); card.id = 'lander-card'; panel.appendChild(card);
+    addEventListener('keydown', ev => { if (ev.key === 'Escape') card.hidden = true; });
+  }
+  const ko = (document.documentElement.lang || '').startsWith('ko');
+  card.innerHTML = '<button aria-label="close">×</button>' + group.map(l => { const kind = t('kinds')[l.kind] || l.kind, when = l.date || String(l.year || ''), rel = l.relative ? (ko ? l.relative.text_ko : l.relative.text_en) : ''; return `<b>${l.name.replace(/ \(planned site\)| impact$/, '')}</b>`
+    + `<div class="k">${kind} · ${when}${!ko && l.status && l.status !== 'deliberate impact' ? ' · ' + l.status : ''}</div>`
+    + `<p>${(ko ? l.purpose_ko : l.purpose_en) || l.mission || ''}</p>`
+    + (rel ? `<div class="k">${rel}${l.verify ? (ko ? ' · 위치 대략' : ' · approx. position') : ''}</div>` : '')
+    + (l.source ? `<a href="${l.source}" target="_blank" rel="noopener">${ko ? '출처' : 'source'}</a>` : ''); }).join('<hr>');
+  card.querySelector('button').onclick = () => { card.hidden = true; };
+  const r = panel.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  card.hidden = false;
+  card.style.left = Math.min(x + 12, r.width - 250) + 'px';
+  card.style.top = Math.max(8, Math.min(y + 12, r.height - card.offsetHeight - 8)) + 'px';
 }

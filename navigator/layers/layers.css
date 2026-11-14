@@ -288,3 +288,12 @@ h2{margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spaci
 .lyr-vec .xr{fill:rgba(15,19,27,.55);stroke:var(--sun);stroke-width:2}
 .lyr-vec .xt{fill:var(--sun);font:600 10px var(--f-mono)}
 .lyr-map .lyr-home{left:124px}
+
+.lyr-vec .lbl-sc{font-size:10px;fill-opacity:.8}
+#lander-card{position:absolute;z-index:20;width:236px;background:rgba(15,19,27,.94);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:10px 12px;font-size:12px;line-height:1.45;text-align:left}
+#lander-card b{font-size:13px;display:block;padding-right:16px}
+#lander-card .k{color:#aab;font-size:11px}
+#lander-card p{margin:6px 0}
+#lander-card a{color:#9cf;font-size:11px}
+#lander-card button{position:absolute;right:6px;top:4px;background:none;border:0;color:#fff;font-size:16px;cursor:pointer}
+#lander-card hr{border:0;border-top:1px solid rgba(255,255,255,.2);margin:8px 0}

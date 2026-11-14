@@ -79,3 +79,4 @@ for t in json.load(open("a3_2022_tiles.json")):
         note=f"position = PGDA 5 m tile {t['tile']} named after this region (https://pgda.gsfc.nasa.gov/products/78); approximate region extent", approximate=True)
 json.dump(L, open("/mnt/project-files/space-apps/lunar/orientation/landers.json", "w"), ensure_ascii=False, indent=1)
 for k in L: print(k["id"], k.get("in_view"), (k["relative"] or {}).get("text_ko"), "VERIFY" if k["verify"] else "")
+# then add map labels and purposes: python3 lander_info.py landers.json

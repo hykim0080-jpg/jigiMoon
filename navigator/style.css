@@ -202,3 +202,10 @@ main[data-view="compare"] #expo{display:none}
   #site-select{max-width:180px}
   .verdict{font-size:13px;max-width:300px}
 }
+#lander-card{position:absolute;z-index:5;width:236px;background:rgba(15,19,27,.94);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:10px 12px;font-size:12px;line-height:1.45}
+#lander-card b{font-size:13px;display:block;padding-right:16px}
+#lander-card .k{color:#aab;font-size:11px}
+#lander-card p{margin:6px 0}
+#lander-card a{color:#9cf;font-size:11px}
+#lander-card button{position:absolute;right:6px;top:4px;background:none;border:0;color:#fff;font-size:16px;cursor:pointer}
+#lander-card hr{border:0;border-top:1px solid rgba(255,255,255,.2);margin:8px 0}
