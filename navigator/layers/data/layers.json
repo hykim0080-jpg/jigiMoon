@@ -175,5 +175,46 @@
   }
  ],
  "compute_s": 1141,
- "default_thresholds_note": "criterion day-count thresholds default to 60 days (about two months of 2027); adjustable"
+ "default_thresholds_note": "criterion day-count thresholds default to 60 days (about two months of 2027); adjustable",
+ "criterion_levels": {
+  "sun_days": {
+   "key": "cs",
+   "param": "sun",
+   "unit": "%",
+   "dir": ">=",
+   "default": 70,
+   "levels": {
+    "50": "sun_days_50",
+    "60": "sun_days_60",
+    "70": "sun_days",
+    "80": "sun_days_80",
+    "90": "sun_days_90"
+   }
+  },
+  "earth_days": {
+   "key": "ce",
+   "param": "earth",
+   "unit": "%",
+   "dir": ">=",
+   "default": 50,
+   "levels": {
+    "30": "earth_days_30",
+    "50": "earth_days",
+    "70": "earth_days_70"
+   }
+  },
+  "dark_days": {
+   "key": "cd",
+   "param": "dark",
+   "unit": "h",
+   "dir": "<=",
+   "default": 50,
+   "levels": {
+    "24": "dark_days_24",
+    "50": "dark_days",
+    "100": "dark_days_100"
+   }
+  }
+ },
+ "criterion_levels_note": "each level file <id>.wasm: number of 2027 landing days whose 14-day mission meets that criterion level alone (0..365, encoded like other layers)"
 }

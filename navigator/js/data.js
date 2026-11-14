@@ -56,7 +56,7 @@ export function loadCal(id, mission) {
     return {
       cal: { sun: c.sun_pct, earth: c.earth_pct, both: c.both_pct, dark: c.longest_dark_h, noComm: c.longest_no_comm_h },
       mast: raw.mast_metrics && { sun: raw.mast_metrics.mast_sun_pct, earth: raw.mast_metrics.mast_earth_pct, dark: raw.mast_metrics.mast_longest_dark_h },
-      grid: raw.move.grid.map(g => ({ dx: g.dx, dy: g.dy, landable: g.landable, slope: g.slope, ok: g.ok_days })),
+      grid: raw.move.grid.map(g => ({ dx: g.dx, dy: g.dy, landable: g.landable, slope: g.slope, ok: g.ok_days, sun: g.sun, earth: g.earth, dark: g.dark })),
       stepKm: raw.move.step_km
     };
   });
@@ -96,6 +96,18 @@ export async function loadSite(id, mission) {
 // per-day numbers of every site, loaded in the background (tooltips, compare)
 const calDone = {};
 export async function preloadCals(ids, mission) {
-  await Promise.all(ids.map(async id => { calDone[`${id}:${mission}`] = (await loadCal(id, mission)).cal; }));
+  await Promise.all(ids.map(async id => { const r = await loadCal(id, mission); calRaw[`${id}:${mission}`] = r; calDone[`${id}:${mission}`] = r.cal; }));
 }
+const calRaw = {};
 export const calOf = (id, mission) => calDone[`${id}:${mission}`] || null;
+
+// metrics a site's entry is rebuilt from when the criteria change (null until its file is loaded)
+export function metricsOf(id, mission) {
+  const raw = id === 'pin' ? full[`pin:${mission}`] : calRaw[`${id}:${mission}`];
+  if (!raw) return null;
+  if (raw.metrics) return raw.metrics;
+  const mast = {};
+  if (raw.mast) for (const h of Object.keys(raw.mast.sun)) mast[h] = { sun: raw.mast.sun[h], earth: raw.mast.earth[h], dark: raw.mast.dark[h] };
+  return { base: { sun: raw.cal.sun, earth: raw.cal.earth, dark: raw.cal.dark }, mast,
+    grid: raw.grid.map(g => ({ dx: g.dx, dy: g.dy, landable: g.landable, okStr: g.ok, sun: g.sun, earth: g.earth, dark: g.dark })) };
+}

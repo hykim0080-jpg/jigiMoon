@@ -3,7 +3,7 @@
 // Given the Sun direction (moon-fixed unit vector) we compare the Sun's local elevation with the horizon.
 
 const N = 800, NAZ = 64, AZ_STEP = 360 / NAZ, R_MOON = 1737400, D2R = Math.PI / 180;
-let hor = null, geo = null, loading = null, psr = null;
+let hor = null, geo = null, loading = null, psr = null, sunYear = null;
 
 export function ready() { return !!hor; }
 
@@ -96,8 +96,8 @@ export function load() {
     const pc = document.createElement('canvas'); pc.width = N; pc.height = N;
     const pg = pc.getContext('2d', { willReadFrequently: true }); pg.drawImage(pi, 0, 0);
     const pd = pg.getImageData(0, 0, N, N).data;
-    psr = new Uint8Array(N * N);
-    for (let i = 0; i < N * N; i++) psr[i] = pd[i * 4] === 0 ? 1 : 0;
+    psr = new Uint8Array(N * N); sunYear = new Uint8Array(N * N);
+    for (let i = 0; i < N * N; i++) { psr[i] = pd[i * 4] === 0 ? 1 : 0; sunYear[i] = pd[i * 4]; }
     hor = buf;
   })();
   return loading;
@@ -139,4 +139,70 @@ export function sunAt(x, y, S) {
   const north = -sp[i] * h + cp[i] * S[2], east = -sl[i] * S[0] + cl[i] * S[1];
   const el = Math.asin(up) / D2R, az = Math.atan2(east, north) / D2R;
   return Math.max(0, Math.min(1, (el - horizonAt(i, az + lon[i])) / 0.53 + 0.5));
+}
+
+// "Long exposure": share of the Sun disc visible, averaged over a list of Sun vectors (one per sample hour).
+// Returns Float32Array(N*N) in 0..1 (PSR pixels stay 0).
+export function exposure(Slist) {
+  const out = new Float32Array(N * N);
+  if (!hor || !Slist.length) return out;
+  const { cl, sl, cp, sp, lon } = geo, n = Slist.length, R2D = 1 / D2R;
+  // fast atan2 (max error ~0.3 deg, far below the 5.6 deg azimuth bins)
+  const atan2 = (y, x) => {
+    const ax = Math.abs(x), ay = Math.abs(y), a = Math.min(ax, ay) / (Math.max(ax, ay) || 1), s2 = a * a;
+    let r = ((-0.0464964749 * s2 + 0.15931422) * s2 - 0.327622764) * s2 * a + a;
+    if (ay > ax) r = 1.57079637 - r;
+    if (x < 0) r = 3.14159274 - r;
+    return y < 0 ? -r : r;
+  };
+  for (let i = 0; i < N * N; i++) {
+    if (psr[i]) continue;
+    let acc = 0;
+    const c1 = cl[i], s1 = sl[i], c2 = cp[i], s2 = sp[i], L = lon[i];
+    for (let k = 0; k < n; k++) {
+      const S = Slist[k], h = c1 * S[0] + s1 * S[1], up = c2 * h + s2 * S[2];
+      if (up < -0.03) continue;                                   // Sun well below the flat horizon
+      const el = up * R2D;                                        // asin(x) ~ x for the low polar Sun
+      let a = (atan2(-s1 * S[0] + c1 * S[1], -s2 * h + c2 * S[2]) * R2D + L) / AZ_STEP;
+      a = ((a % NAZ) + NAZ) % NAZ;
+      const kk = a | 0, f0 = a - kk, base = i;
+      const v0 = hor[kk * N * N + base], v1 = hor[((kk + 1) % NAZ) * N * N + base];
+      const f = (el - ((v0 + (v1 - v0) * f0) / 10 - 5)) / 0.53 + 0.5;
+      acc += f <= 0 ? 0 : f >= 1 ? 1 : f;
+    }
+    out[i] = acc / n;
+  }
+  return out;
+}
+
+// paint an exposure map: dark where the Sun was mostly hidden, clear where it was mostly up
+export function paintExposure(canvas, ex) {
+  if (canvas.width !== N) { canvas.width = N; canvas.height = N; }
+  const g = canvas.getContext('2d'), out = g.createImageData(N, N), d = out.data;
+  for (let i = 0; i < N * N; i++) {
+    if (psr[i]) { d[i * 4] = 18; d[i * 4 + 1] = 32; d[i * 4 + 2] = 110; d[i * 4 + 3] = 200; continue; }
+    d[i * 4 + 3] = Math.round(200 * (1 - ex[i]));
+  }
+  g.putImageData(out, 0, 0);
+}
+
+// the k best-lit landable pixels (slope <= maxSlope), at least sepKm apart; ties -> more sun over 2027
+export function brightest(ex, slope, k = 5, sepKm = 10, maxSlope = 8) {
+  const idx = [];
+  for (let i = 0; i < N * N; i++) {
+    if (psr[i] || ex[i] < 0.5) continue;
+    const s = slope ? slope[i] : 0;
+    if (slope && (s === 255 || s * 40 / 250 > maxSlope)) continue;
+    idx.push(i);
+  }
+  idx.sort((a, b) => (ex[b] - ex[a]) || (sunYear[b] - sunYear[a]));
+  const out = [], sep = (sepKm * 2) ** 2;     // in pixels (500 m)
+  for (const i of idx) {
+    const q = i % N, r = (i / N) | 0;
+    if (out.some(o => (o.q - q) ** 2 + (o.r - r) ** 2 < sep)) continue;
+    const [x, y] = pixelXY(q, r);
+    out.push({ i, q, r, x, y, frac: ex[i] });
+    if (out.length >= k) break;
+  }
+  return out;
 }

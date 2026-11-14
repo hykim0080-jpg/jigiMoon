@@ -39,5 +39,5 @@ export async function loadAll(dataUrl = './data/') {
   const get = async f => { try { const r = await fetch(dataUrl + f); return r.ok ? new Uint8Array(await r.arrayBuffer()) : null; } catch (e) { return null; } };
   const [ib, bits, m20] = await Promise.all([get('ok14_idx.wasm'), get('ok14_bits.wasm'), get('days6_m20.wasm')]);
   const ok14 = ib && bits && bits.length === (ib.length / 4) * 46 ? { idx: new Uint32Array(ib.buffer, ib.byteOffset, ib.length / 4), bits } : null;
-  return { meta, layers, bytes: bs, hill, sites, hist, landmarks, landers, month, ok14, m20: m20 && m20.length === N * N ? m20 : null };
+  return { dataUrl, meta, layers, bytes: bs, hill, sites, hist, landmarks, landers, month, ok14, m20: m20 && m20.length === N * N ? m20 : null };
 }

@@ -1,5 +1,6 @@
 import { state, setState, subscribe } from './state.js';
-import { loadIndex, loadSite, getSite, preloadCals } from './data.js';
+import { loadIndex, loadSite, getSite, preloadCals, metricsOf } from './data.js';
+import { applyCriteria, critKey } from './criteria.js';
 import { t } from './strings.js';
 import * as header from './header.js';
 import * as calendar from './calendar.js';
@@ -17,7 +18,19 @@ import * as pin from './pin.js';
 const $ = id => document.getElementById(id);
 const data = { index: null, site: null };
 
+// rebuild the per-day entries when the criteria or the mission change (needs every site's file)
+const applied = {}, loadingCals = {};
+function criteriaReady(st) {
+  const key = critKey(st.crit);
+  if (applied[st.mission] === key) return true;
+  const ids = data.index.sites.map(s => s.id);
+  if (applyCriteria(data.index, st.mission, st.crit, id => metricsOf(id, st.mission))) { applied[st.mission] = key; return true; }
+  if (!loadingCals[st.mission]) loadingCals[st.mission] = preloadCals(ids.filter(id => id !== 'pin'), st.mission).then(() => render(state));
+  return false;
+}
+
 function render(st) {
+  if (!criteriaReady(st)) return;
   data.site = getSite(st.site, st.mission);
   if (!data.site) {
     loadSite(st.site, st.mission).then(() => render(state));

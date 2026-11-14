@@ -6,7 +6,10 @@ import { status, fixText, shortDate, blockage, azToMapDir, nearestOk } from './l
 import { togglePin, rowOrder } from './calendar.js';
 import { landmarks, where, fmtLatLon } from './orient.js';
 import * as shadow from './shadow.js';
-import { moment } from './globe.js';
+import { moment, bodyDir } from './globe.js';
+import { getSite } from './data.js';
+import { isoDate } from './logic.js';
+import { critQuery } from './criteria.js';
 
 // shadow picture for the selected hour (Sun direction is the same over the whole map)
 const shadowCanvas = document.createElement('canvas');
@@ -22,6 +25,30 @@ function shadowFor(st, d) {
     shadowKey = key;
   }
   return shadowUrl;
+}
+
+// "long exposure": Sun-disc share averaged over the mission window (3 h steps), and its brightest landable spots
+const expoCanvas = document.createElement('canvas');
+let expoKey = null, expoUrl = null, expoTop = [], expoData = null, slopeMap = null, slopeLoading = false;
+function expoFor(st, d) {
+  if (!shadow.ready()) return null;
+  if (!slopeMap && !slopeLoading) { slopeLoading = true; shadow.loadExtra().then(x => { slopeMap = x.slope; if (expoData) expoTop = shadow.brightest(expoData, slopeMap); render(state, data); }); }
+  const key = `${st.day}:${st.mission}`;
+  if (key !== expoKey) {
+    const site = getSite(st.site, st.mission), s = d.index.byId[st.site];
+    if (!site || !s) return null;
+    const list = [], last = site.sky.sunAz.length - 1;
+    for (let h = 0; h < st.mission * 24; h += 3) {
+      const i = Math.min(last, st.day * 24 + h);
+      list.push(bodyDir(s.lat, s.lon, site.sky.sunAz[i], site.sky.sunEl[i]));
+    }
+    const ex = expoData = shadow.exposure(list);
+    shadow.paintExposure(expoCanvas, ex);
+    expoUrl = expoCanvas.toDataURL('image/png');
+    expoTop = slopeMap ? shadow.brightest(ex, slopeMap) : [];
+    expoKey = key;
+  }
+  return expoUrl;
 }
 
 const R_KM = 200, EDGE = 14;
@@ -41,6 +68,15 @@ export function init(node, d) {
   im.onload = () => { hill = 'data/hillshade_2800.jpg'; render(state, data); };
   im.src = 'data/hillshade_2800.jpg';
   shadow.load().then(() => render(state, data));
+  const eb = document.getElementById('expo');
+  eb.addEventListener('click', () => setState({ expo: state.expo ? 0 : 1 }));
+  svg.addEventListener('pointerdown', e => {
+    const xy = e.target.dataset && e.target.dataset.expo;
+    if (!xy) return;
+    const l = new URLSearchParams(location.hash.slice(1)).get('lang');
+    location.hash = `pin=${xy}&d=${isoDate(state.day)}&ex=1${l ? '&lang=' + l : ''}${critQuery(state.crit)}`;
+    location.reload();
+  });
 
   svg.addEventListener('pointermove', e => {
     const id = e.target.dataset.id || null;
@@ -50,9 +86,10 @@ export function init(node, d) {
     else hideTip();
   });
   svg.addEventListener('pointerleave', () => { setHover(null); hideTip(); });
-  svg.addEventListener('click', e => {
+  // pick on pointerdown: during playback the map is redrawn every tick, so a click's target is gone by pointerup
+  svg.addEventListener('pointerdown', e => {
     const id = e.target.dataset.id;
-    if (!id) return;
+    if (!id || e.button !== 0) return;
     if (e.shiftKey) togglePin(id); else setState({ site: id });
   });
   svg.addEventListener('dblclick', e => { if (!e.target.dataset.id) setState({ zoom: state.zoom > 1.01 ? 1 : ZOOM.site }); });
@@ -112,13 +149,14 @@ function draw(st) {
   const compare = st.view === 'compare', siteLevel = vp.h < R_KM - 1;
   clear(svg);
   document.getElementById('where').textContent = where(data.index.byId[st.site]);
+  { const eb = document.getElementById('expo'); eb.textContent = t('expo', st.mission); eb.setAttribute('aria-pressed', String(!!st.expo)); }
   document.getElementById('zoom').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(Math.abs((b.dataset.z === 'spot' ? ZOOM.spot : Number(b.dataset.z)) / st.zoom - 1) < 0.02)));
 
   // hillshade, then (later) a shadow layer, then the overlays
   const iw = 2 * R_KM * ppk;
     el('image', { href: 'data/hillshade.jpg', x: px(-R_KM), y: py(R_KM), width: iw, height: iw }, svg);
   if (hill !== 'data/hillshade.jpg') el('image', { href: hill, x: px(-R_KM), y: py(R_KM), width: iw, height: iw }, svg);
-  const sg = el('g', { id: 'shadow-layer' }, svg), sh = shadowFor(st, data);
+  const sg = el('g', { id: 'shadow-layer' }, svg), sh = st.expo ? expoFor(st, data) : shadowFor(st, data);
   // the mask grid is 800 px of 500 m, pixel centres from -199.75 km: it spans exactly +-200 km
   const fade = Math.max(0, Math.min(1, (vp.h - 3.5) / 11.5));   // 500 m mask: gone at Spot
   if (sh && fade > 0.01) el('image', { opacity: fade, href: sh, x: px(-R_KM), y: py(R_KM), width: iw, height: iw, preserveAspectRatio: 'none', style: 'image-rendering:pixelated' }, sg);
@@ -136,6 +174,13 @@ function draw(st) {
   }
   el('line', { x1: px(0), y1: py(0), x2: px(0), y2: -S, stroke: 'var(--earth)', 'stroke-opacity': .6 }, svg);
   el('path', { d: `M${px(0) - 5},${py(0)}h10M${px(0)},${py(0) - 5}v10`, stroke: '#fff', 'stroke-width': 1 }, svg);
+
+  // brightest spots of the long exposure (click = examine as a pin)
+  if (st.expo && !compare) expoTop.forEach((p, k) => {
+    const x = px(p.x / 1000), y = py(p.y / 1000), tip = t('expoTip', Math.round(p.frac * 100));
+    el('circle', { cx: x, cy: y, r: 7, fill: 'rgba(15,19,27,.55)', stroke: 'var(--sun)', 'stroke-width': 2, 'data-tip': tip, 'data-expo': `${p.x},${p.y}`, style: 'cursor:pointer' }, svg);
+    text(svg, String(k + 1), { x, y: y + 3.5, 'text-anchor': 'middle', style: 'fill:var(--sun);font-size:10px;font-weight:600;pointer-events:none' });
+  });
 
   const mode = data.index.modes[st.mission].sites, lim = limitsOf(st);
   const marked = new Set(compare ? (data.compared || [st.site]) : [st.site, ...st.pinned]);

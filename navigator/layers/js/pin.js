@@ -2,12 +2,15 @@
 import { N, PX, BUDGET } from './config.js';
 import { cellToXY, cellToLatLon } from './geo.js';
 import { describe, sectorOf } from './orient.js';
-import { sample } from './compose.js';
+import { sample, failBase, critIds } from './compose.js';
+import { skyAt, calendarFrom } from './time.js';
+import { isDefault, critHash } from './crit.js';
 import { decode } from './data.js';
 import { lang } from './strings.js';
 
 const NPX = N * N, DAYS = 365, T0 = Date.UTC(2027, 0, 1);
-let D, key = '', info = null;
+let D, key = '', info = null, onCal = null; const cal = new Map(), asked = new Set();
+export const setOnCal = f => { onCal = f; };
 export const initPin = d => { D = d; };
 export const doyOfMonth = m => (Date.UTC(2027, m, 1) - T0) / 864e5;
 export const isoOfDay = d => new Date(T0 + d * 864e5).toISOString().slice(0, 10);
@@ -29,7 +32,7 @@ const slopeMeta = () => D.layers.find(m => m.id === 'slope');
 const slopeVal = i => { const m = slopeMeta(), b = m && D.bytes.slope; return b && b[i] <= 250 ? decode(m, b[i]) : null; };
 const dayVal = (arr, m, i) => arr && arr[i] <= 250 ? Math.round(arr[i] * 365 / 250) : 0;
 
-function verdict(st, p, go, slopeV) {
+function verdict(st, p, go, slopeV, nd) {
   const d = st.tDay, i = p.row * N + p.col, thr = st.threshold.slope, slopeOn = st.on.mask.slope && slopeMeta() && thr != null;
   const steep = !!(slopeOn && slopeV != null && slopeV > thr);
   const goNow = !steep && !!go && go.go[d] === 1;
@@ -37,11 +40,11 @@ function verdict(st, p, go, slopeV) {
   let wait = null; if (!steep && go && !goNow) for (let d2 = d + 1; d2 < DAYS; d2++) if (go.go[d2]) { wait = d2 - d; break; }
   let move = null;
   if (goNow) move = { here: true };
-  else if (D.ok14) {
+  else if (nd ? st.mode === 'mask' && critIds(st).length : D.ok14) {
     let bd = BUDGET.moveCells ** 2 + 1;
     for (let r = Math.max(0, p.row - BUDGET.moveCells); r <= Math.min(N - 1, p.row + BUDGET.moveCells); r++) for (let c = Math.max(0, p.col - BUDGET.moveCells); c <= Math.min(N - 1, p.col + BUDGET.moveCells); c++) {
-      const dd = (c - p.col) ** 2 + (r - p.row) ** 2; if (dd >= bd) continue;
-      const j = r * N + c; if (!goBit(j, d)) continue;
+      const dd = (c - p.col) ** 2 + (r - p.row) ** 2; if (dd >= bd || (nd && dd === 0)) continue;
+      const j = r * N + c; if (nd ? failBase[j] !== 0 : !goBit(j, d)) continue;
       if (slopeOn) { const s = slopeVal(j); if (s == null || s > thr) continue; }
       bd = dd; move = { col: c, row: r };
     }
@@ -56,22 +59,24 @@ function verdict(st, p, go, slopeV) {
     if (cw === Infinity && cm === Infinity) kind = mast && (go ? go.count === 0 : true) ? 'mast' : 'none';
     else kind = cw <= cm ? 'wait' : 'move';
   }
-  return { kind, d, steep, slopeV, run, wait, move, mast, goNow, slopeThr: thr };
+  return { pending: nd && !go, kind, d, steep, slopeV, run, wait, move, mast, goNow, slopeThr: thr };
 }
 
 export function pinInfo(st) {
   const p = st.pin; if (!p) { key = ''; return info = null; }
-  const k = `${p.col},${p.row},${st.tDay},${st.threshold.slope},${st.on.mask.slope}`;
+  const nd = !isDefault(D.meta, st.crit), ck = `${p.row * N + p.col}|${JSON.stringify(st.crit)}`;
+  const k = `${p.col},${p.row},${st.tDay},${JSON.stringify(st.threshold)},${JSON.stringify(st.on.mask)},${ck},${cal.has(ck)},${st.mode}`;
   if (k === key) return info; key = k;
   const i = p.row * N + p.col, { x, y } = cellToXY(p.col, p.row), ll = cellToLatLon(p.col, p.row);
-  const go = goDays(i), sv = slopeVal(i);
+  let go = nd ? cal.get(ck) || null : goDays(i); const sv = slopeVal(i);
+  if (nd && !go && !asked.has(ck)) { asked.add(ck); skyAt(p.col, p.row).then(sky => { cal.set(ck, calendarFrom(sky, st.crit)); asked.delete(ck); onCal && onCal(); }); }
   const site = D.sites.find(s => s.box_m && x >= s.box_m[0] && x <= s.box_m[2] && y >= s.box_m[1] && y <= s.box_m[3]);
   const lq = new URLSearchParams(location.search).get('lang') || new URLSearchParams(location.hash.slice(1)).get('lang');
-  const q = lq ? '?lang=' + lq : '', l2 = lq ? '&lang=' + lq : '';
+  const ch = critHash(D.meta, st.crit), q = lq ? '?lang=' + lq : '', l2 = (lq ? '&lang=' + lq : '') + (ch ? '&' + ch : '');
   const link = site ? `../index.html${q}#s=${site.id}&day=${st.tDay}${l2}` : `../index.html${q}#pin=${Math.round(x)},${Math.round(y)}&d=${isoOfDay(st.tDay)}${l2}`;
   return info = {
     col: p.col, row: p.row, x, y, ll, go, siteId: site ? site.id : null, site,
     title: describe(x, y, D.landmarks) || `${Math.abs(ll.lat).toFixed(2)}°S`,
-    values: sample(p.col, p.row)?.values || {}, v: verdict(st, p, go, sv), link,
+    values: sample(p.col, p.row)?.values || {}, v: verdict(st, p, go, sv, nd), pending: nd && !go, link,
   };
 }

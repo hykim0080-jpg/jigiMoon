@@ -106,8 +106,16 @@ export async function compute(x, y) {
 
   for (const mission of [14, 6]) {
     const w = windows(own, mission), okBase = w.ok;
-    const mw = Object.fromEntries(mastSets.map(h => [h, windows(mastSer[h], mission).ok]));
-    const grid = cells.map((c, k) => ({ dx: c.dx, dy: c.dy, landable: c.landable, slope: c.slope, ok: c.landable ? windows(cellSer[k], mission).ok.map(v => (v ? '1' : '0')).join('') : '0'.repeat(365) }));
+    const mwAll = Object.fromEntries(mastSets.map(h => [h, windows(mastSer[h], mission)]));
+    const mw = Object.fromEntries(mastSets.map(h => [h, mwAll[h].ok]));
+    const cw = cells.map((c, k) => (c.landable ? windows(cellSer[k], mission) : null));
+    const grid = cells.map((c, k) => ({ dx: c.dx, dy: c.dy, landable: c.landable, slope: c.slope, ok: c.landable ? cw[k].ok.map(v => (v ? '1' : '0')).join('') : '0'.repeat(365) }));
+    // per-day metrics, so the entry can be rebuilt for other criteria (criteria.js)
+    const metrics = {
+      base: { sun: w.sun, earth: w.earth, dark: w.dark },
+      mast: Object.fromEntries(mastSets.map(h => [h, { sun: mwAll[h].sun, earth: mwAll[h].earth, dark: mwAll[h].dark }])),
+      grid: cells.map((c, k) => ({ dx: c.dx, dy: c.dy, landable: c.landable, okStr: grid[k].ok, ...(cw[k] ? { sun: cw[k].sun, earth: cw[k].earth, dark: cw[k].dark } : {}) }))
+    };
     // mast_ok per height: the nearest computed set at or below the height
     const mastOk = {};
     for (const h of MAST_HEIGHTS) {
@@ -131,7 +139,7 @@ export async function compute(x, y) {
       entry: { ok: okBase, wait, mast, move, mastOk, summary: { ok_days: days, not_ok_days: 365 - days } },
       detail: {
         cal: { sun: w.sun, earth: w.earth, both: w.both, dark: w.dark, noComm: w.noComm },
-        mast: null, grid, stepKm: 0.5
+        mast: null, grid, stepKm: 0.5, metrics
       }
     };
   }

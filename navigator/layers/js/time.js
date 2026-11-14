@@ -53,6 +53,19 @@ export async function skyAt(col, row) {
   const sky = { horizon: Array.from(h720), azStep: 0.5, hours: n, center: (Math.atan2(sx, sy) / D2R + 360) % 360, sunAz: pick(o.az, 0), sunEl: pick(o.el, 0), sunFrac: o.frac, sunVis: Array.from(o.frac, f => f > 0), earthAz: pick(o.az, 1), earthEl: pick(o.el, 1), earthVis: o.vis };
   skies.set(i, sky); return sky;
 }
+// per landing day GO of a 14-day mission from a point's hourly series: sun% >= cs, Earth% >= ce, longest dark (frac < 0.1) <= cd h
+export function calendarFrom(sky, crit) {
+  const n = 336, go = new Uint8Array(365), cs = new Float64Array(sky.hours + 1), ce = new Float64Array(sky.hours + 1); let count = 0;
+  for (let i = 0; i < sky.hours; i++) { cs[i + 1] = cs[i] + sky.sunFrac[i]; ce[i + 1] = ce[i] + sky.earthVis[i]; }
+  for (let d = 0; d < 365; d++) {
+    const a = d * 24, b = a + n;
+    if ((cs[b] - cs[a]) / n * 100 < crit.sun - 1e-9 || (ce[b] - ce[a]) / n * 100 < crit.earth - 1e-9) continue;
+    let run = 0, dark = 0;
+    for (let i = a; i < b; i++) { run = sky.sunFrac[i] < 0.1 ? run + 1 : 0; if (run > dark) dark = run; }
+    if (dark <= crit.dark) { go[d] = 1; count++; }
+  }
+  return { go, count };
+}
 export const skyCached = (col, row) => skies.has(row * 800 + col);
 export function drawPinSky(svg, st) {
   if (!state.pin || !svg) return;
@@ -61,7 +74,23 @@ export function drawPinSky(svg, st) {
 }
 
 // ---- shadow overlay ----
-export const shadowCanvas = () => state.shadow && painted ? cv : null;
+export const shadowCanvas = () => state.expo ? (expoOk ? expoCv : null) : state.shadow && painted ? cv : null;
+// ---- long exposure (as mode A): Sun-disc share over the 14-day window from the selected day, 3 h steps ----
+let expoCv = null, expoOk = false, expoKey = null, expoTimer = 0, expoData = null, slopeBytes = null; export let expoTop = [];
+export function syncExpo(st) {
+  if (!st.expo) { clearTimeout(expoTimer); bar.expo && bar.expo.classList.remove('busy'); return; }
+  if (st.tDay === expoKey) return;
+  clearTimeout(expoTimer); bar.expo.classList.add('busy');
+  expoTimer = setTimeout(async () => {
+    await ensure(); const day = state.tDay;
+    await new Promise(r => requestAnimationFrame(() => setTimeout(r, 20)));   // let the busy state paint before the 2.5 s job
+    const list = []; for (let h = 0; h < 14 * 24; h += 3) { const o = Math.min(B.n - 1, day * 24 + h) * 3; list.push(B.S.subarray(o, o + 3)); }
+    const ex = shadow.exposure(list); expoCv = expoCv || document.createElement('canvas'); shadow.paintExposure(expoCv, ex);
+    expoTop = slopeBytes ? shadow.brightest(ex, slopeBytes, 5, 10, state.threshold.slope ?? 8) : [];
+    expoOk = true; expoKey = day; bar.expo.classList.remove('busy');
+    setState({}, state.tDay === day ? 'view' : 'time');
+  }, 150);
+}
 export function syncShadow() {
   if (!state.shadow) return;
   if (!B) { ensure().then(() => setState({}, 'time')); return; }
@@ -75,18 +104,20 @@ export const forcePaint = () => { painted = ''; };
 // ---- scrubber ----
 export const dateText = d => { const dt = new Date(T0 + d * 864e5); return lang === 'ko' ? `${dt.getUTCMonth() + 1}월 ${dt.getUTCDate()}일` : `${MONTH_NAMES[dt.getUTCMonth()]} ${dt.getUTCDate()}`; };
 export const doyOfMonth = m => (Date.UTC(2027, m, 1) - T0) / 864e5;
-export function initTime(panel) {
+export function initTime(panel, d) {
+  slopeBytes = d && d.bytes.slope;
   const el = document.createElement('div'); el.className = 'lyr-time';
-  el.innerHTML = `<button class="lyr-sunb" aria-pressed="false" title="${t('shadow')}">☀</button><span class="n lyr-td"></span><input class="lyr-dsl" type="range" min="0" max="364" step="1"><input class="lyr-hsl" type="range" min="0" max="23" step="1"><span class="n lyr-th2"></span>`;
+  el.innerHTML = `<button class="lyr-sunb" aria-pressed="false" title="${t('shadow')}">☀</button><button class="lyr-expob" aria-pressed="false">${t('expo', 14)}</button><span class="n lyr-td"></span><input class="lyr-dsl" type="range" min="0" max="364" step="1"><input class="lyr-hsl" type="range" min="0" max="23" step="1"><span class="n lyr-th2"></span>`;
   panel.append(el);
-  bar = { el, sun: el.querySelector('button'), td: el.querySelector('.lyr-td'), d: el.querySelector('.lyr-dsl'), h: el.querySelector('.lyr-hsl'), th: el.querySelector('.lyr-th2') };
+  bar = { el, sun: el.querySelector('.lyr-sunb'), expo: el.querySelector('.lyr-expob'), td: el.querySelector('.lyr-td'), d: el.querySelector('.lyr-dsl'), h: el.querySelector('.lyr-hsl'), th: el.querySelector('.lyr-th2') };
   for (const ev of ['pointerdown', 'dblclick', 'wheel', 'pointermove', 'pointerup']) el.addEventListener(ev, e => e.stopPropagation(), { passive: true });
-  bar.sun.onclick = () => { setState({ shadow: !state.shadow }, 'time'); };
+  bar.sun.onclick = () => { setState({ shadow: !state.shadow, expo: false }, 'time'); };
+  bar.expo.onclick = () => { setState({ expo: !state.expo, shadow: false }, 'time'); };
   bar.d.oninput = () => setState({ tDay: +bar.d.value, tTouched: true }, 'time');
   bar.h.oninput = () => setState({ tHour: +bar.h.value, tTouched: true }, 'time');
 }
 export function renderTime(st) {
   bar.el.classList.toggle('open', !!st.shadow); bar.el.parentNode.classList.toggle('topen', !!st.shadow);
-  bar.sun.setAttribute('aria-pressed', st.shadow); bar.d.value = st.tDay; bar.h.value = st.tHour;
+  bar.expo.setAttribute('aria-pressed', !!st.expo); bar.sun.setAttribute('aria-pressed', st.shadow); bar.d.value = st.tDay; bar.h.value = st.tHour;
   bar.td.textContent = dateText(st.tDay); bar.th.textContent = String(st.tHour).padStart(2, '0') + ':00';
 }

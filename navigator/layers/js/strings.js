@@ -10,7 +10,7 @@ const S = {
     avail_wait: n => `AVAILABLE IN ${n} ${n === 1 ? 'DAY' : 'DAYS'}`, avail_move_dir: (km, dir) => `AVAILABLE ${km} KM ${dir}`, avail_mast: m => `AVAILABLE WITH ${m} M MAST`,
     noFix: (km, m, d) => `no fix within ${km} km / ${m} m / ${d} d`, slope_fail: v => `SLOPE ${v}°`,
     move: 'MOVE', mast: 'MAST', wait: 'WAIT', move_txt: (dir, km) => `${km} km ${dir}`, mast_gain: n => `20 m · +${n} d`, mast_title: (a, b) => `6-d mission ${a} → ${b} d`, days: n => `${n} d`,
-    lat: 'Lat/Lon',
+    lat: 'Lat/Lon', expo: n => `☀ ${n} d`, expoTip: p => `sunlit ${p} % of the mission`,
   },
   ko: {
     app: '달 착륙지 내비게이터', compare: '사이트 비교', find: '입지 분석', go: 'GO', none: '없음', here: '여기', open_cmp: '사이트 비교에서 보기 ↗',
@@ -23,7 +23,7 @@ const S = {
     avail_wait: n => `${n}일 후 가능`, avail_move_dir: (km, dir) => `${dir} ${km} km 이동 시 가능`, avail_mast: m => `${m} m 마스트로 가능`,
     noFix: (km, m, d) => `${km} km / ${m} m / ${d}일 안에 해법 없음`, slope_fail: v => `경사 ${v}°`,
     move: '이동', mast: '마스트', wait: '대기', move_txt: (dir, km) => `${dir} ${km} km`, mast_gain: n => `20 m · +${n}일`, mast_title: (a, b) => `6일 임무 ${a} → ${b}일`, days: n => `${n}일`,
-    lat: '위도/경도',
+    lat: '위도/경도', expo: n => `☀ ${n}일`, expoTip: p => `임무 기간 중 ${p} % 햇빛`,
   },
 };
 const qp = k => new URLSearchParams(location.search).get(k) ?? new URLSearchParams(location.hash.slice(1)).get(k);

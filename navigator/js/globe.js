@@ -106,7 +106,7 @@ function goTo(mode) {
 }
 
 // unit vector (moon-fixed: x = lon 0, y = lon 90E, z = north) of a body seen at az/el from a site
-function bodyDir(lat, lon, az, el) {
+export function bodyDir(lat, lon, az, el) {
   const p = lat * D2R, l = lon * D2R, a = az * D2R, e = el * D2R;
   const up = [Math.cos(p) * Math.cos(l), Math.cos(p) * Math.sin(l), Math.sin(p)];
   const east = [-Math.sin(l), Math.cos(l), 0];
@@ -209,15 +209,31 @@ export function render(st, d) {
   line(Array.from({ length: 61 }, (_, i) => P(0, -90 + i * 3)), faint, g);
   line(Array.from({ length: 61 }, (_, i) => P(-90 + i * 3, 0)), faint, g);
   if (m) {
-    // sun direction projected onto the view plane, marked just outside the limb
-    const p = projectR(Math.asin(m.sun[2]) / D2R, Math.atan2(m.sun[1], m.sun[0]) / D2R, c), n = Math.hypot(p.x, p.y) || 1;
-    const rr = Math.min(gm.r + 9, Math.min(gm.W, gm.H) / 2 - 8);
-    el('circle', { cx: gm.cx + p.x / n * rr, cy: gm.cy - p.y / n * rr, r: 4, fill: 'var(--sun)' }, g);
+    // the Sun on a thin "monthly orbit" ring: the Moon's equator plane (the Sun stays within 1.5 deg of it),
+    // seen tilted so the ring reads as an orbit. Front half = Sun behind the viewer (full Moon, ○),
+    // back half hidden by the disc = Sun behind the Moon (new Moon, ●). Moves ~0.5 deg per hour.
+    const rr = Math.min(gm.r + 10, Math.min(gm.W, gm.H) / 2 - 6) / gm.r;
+    const tc = { lat: Math.max(-90, Math.min(90, c.lat + (c.lat < -45 ? 35 : 25))), lon: c.lon, roll: c.roll };
+    const R3 = (lat, lon) => { const p = projectR(lat, lon, tc); return { x: gm.cx + p.x * rr * gm.r, y: gm.cy - p.y * rr * gm.r, vis: p.vis }; };
+    const hidden = q => !q.vis && Math.hypot(q.x - gm.cx, q.y - gm.cy) < gm.r + 1;
+    const ring = Array.from({ length: 145 }, (_, i) => R3(0, i * 2.5));
+    let dpath = '', pen = false;
+    for (const q of ring) { if (hidden(q)) { pen = false; continue; } dpath += `${pen ? 'L' : 'M'}${q.x.toFixed(1)},${q.y.toFixed(1)}`; pen = true; }
+    el('path', { d: dpath, fill: 'none', stroke: 'var(--sun)', 'stroke-opacity': .35, 'stroke-width': 1 }, g);
+    // full (Sun toward Earth) and new (Sun away from Earth) points of the cycle
+    for (const [lon, full] of [[m.lon0, true], [m.lon0 + 180, false]]) {
+      const q = R3(0, lon);
+      if (hidden(q)) continue;
+      el('circle', { cx: q.x, cy: q.y, r: 3, fill: full ? '#fff' : '#0f131b', stroke: '#fff', 'stroke-width': 1, 'stroke-opacity': .7, 'fill-opacity': full ? .7 : 1 }, g);
+    }
+    const sq = R3(Math.asin(m.sun[2]) / D2R, Math.atan2(m.sun[1], m.sun[0]) / D2R);
+    if (hidden(sq)) el('circle', { cx: sq.x, cy: sq.y, r: 4, fill: 'none', stroke: 'var(--sun)', 'stroke-opacity': .6, 'stroke-dasharray': '2 2' }, g);
+    else el('circle', { cx: sq.x, cy: sq.y, r: 4, fill: 'var(--sun)' }, g);
     // Earth too, once the view has turned away from it
     const ep = projectR(m.lat0, m.lon0, c), en = Math.hypot(ep.x, ep.y);
     if (en > 0.05 || !ep.vis) {
-      const f = 1;
-      el('circle', { cx: gm.cx + f * ep.x / (en || 1) * rr, cy: gm.cy - f * ep.y / (en || 1) * rr, r: 4, fill: 'var(--earth)', 'fill-opacity': ep.vis ? 1 : .5 }, g);
+      const er = Math.min(gm.r + 9, Math.min(gm.W, gm.H) / 2 - 8);
+      el('circle', { cx: gm.cx + ep.x / (en || 1) * er, cy: gm.cy - ep.y / (en || 1) * er, r: 4, fill: 'var(--earth)', 'fill-opacity': ep.vis ? 1 : .5 }, g);
     }
   }
 
