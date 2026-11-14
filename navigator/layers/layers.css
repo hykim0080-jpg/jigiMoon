@@ -271,3 +271,20 @@ h2{margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spaci
 .lyr-go-n{font-size:13px;font-weight:600;color:var(--ok);white-space:nowrap}
 .lyr-link{flex:none;display:block;text-align:center;border:1px solid var(--ink);border-radius:6px;padding:4px 6px;font-size:12px;font-weight:500}
 .lyr-link:hover{background:var(--ink);color:var(--surface)}
+
+/* criterion level picker */
+.lyr-lv{border:0;background:transparent;padding:0;font:inherit;color:inherit;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+.lyr-lvs{border-radius:5px;vertical-align:middle;margin:0 2px}
+.lyr-lvs button{font-size:11px;padding:0 5px;line-height:18px}
+.lyr-cl1 .lyr-nm{overflow:visible;white-space:nowrap}
+
+/* long exposure toggle (look of mode A's #expo) and rings */
+.lyr-expob{height:28px;background:rgba(15,19,27,.8);border:1px solid #fff;border-radius:8px;color:#fff;font-size:12px;padding:0 9px;cursor:pointer;white-space:nowrap}
+.lyr-expob[aria-pressed="true"]{background:var(--sun);border-color:var(--sun);color:#0f131b}
+.lyr-expob.busy{animation:lyrbusy .9s ease-in-out infinite}
+@keyframes lyrbusy{50%{opacity:.45}}
+.lyr-time:not(.open){width:auto;gap:6px}
+.lyr-time:not(.open) .lyr-expob{display:block}
+.lyr-vec .xr{fill:rgba(15,19,27,.55);stroke:var(--sun);stroke-width:2}
+.lyr-vec .xt{fill:var(--sun);font:600 10px var(--f-mono)}
+.lyr-map .lyr-home{left:124px}

@@ -181,3 +181,14 @@ header>.chips{min-width:300px}.verdict{min-width:200px;max-width:400px}
 #busy[hidden]{display:none}
 #busy i{width:36px;height:36px;border-radius:50%;border:4px solid #fff;border-top-color:transparent;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+#adv-panel .crit{display:grid;grid-template-columns:100px 1fr 20px;gap:8px;align-items:center;color:var(--muted)}
+#adv-panel .cseg{display:flex;border:1px solid var(--ink);border-radius:6px;overflow:hidden}
+#adv-panel .cseg button{flex:1;padding:2px 0;font-size:12px;border:0;background:transparent;color:var(--ink);cursor:pointer}
+#adv-panel .cseg button+button{border-left:1px solid var(--ink)}
+#adv-panel .cseg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+#adv-panel hr{border:0;border-top:1px solid var(--line);margin:2px 0;width:100%}
+.adv>button.changed{border-color:var(--warn,#c0392b);box-shadow:inset 0 0 0 1px var(--warn,#c0392b)}
+#expo{position:absolute;right:8px;top:40px;z-index:3;background:rgba(15,19,27,.8);border:1px solid #fff;border-radius:8px;color:#fff;font-size:12px;padding:3px 9px;cursor:pointer}
+#expo[aria-pressed="true"]{background:var(--sun);border-color:var(--sun);color:#0f131b}
+main[data-view="compare"] #expo{display:none}

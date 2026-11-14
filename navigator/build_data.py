@@ -40,7 +40,9 @@ for mode, src in MODES.items():
             'mast_metrics': {k: {h: c[k][h] for h in H} for k in ('mast_sun_pct', 'mast_earth_pct', 'mast_longest_dark_h') if k in c},
             'move': {'step_km': j['move']['step_km'], 'radius_km': j['move']['radius_km'],
                      'grid': [{'dx': p['dx_km'], 'dy': p['dy_km'], 'landable': p['landable'], 'slope': p['slope_deg'],
-                               'ok_days': p['ok_days']} for p in g]},
+                               'ok_days': p['ok_days'],
+                               **({'sun': p['cal_sun_pct'], 'earth': p['cal_earth_pct'], 'dark': p['cal_longest_dark_h']}
+                                  if p['landable'] and 'cal_sun_pct' in p else {})} for p in g]},
         }
         json.dump(site, open(os.path.join(D, mode, sid + '.json'), 'w'), separators=(',', ':'))
 

@@ -1,6 +1,7 @@
 import { DEFAULT, MAST_HEIGHTS, ZOOM, FIRST_DAY } from './config.js';
+import { readCrit, saveCrit, critParams } from './criteria.js';
 
-const KEYS = { site: 's', day: 'day', mission: 'm', mast: 'mast', mastMax: 'mx', moveMax: 'vx', waitMax: 'wx', baseline: 'base', view: 'v', hour: 'h', zoom: 'z', mode: 'pm' };
+const KEYS = { site: 's', day: 'day', mission: 'm', mast: 'mast', mastMax: 'mx', moveMax: 'vx', waitMax: 'wx', baseline: 'base', view: 'v', hour: 'h', zoom: 'z', mode: 'pm', expo: 'ex' };
 const subs = [];
 
 function readHash() {
@@ -23,13 +24,14 @@ function readHash() {
   return out;
 }
 
-export const state = { pinXY: '', ...DEFAULT, ...readHash() };
+export const state = { pinXY: '', ...DEFAULT, ...readHash(), crit: readCrit() };
 
 function writeHash() {
   const p = new URLSearchParams();
   for (const [k, h] of Object.entries(KEYS)) p.set(h, state[k]);
   if (state.pinned.length) p.set('cmp', state.pinned.join(','));
   if (state.pinXY) p.set('pin', state.pinXY);
+  for (const [h, v] of critParams(state.crit)) p.set(h, v);
   const old = new URLSearchParams(location.hash.slice(1));
   if (old.has('lang')) p.set('lang', old.get('lang'));
   history.replaceState(null, '', '#' + p.toString());
@@ -37,6 +39,7 @@ function writeHash() {
 
 export function setState(patch) {
   Object.assign(state, patch);
+  if (patch.crit) saveCrit(state.crit);
   state.zoom = Math.max(1, Math.min(ZOOM.spot, Number(state.zoom) || 1));
   state.day = Math.max(0, Math.min(364, Math.round(state.day)));
   state.hour = Math.max(0, Math.min(state.mission * 24, Math.round(state.hour)));

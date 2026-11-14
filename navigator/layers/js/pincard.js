@@ -20,6 +20,7 @@ export function initPinCard(root, d) {
   el.addEventListener('click', e => { const b = e.target.closest('[data-step]'); if (b) setDay(state.tDay + +b.dataset.step); });
 }
 function verdictHtml(v) {
+  if (v.pending) return `<i class="lyr-dot" style="background:var(--muted)"></i><span style="color:var(--muted)">…</span>`;
   const dot = `<i class="lyr-dot" style="background:var(--${v.kind === 'go' ? 'ok' : 'block'})"></i>`;
   if (v.kind === 'go') return `${dot}<span style="color:var(--ok)">${t('go_run', v.run)}</span>`;
   const head = t('nogo') + (v.steep ? ' · ' + t('slope_fail', v.slopeV.toFixed(0)) : '');
@@ -28,7 +29,7 @@ function verdictHtml(v) {
 }
 export function renderPinCard(st) {
   const inf = pinInfo(st);
-  const k = inf ? `${inf.col},${inf.row},${st.tDay},${st.adv},${JSON.stringify(st.threshold)},${JSON.stringify(st.on.mask)}` : '';
+  const k = inf ? `${inf.col},${inf.row},${st.tDay},${st.adv},${inf.pending},${inf.go ? inf.go.count : ''},${JSON.stringify(st.crit)},${JSON.stringify(st.threshold)},${JSON.stringify(st.on.mask)}` : '';
   if (k === key) return; key = k;
   if (!inf) { el.innerHTML = ''; return; }
   const v = inf.v, f = (kind, label, val, title = '') => `<div class="lyr-fx${v.kind === kind ? ' pick' : ''}${val == null ? ' na' : ''}" style="--c:var(--${kind})" title="${title}"><span>${label}</span><span class="n">${val ?? '—'}</span></div>`;

@@ -77,14 +77,14 @@
   354.375
  ],
  "azimuth_convention": "map azimuth, degrees clockwise from map +y (toward lon 0 = Earth) to map +x (lon 90E). Local azimuth (from local north) = map_az - lon",
- "files": "horizon_KK.png RGBA: R,G,B,A = azimuths 4K, 4K+1, 4K+2, 4K+3 (indices into azimuths_deg)",
+ "files": "h_KK.png RGB: R,G,B = azimuth indices 3K, 3K+1, 3K+2 (22 files, last file only R used). Repacked from horizon_*.png (RGBA) to avoid premultiplied-alpha decoding",
  "encoding": "el_deg = v/10 - 5 (v 0..254 covers -5..+20.4 deg); 255 = >= 20.5 deg. Values below -5 clamp to 0",
  "value": "terrain horizon elevation angle (deg) seen from 2 m above the ground, max over 150 km, lunar curvature included; linear interpolation of a 1-deg azimuth table",
  "observer_m": 2,
  "max_km": 150,
  "terrain": [
   "NASA GSFC PGDA LOLA LDEM_80S_80MPP_ADJ (80 m)",
-  "LDEM_60S_240MPP_ADJ (240 m, beyond 80S) — https://pgda.gsfc.nasa.gov/products/90, public domain"
+  "LDEM_60S_240MPP_ADJ (240 m, beyond 80S) \u2014 https://pgda.gsfc.nasa.gov/products/90, public domain"
  ],
- "code": "space-apps/lunar/layers/hz_table.py (NA=360) + export in thread 남극 요소별 지도 겹쳐 보기"
+ "code": "space-apps/lunar/layers/hz_table.py (NA=360) + export in thread \ub0a8\uadf9 \uc694\uc18c\ubcc4 \uc9c0\ub3c4 \uacb9\uccd0 \ubcf4\uae30"
 }

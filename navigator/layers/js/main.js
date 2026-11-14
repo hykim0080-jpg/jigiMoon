@@ -4,12 +4,13 @@ import { initCompose, compose, sample, scoreIds, critIds, scoreColor } from './c
 import { initMap, blit, drawOverlay, resize, renderBadge, flyTo, flyToCells, flyToCell, setPick } from './mapview.js';
 import { initPanel, renderPanel, renderReadout } from './panel.js';
 import { initZones, scheduleZones, renderZones, loadOverride, getZones } from './zones.js';
+import { readCrit, saveCrit, critHash, applyLevels, isDefault } from './crit.js';
 import { initCriteria, renderCriteria, renderCritTick } from './criteria.js';
 import { initPinCard, renderPinCard, renderPinSky } from './pincard.js';
 import { DEFAULT_ON, ZONE } from './config.js';
 import { t, lang } from './strings.js';
-import { initPin } from './pin.js';
-import { syncShadow, renderTime, ensure as ensureTime } from './time.js';
+import { initPin, setOnCal } from './pin.js';
+import { syncShadow, syncExpo, renderTime, ensure as ensureTime } from './time.js';
 import { xyToCell, cellToXY } from './geo.js';
 
 export async function mount(root, opts = {}) {
@@ -30,6 +31,7 @@ export async function mount(root, opts = {}) {
   let mdef = DEFAULT_ON.maskHues.map(hh => DEFAULT_ON.pref.map(sf => crit.find(m => m.id === hh + sf)).find(Boolean)).filter(Boolean);
   if (!mdef.length) mdef = crit;
   for (const m of mdef) on.mask[m.id] = true;
+  state.crit = readCrit(data.meta, h);
   Object.assign(state, { order: ids, on, opacity, threshold, weight, lastWeight, ov: loadOverride() });
   if (h.get('a') === '1') state.adv = true;
   if (state.adv && ['layers', 'mask', 'score'].includes(h.get('m'))) state.mode = h.get('m');
@@ -40,11 +42,17 @@ export async function mount(root, opts = {}) {
   const mon = +h.get('mon'); if (state.adv && mon >= 1 && mon <= 12 && data.month) state.month = mon - 1;
   let pinFly = null;
   if (h.get('pin')) { const [px, py] = h.get('pin').split(',').map(Number), c = xyToCell(px, py); if (Number.isFinite(c.col) && c.col >= 0 && c.row >= 0 && c.col < 800 && c.row < 800) { state.pin = c; pinFly = c; state.autoPin = false; } }
-  initPin(data); ensureTime();
+  initPin(data); ensureTime(); setOnCal(() => setState({}, 'panel'));
 
   const { comp } = initCompose(data);
+  { const ok = await applyLevels(data, state.crit, dataUrl); if (!ok) state.crit = readCrit(data.meta, new URLSearchParams()), await applyLevels(data, state.crit, dataUrl); }
   const pick = z => { setState({ pin: { col: z.best.col, row: z.best.row }, autoPin: false }, 'panel'); flyToCells(z.bbox, ZONE.fitMaxK); };
-  initPanel(pLayers, data); initCriteria(pCrit, data); initZones(pZones, data, { pick }); initPinCard(pPin, data); initMap(pMap, data, comp); setPick(pick);
+  initPanel(pLayers, data); const setCrit = async (param, v, whole) => {
+    const next = whole || { ...state.crit, [param]: v };
+    if (!(await applyLevels(data, next, dataUrl))) { await applyLevels(data, state.crit, dataUrl); return false; }
+    saveCrit(next); setState({ crit: next }, 'pixels'); return true;
+  };
+  initCriteria(pCrit, data, setCrit); initZones(pZones, data, { pick }); initPinCard(pPin, data); initMap(pMap, data, comp); setPick(pick);
   const setAdv = v => setState(v ? { adv: true } : { adv: false, mode: 'mask', month: null, edit: null, minArea: 1 }, 'pixels');
   advBtn.onclick = () => setAdv(!state.adv);
 
@@ -66,10 +74,10 @@ export async function mount(root, opts = {}) {
   const flush = () => {
     raf = 0; const p = pend; pend = new Set();
     app.dataset.adv = state.adv ? '1' : ''; advBtn.setAttribute('aria-pressed', state.adv);
-    if (p.has('pixels')) { passPx = compose(state).passPx; if (state.adv) renderPanel(state); renderCriteria(state); renderZones(state); zonesSoon(); syncShadow(); renderTime(state); renderPinCard(state); renderPinSky(state); blit(); overlay(); readout(); }
+    if (p.has('pixels')) { passPx = compose(state).passPx; if (state.adv) renderPanel(state); renderCriteria(state); renderZones(state); zonesSoon(); syncShadow(); syncExpo(state); renderTime(state); renderPinCard(state); renderPinSky(state); blit(); overlay(); readout(); }
     else {
       if (p.has('view')) { blit(); overlay(); }
-      if (p.has('time')) { syncShadow(); renderTime(state); renderPinCard(state); renderPinSky(state); blit(); }
+      if (p.has('time')) { syncShadow(); syncExpo(state); renderTime(state); renderPinCard(state); renderPinSky(state); blit(); overlay(); }
       if (p.has('zones')) { renderZones(state); zonesSoon(); readout(); }
       if (p.has('panel')) { renderZones(state); renderPinCard(state); renderPinSky(state); overlay(); readout(); }
       if (p.has('site')) { overlay(); readout(); }
@@ -80,7 +88,9 @@ export async function mount(root, opts = {}) {
     if (state.adv && state.month != null) q.set('mon', state.month + 1);
     if (state.tTouched) { q.set('d', new Date(Date.UTC(2027, 0, 1 + state.tDay)).toISOString().slice(0, 10)); q.set('h', String(state.tHour).padStart(2, '0')); }
     if (state.shadow) q.set('sh', 1);
+    { const ch = critHash(data.meta, state.crit); for (const kv of ch ? ch.split('&') : []) { const [a, b] = kv.split('='); q.set(a, b); } }
     if (lq) q.set('lang', lq);
+    { const ch = critHash(data.meta, state.crit), href = '../index.html' + (lq ? '?lang=' + lq : '') + (ch ? '#' + ch : ''); for (const a of app.querySelectorAll('.lyr-sw a, .app-name')) a.setAttribute('href', href); }
     history.replaceState(null, '', '#' + q.toString().replace(/%2C/g, ','));
   };
   const zonesSoon = () => scheduleZones(state, () => {
@@ -101,6 +111,11 @@ export async function mount(root, opts = {}) {
     else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') setState({ tDay: Math.max(0, Math.min(364, state.tDay + (e.key === 'ArrowRight' ? 1 : -1))), tTouched: true }, 'time');
   };
   addEventListener('keydown', onKey);
+  const onHash = () => {
+    const nc = readCrit(data.meta, new URLSearchParams(location.hash.slice(1)));
+    if (JSON.stringify(nc) !== JSON.stringify(state.crit)) setCrit(null, null, nc);
+  };
+  addEventListener('hashchange', onHash);
   setS(); resize();
   setState({}, 'pixels');
   if (pinFly) flyToCell(pinFly.col, pinFly.row, 4, true); else if (state.site) flyTo(data.sites.find(s => s.id === state.site), true);

@@ -3,6 +3,7 @@ import { MAST_SLIDER } from './config.js';
 import { t, siteName } from './strings.js';
 import { status, fixText, isoDate, nearestOk, goRuns, shortDate, dateOf } from './logic.js';
 import { moveShort } from './orient.js';
+import { LEVELS, critQuery, isDefault } from './criteria.js';
 
 let root, refs;
 
@@ -24,7 +25,7 @@ export function init(el, data) {
     <span class="grow"></span>
     <div class="verdict"></div>
     <div class="adv"><button id="adv-btn" aria-label="${t('advanced')}" aria-expanded="false">⋯</button>
-      <div id="adv-panel" hidden>${[['moveMax','maxMove',0.25,6,0.25],['mastMax','maxMast',MAST_SLIDER.min,MAST_SLIDER.max,1],['waitMax','maxWait',0,120,1]].map(([k,l,mn,mx,sp])=>`<label>${t(l)}<span class="rw"><input type="range" min="${mn}" max="${mx}" step="${sp}" data-k="${k}">${k==='mastMax'?`<i style="left:${(MAST_SLIDER.mark-mn)/(mx-mn)*100}%"></i>`:''}</span><input class="n" type="number" min="${mn}" max="${mx}" step="${sp}" data-k="${k}"></label>`).join('')}</div></div>
+      <div id="adv-panel" hidden>${[['sun', '≥', '%'], ['earth', '≥', '%'], ['dark', '≤', 'h']].map(([k, op, u]) => `<div class="crit" data-c="${k}"><span>${t(k)} ${op}</span><span class="cseg">${LEVELS[k].map(v => `<button data-v="${v}">${v}</button>`).join('')}</span><span>${u}</span></div>`).join('')}<hr>${[['moveMax','maxMove',0.25,6,0.25],['mastMax','maxMast',MAST_SLIDER.min,MAST_SLIDER.max,1],['waitMax','maxWait',0,120,1]].map(([k,l,mn,mx,sp])=>`<label>${t(l)}<span class="rw"><input type="range" min="${mn}" max="${mx}" step="${sp}" data-k="${k}">${k==='mastMax'?`<i style="left:${(MAST_SLIDER.mark-mn)/(mx-mn)*100}%"></i>`:''}</span><input class="n" type="number" min="${mn}" max="${mx}" step="${sp}" data-k="${k}"></label>`).join('')}</div></div>
     ${seg([['focus', t('focus')], ['compare', t('compare')], ['sites', t('sites')]], 'view')}`;
   refs = {
     select: root.querySelector('#site-select'),
@@ -36,6 +37,10 @@ export function init(el, data) {
   };
   const adv = root.querySelector('#adv-panel'), btn = root.querySelector('#adv-btn');
   btn.addEventListener('click', () => { adv.hidden = !adv.hidden; btn.setAttribute('aria-expanded', String(!adv.hidden)); });
+  adv.addEventListener('click', e => {
+    const b = e.target.closest('.crit button');
+    if (b) setState({ crit: { ...state.crit, [b.closest('.crit').dataset.c]: Number(b.dataset.v) } });
+  });
   adv.addEventListener('input', e => {
     const v = parseFloat(e.target.value);
     if (!isNaN(v)) setState({ [e.target.dataset.k]: v });
@@ -58,8 +63,10 @@ export function render(st, data) {
   { // link to the layer viewer at the selected site and month
     const s = data.index.byId[st.site], mon = dateOf(st.day).getUTCMonth() + 1;
     const l = new URLSearchParams(location.hash.slice(1)).get('lang') || new URLSearchParams(location.search).get('lang') || 'en';
-    root.querySelector('#find-link').href = `layers/index.html#pin=${Math.round(s.x_m)},${Math.round(s.y_m)}&mon=${mon}&lang=${l}`;
+    root.querySelector('#find-link').href = `layers/index.html#pin=${Math.round(s.x_m)},${Math.round(s.y_m)}&mon=${mon}&lang=${l}${critQuery(st.crit)}`;
   }
+  refs.adv.querySelectorAll('.crit').forEach(r => r.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(st.crit[r.dataset.c] === Number(b.dataset.v)))));
+  root.querySelector('#adv-btn').classList.toggle('changed', !isDefault(st.crit));
   refs.date.textContent = isoDate(st.day);
   const slip = st.day - st.baseline;
   refs.slip.textContent = slip ? (slip > 0 ? t('slip', slip) : `−${-slip} d`) : '';

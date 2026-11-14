@@ -6,7 +6,7 @@ import { t, layerName, unitOf } from './strings.js';
 import { fmt } from './data.js';
 import { rampCss } from './ramps.js';
 import { SIMPLE, ZONE } from './config.js';
-import { shadowCanvas, initTime } from './time.js';
+import { shadowCanvas, initTime, expoTop } from './time.js';
 import { pinInfo } from './pin.js';
 import { getZones, hotZoneId, paint, brushCells, saveOverride } from './zones.js';
 import { haloCanvas } from './compose.js';
@@ -39,7 +39,7 @@ export function initMap(el, d, compCanvas) {
   homeBtn = Object.assign(document.createElement('button'), { className: 'lyr-home', textContent: t('home'), hidden: true });
   homeBtn.onclick = e => { e.stopPropagation(); reset(); };
   homeBtn.onpointerdown = homeBtn.ondblclick = e => e.stopPropagation();
-  panel.append(canvas, svg, legend, badge, homeBtn); initTime(panel);
+  panel.append(canvas, svg, legend, badge, homeBtn); initTime(panel, data);
   ctx = canvas.getContext('2d');
   tip = document.getElementById('tip') || Object.assign(document.createElement('div'), { id: 'tip', hidden: true });
   if (!tip.parentNode) document.body.append(tip);
@@ -129,6 +129,12 @@ function hitBadge(mx, my) {
   for (const b of badges()) { const d = Math.hypot(b.x - mx, b.cy - my); if (d < bd) { best = b; bd = d; } }
   return best ? best.z : null;
 }
+function hitRing(mx, my) {
+  if (!state.expo) return null;
+  let best = null, bd = 11;
+  expoTop.forEach(p => { const [x, y] = toScr(p.q + .5, p.r + .5), d = Math.hypot(x - mx, y - my); if (d < bd) { best = p; bd = d; } });
+  return best;
+}
 function hitLander(mx, my) {
   let best = null, bd = 9;
   for (const l of drawableLanders(data.landers)) { const [x, y] = toScr(...mToCf(l.x_m, l.y_m)), d = Math.hypot(x - mx, y - my); if (d < bd) { best = l; bd = d; } }
@@ -169,7 +175,9 @@ function wire() {
     if (!drag) return; const moved = drag.moved; drag = null; panel.classList.remove('grab');
     if (moved) return;
     const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top, hb = hitBadge(mx, my), hs = state.adv ? hitSite(mx, my) : null, cell = cellFromEvent(e);
+    const hr = hitRing(mx, my);
     if (hb) { if (pickFn) pickFn(hb); }
+    else if (hr) setState({ pin: { col: hr.q, row: hr.r }, autoPin: false }, 'panel');
     else if (hs) { setState({ site: hs.id }, 'site'); flyTo(hs); }
     else if (cell) setState({ pin: cell, autoPin: false }, 'panel');
   });
@@ -286,6 +294,7 @@ export function drawOverlay(st, siteFill) {
   if (st.edit && st.hover) { const [x, y] = toScr(st.hover.col + .5, st.hover.row + .5); h += `<circle cx="${x}" cy="${y}" r="${brushCells(s) * s}" class="brush ${st.edit}"/>`; }
   else if (st.hover && k >= 4) { const [x, y] = toScr(st.hover.col, st.hover.row); h += `<rect x="${x}" y="${y}" width="${s}" height="${s}" class="hv"/>`; }
   h += landerSvg(st);
+  if (st.expo) expoTop.forEach((p, k) => { const [x, y] = toScr(p.q + .5, p.r + .5); if (x > -10 && y > -10 && x < W + 10 && y < W + 10) h += `<circle cx="${x}" cy="${y}" r="7" class="xr"/><text x="${x}" y="${y + 3.5}" text-anchor="middle" class="xt">${k + 1}</text>`; });
   if (st.mode !== 'layers') for (const b of badges()) {
     const sg = b.flip ? 1 : -1, hotB = b.id === hotZ;
     h += `<path d="M${b.x} ${b.y}V${b.y + sg * 10}" class="zbs0"/><path d="M${b.x} ${b.y}V${b.y + sg * 10}" class="zbs"/><circle cx="${b.x}" cy="${b.cy}" r="11" class="zb${hotB ? ' hot' : ''}"/><text x="${b.x}" y="${b.cy + 4.5}" text-anchor="middle" class="zbt">${b.id}</text>`;
