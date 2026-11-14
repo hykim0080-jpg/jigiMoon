@@ -2,7 +2,7 @@ import { N, PX, HALF, GRATICULE_LATS, SCORE_RAMP } from './config.js';
 import { state, setState } from './state.js';
 import { latRadius, cellToLatLon, cellToXY } from './geo.js';
 import { sample, scoreColor, failCount, score100, critIds } from './compose.js';
-import { t, layerName, unitOf } from './strings.js';
+import { t, layerName, unitOf, lang } from './strings.js';
 import { fmt } from './data.js';
 import { rampCss } from './ramps.js';
 import { SIMPLE, ZONE } from './config.js';
@@ -176,6 +176,9 @@ function wire() {
     if (moved) return;
     const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top, hb = hitBadge(mx, my), hs = state.adv ? hitSite(mx, my) : null, cell = cellFromEvent(e);
     const hr = hitRing(mx, my);
+    const hl = hitLander(mx, my);
+    landerCard(hl, e);
+    if (hl) { tip.hidden = true; return; }
     if (hb) { if (pickFn) pickFn(hb); }
     else if (hr) setState({ pin: { col: hr.q, row: hr.r }, autoPin: false }, 'panel');
     else if (hs) { setState({ site: hs.id }, 'site'); flyTo(hs); }
@@ -244,7 +247,7 @@ function landerSvg(st) {
     if (x < -10 || y < -10 || x > W + 10 || y > W + 10) continue;
     const cls = `ls ${l.kind === 'landed' || l.kind === 'planned' ? 'f' : 'x'}${l.verify || l.kind === 'planned' ? ' v' : ''}`;
     g += `<path transform="translate(${x} ${y})" d="${landerPath(l.kind)}" class="${cls}"/>`;
-    if (st.hoverLander === l.id) lab += `<text x="${x + 8}" y="${y + 4}" class="lbl">${landerLabel(l)}</text>`;
+    if (l.short || st.hoverLander === l.id) lab += `<text x="${x + 8}" y="${y + 4}" class="lbl lbl-sc">${st.hoverLander === l.id ? landerLabel(l) : l.short}</text>`;
   }
   return g + lab;
 }
@@ -310,3 +313,26 @@ export function drawOverlay(st, siteFill) {
   svg.innerHTML = h;
 }
 export const mapHome = reset;
+
+// spacecraft card (same content as the Compare map)
+function landerCard(l, e) {
+  let card = document.getElementById('lander-card');
+  if (!l) { if (card) card.hidden = true; return; }
+  const l0 = l, group = data.landers.filter(q => q.mission === l0.mission && q.x_m != null && Math.hypot(q.x_m - l0.x_m, q.y_m - l0.y_m) < 3000);
+  if (!card) {
+    card = Object.assign(document.createElement('div'), { id: 'lander-card' }); panel.appendChild(card);
+    addEventListener('keydown', ev => { if (ev.key === 'Escape') card.hidden = true; });
+  }
+  const ko = lang === 'ko', kinds = ko ? { landed: '착륙', planned: '계획', impact: '충돌', crash: '추락' } : {};
+  card.innerHTML = '<button aria-label="close">×</button>' + group.map(l => { const rel = l.relative ? (ko ? l.relative.text_ko : l.relative.text_en) : ''; return `<b>${l.name.replace(/ \(planned site\)| impact$/, '')}</b>`
+    + `<div class="k">${kinds[l.kind] || l.kind} · ${l.date || l.year || ''}${!ko && l.status && l.status !== 'deliberate impact' ? ' · ' + l.status : ''}</div>`
+    + `<p>${(ko ? l.purpose_ko : l.purpose_en) || l.mission || ''}</p>`
+    + (rel ? `<div class="k">${rel}${l.verify ? (ko ? ' · 위치 대략' : ' · approx. position') : ''}</div>` : '')
+    + (l.source ? `<a href="${l.source}" target="_blank" rel="noopener">${ko ? '출처' : 'source'}</a>` : ''); }).join('<hr>');
+  card.querySelector('button').onclick = ev => { ev.stopPropagation(); card.hidden = true; };
+  card.onpointerdown = ev => ev.stopPropagation(); card.onpointerup = ev => ev.stopPropagation();
+  const r = panel.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  card.hidden = false;
+  card.style.left = Math.min(x + 12, r.width - 250) + 'px';
+  card.style.top = Math.max(8, Math.min(y + 12, r.height - card.offsetHeight - 8)) + 'px';
+}

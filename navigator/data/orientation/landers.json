@@ -27,7 +27,10 @@
    "text_ko": "무톤산",
    "text_en": "at Mons Mouton"
   },
-  "verify": false
+  "verify": false,
+  "short": "IM-2 2025",
+  "purpose_en": "NASA CLPS lander carrying an ice drill (PRIME-1) and a hopper; landed on its side and ended early.",
+  "purpose_ko": "얼음 드릴(PRIME-1)과 호퍼를 실은 NASA CLPS 착륙선. 옆으로 누운 채 착륙해 일찍 끝남."
  },
  {
   "id": "im-1-odysseus",
@@ -45,7 +48,10 @@
   "x_m": 7540,
   "y_m": 299939,
   "in_view": false,
-  "relative": null
+  "relative": null,
+  "short": "IM-1 2024",
+  "purpose_en": "First commercial soft landing on the Moon, carrying NASA instruments; came to rest tipped.",
+  "purpose_ko": "NASA 장비를 실은 첫 민간 연착륙. 기울어진 채 멈춤."
  },
  {
   "id": "lcross-centaur",
@@ -75,7 +81,10 @@
    "text_ko": "카베우스 안 (왼쪽, 중심에서 26 km)",
    "text_en": "inside Cabeus, left side, 26 km from centre"
   },
-  "verify": false
+  "verify": false,
+  "short": "LCROSS 2009",
+  "purpose_en": "Spent Centaur rocket stage aimed into Cabeus to throw up a plume; the plume showed water ice.",
+  "purpose_ko": "다 쓴 센타우르 로켓을 카베우스에 일부러 충돌시켜 분출물을 일으킴. 분출물에서 물 얼음 확인."
  },
  {
   "id": "lcross-ssc",
@@ -105,7 +114,10 @@
    "inside": true,
    "text_ko": "카베우스 안 (왼쪽, 중심에서 27 km)",
    "text_en": "inside Cabeus, left side, 27 km from centre"
-  }
+  },
+  "short": "",
+  "purpose_en": "Shepherding spacecraft that flew through the Centaur plume to measure it, then struck Cabeus minutes later.",
+  "purpose_ko": "센타우르 분출물 속을 지나며 측정한 뒤 몇 분 후 카베우스에 충돌한 동반 탐사선."
  },
  {
   "id": "lunar-prospector",
@@ -135,7 +147,10 @@
    "inside": true,
    "text_ko": "슈메이커 안 (지구 쪽 오른편, 중심에서 14 km)",
    "text_en": "inside Shoemaker, Earth-right side, 14 km from centre"
-  }
+  },
+  "short": "Lunar Prospector 1999",
+  "purpose_en": "Orbiter steered into a shadowed crater at mission end to look for a water-vapour plume; none was seen.",
+  "purpose_ko": "임무 끝에 영구 그림자 크레이터로 충돌시켜 수증기를 찾으려 한 궤도선. 관측되지 않음."
  },
  {
   "id": "viper",
@@ -166,7 +181,10 @@
    "inside": false,
    "text_ko": "무톤산 위 (지구 반대쪽)",
    "text_en": "on Mons Mouton, back side"
-  }
+  },
+  "short": "VIPER (cancelled)",
+  "purpose_en": "NASA rover planned to map water ice near Nobile; cancelled in 2024 before launch.",
+  "purpose_ko": "노빌레 근처 물 얼음을 탐사할 예정이던 NASA 로버. 2024년 발사 전 취소."
  },
  {
   "id": "change-7",
@@ -184,7 +202,10 @@
   "x_m": null,
   "y_m": null,
   "in_view": null,
-  "relative": null
+  "relative": null,
+  "short": "Chang'e-7 2027",
+  "purpose_en": "Chinese orbiter, lander, rover and hopper to search for water ice near Shackleton.",
+  "purpose_ko": "섀클턴 근처 물 얼음을 찾을 중국의 궤도선·착륙선·로버·호퍼."
  },
  {
   "id": "chandrayaan-1-mip",
@@ -202,7 +223,10 @@
   "x_m": null,
   "y_m": null,
   "in_view": null,
-  "relative": null
+  "relative": null,
+  "short": "Chandrayaan-1 MIP 2008",
+  "purpose_en": "Probe dropped from India's first lunar orbiter; measured the thin lunar atmosphere on the way down.",
+  "purpose_ko": "인도 첫 달 궤도선에서 떨어뜨린 충돌 탐침. 내려가며 희박한 달 대기 측정."
  },
  {
   "id": "chandrayaan-3",
@@ -219,7 +243,10 @@
   "y_m": 534332,
   "in_view": false,
   "relative": null,
-  "verify": false
+  "verify": false,
+  "short": "Chandrayaan-3 2023",
+  "purpose_en": "India's first soft landing, the closest to the south pole at the time (69.4° S).",
+  "purpose_ko": "인도 첫 연착륙. 당시 남극에 가장 가까운 착륙(남위 69.4°)."
  },
  {
   "id": "chandrayaan-2",
@@ -236,7 +263,10 @@
   "y_m": 539530,
   "in_view": false,
   "relative": null,
-  "verify": false
+  "verify": false,
+  "short": "Chandrayaan-2 2019",
+  "purpose_en": "India's Vikram lander, lost during its final descent.",
+  "purpose_ko": "인도 비크람 착륙선. 마지막 하강 중 실패."
  },
  {
   "id": "luna-25",
@@ -254,7 +284,10 @@
   "y_m": 479695,
   "in_view": false,
   "relative": null,
-  "verify": false
+  "verify": false,
+  "short": "Luna-25 2023",
+  "purpose_en": "Russian south-pole lander; crashed after an orbit-change burn ran too long.",
+  "purpose_ko": "러시아 남극 착륙선. 궤도 변경 분사가 너무 길어 추락."
  },
  {
   "id": "a3-2024-peak-near-cabeus-b",

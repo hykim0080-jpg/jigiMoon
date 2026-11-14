@@ -88,6 +88,8 @@ export function init(node, d) {
   svg.addEventListener('pointerleave', () => { setHover(null); hideTip(); });
   // pick on pointerdown: during playback the map is redrawn every tick, so a click's target is gone by pointerup
   svg.addEventListener('pointerdown', e => {
+    if (e.target.dataset.lander) { landerCard(e.target.dataset.lander, e); return; }
+    landerCard(null);
     const id = e.target.dataset.id;
     if (!id || e.button !== 0) return;
     if (e.shiftKey) togglePin(id); else setState({ site: id });
@@ -247,6 +249,7 @@ function draw(st) {
   // spacecraft: white diamonds and crosses, never status-coloured
   const kindWord = k => t('kinds')[k] || k;
   const scs = [];
+  lastLanders = data.index.landers;
   for (const l of data.index.landers) {
     if (!['landed', 'planned', 'impact', 'crash'].includes(l.kind)) continue;
     if (l.x_m == null || Math.abs(l.x_m) > R_KM * 1000 || Math.abs(l.y_m) > R_KM * 1000) continue;
@@ -262,7 +265,7 @@ function draw(st) {
     else if (l.kind === 'planned') mk({ d: dia, stroke: '#fff', 'stroke-width': 1.5, fill: 'none' }, gl);
     else mk({ d: `M${x - a},${y - a}L${x + a},${y + a}M${x + a},${y - a}L${x - a},${y + a}`, stroke: '#fff', 'stroke-width': 1.5, fill: 'none' }, gl);
     const tp = `${l.verify ? '≈ ' : ''}${siteName(l)} · ${(l.mission || '').split('(')[0].trim()} · ${l.year} · ${kindWord(l.kind)}`;
-    el('circle', { cx: x, cy: y, r: 8, fill: 'transparent', 'data-tip': tp }, svg);
+    el('circle', { cx: x, cy: y, r: 9, fill: 'transparent', 'data-tip': tp, 'data-lander': l.id, style: 'cursor:pointer' }, svg);
     scs.push({ l, x, y });
   }
 
@@ -353,9 +356,9 @@ function draw(st) {
   for (const l of lms) if (l.tier === 1 && onScreen(px(l.x), py(l.y))) lmLabel(l, true);
   for (const id of marked) if (id !== st.site) siteLabel(dotOf(id), 13, 600, 1, true);
   if (ui.hover && !marked.has(ui.hover)) siteLabel(dotOf(ui.hover), 12, 600, 1, true);
+  for (const q of scs) if (q.l.short && onScreen(q.x, q.y)) place(q.l.short, `${halo}font-size:10px;fill:#fff;fill-opacity:.75`, [[q.x + 9, q.y + 3, 'start'], [q.x - 9, q.y + 3, 'end']]);
   if (siteLevel) {
     for (const l of lms) if (l.tier === 2 && onScreen(px(l.x), py(l.y))) lmLabel(l, false);
-    for (const q of scs) if (onScreen(q.x, q.y)) place(siteName(q.l), `${halo}font-size:10px;fill:#fff;fill-opacity:.7`, [[q.x + 9, q.y + 3, 'start'], [q.x - 9, q.y + 3, 'end']]);
     for (const id of rowOrder()) if (!marked.has(id) && id !== ui.hover && dotOf(id) && onScreen(dotOf(id).x, dotOf(id).y)) siteLabel(dotOf(id), 11, 400, .85, false);
   }
 
@@ -370,4 +373,30 @@ function draw(st) {
   el('path', { d: `M${S / 2 - 4},${9} L${S / 2},${5} L${S / 2 + 4},${9}`, fill: 'none', stroke: '#fff', 'stroke-width': 1.5 }, em);
   if (!compare) text(em, t('earthWord'), { x: S / 2 + 12, y: 20, class: 'tick', style: `fill:#fff;${halo}letter-spacing:.08em` });
   document.dispatchEvent(new Event('mapframe'));
+}
+
+let lastLanders = [];
+// spacecraft card: name, what happened, when, what it was for
+function landerCard(id, e) {
+  const panel = document.getElementById('map-panel');
+  let card = document.getElementById('lander-card');
+  if (!id) { if (card) card.hidden = true; return; }
+  const l0 = lastLanders.find(q => q.id === id); if (!l0) return;
+  const group = lastLanders.filter(q => q.mission === l0.mission && q.x_m != null && Math.hypot(q.x_m - l0.x_m, q.y_m - l0.y_m) < 3000);
+  hideTip();
+  if (!card) {
+    card = document.createElement('div'); card.id = 'lander-card'; panel.appendChild(card);
+    addEventListener('keydown', ev => { if (ev.key === 'Escape') card.hidden = true; });
+  }
+  const ko = (document.documentElement.lang || '').startsWith('ko');
+  card.innerHTML = '<button aria-label="close">×</button>' + group.map(l => { const kind = t('kinds')[l.kind] || l.kind, when = l.date || String(l.year || ''), rel = l.relative ? (ko ? l.relative.text_ko : l.relative.text_en) : ''; return `<b>${l.name.replace(/ \(planned site\)| impact$/, '')}</b>`
+    + `<div class="k">${kind} · ${when}${!ko && l.status && l.status !== 'deliberate impact' ? ' · ' + l.status : ''}</div>`
+    + `<p>${(ko ? l.purpose_ko : l.purpose_en) || l.mission || ''}</p>`
+    + (rel ? `<div class="k">${rel}${l.verify ? (ko ? ' · 위치 대략' : ' · approx. position') : ''}</div>` : '')
+    + (l.source ? `<a href="${l.source}" target="_blank" rel="noopener">${ko ? '출처' : 'source'}</a>` : ''); }).join('<hr>');
+  card.querySelector('button').onclick = () => { card.hidden = true; };
+  const r = panel.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  card.hidden = false;
+  card.style.left = Math.min(x + 12, r.width - 250) + 'px';
+  card.style.top = Math.max(8, Math.min(y + 12, r.height - card.offsetHeight - 8)) + 'px';
 }
