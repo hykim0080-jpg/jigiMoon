@@ -57,14 +57,14 @@ let svg, data, S = 588, ppk = 1.47;
 const vp = { cx: 0, cy: 0, h: R_KM };
 // sites with a PGDA 5 m tile (data/spot5); the rest use the 20 m patch (data/spot)
 const SPOT5 = new Set(['haworth', 'malapert-massif', 'mons-mouton', 'nobile-rim-1', 'nobile-rim-2', 'de-gerlache-rim-2', 'shackleton-rim', 'connecting-ridge']);
-let anim = null, hill = 'data/hillshade.jpg';
+let anim = null, hill = 'data/hillshade.jpg', instant = false;
 const px = x => (x - vp.cx + vp.h) / (2 * vp.h) * S;
 const py = y => (vp.cy + vp.h - y) / (2 * vp.h) * S;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const noMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export function init(node, d) {
-  svg = node; data = d;
+export function init(node, d, openPin) {
+  svg = node; data = d; pinOpener = openPin;
   // sharp hillshade when present, the 700 px one otherwise
   const im = new Image();
   im.onload = () => { hill = 'data/hillshade_4000.jpg'; render(state, data); };
@@ -75,9 +75,8 @@ export function init(node, d) {
   svg.addEventListener('pointerdown', e => {
     const xy = e.target.dataset && e.target.dataset.expo;
     if (!xy) return;
-    const l = new URLSearchParams(location.hash.slice(1)).get('lang');
-    location.hash = `pin=${xy}&d=${isoDate(state.day)}&ex=1${l ? '&lang=' + l : ''}${critQuery(state.crit)}`;
-    location.reload();
+    const [x, y] = xy.split(',').map(Number);
+    if (pinOpener) pinOpener(x, y);
   });
 
   svg.addEventListener('pointermove', e => {
@@ -96,12 +95,58 @@ export function init(node, d) {
     if (!id || e.button !== 0) return;
     if (e.shiftKey) togglePin(id); else setState({ site: id });
   });
-  svg.addEventListener('dblclick', e => { if (!e.target.dataset.id) setState({ zoom: state.zoom > 1.01 ? 1 : ZOOM.site }); });
+  // free view: drag to pan, wheel zooms about the cursor, double-click examines that point as a pin
+  const world = e => { const r = svg.getBoundingClientRect(), u = (e.clientX - r.left) / r.width * 2 - 1, v = (e.clientY - r.top) / r.height * 2 - 1; return { u, v, x: vp.cx + u * vp.h, y: vp.cy - v * vp.h }; };
+  let drag = null;
+  svg.addEventListener('pointerdown', e => {
+    const d = e.target.dataset || {};
+    if (e.button !== 0 || d.id || d.lander || d.expo || state.view === 'compare') return;
+    drag = { x: e.clientX, y: e.clientY, cx: vp.cx, cy: vp.cy, moved: false, id: e.pointerId, held: false };
+    // press and hold: zoom out x2 about the point after 500 ms, then every 400 ms down to Region
+    const pt = { clientX: e.clientX, clientY: e.clientY }, dg = drag;
+    holdRing(state.zoom > 1.001 ? pt : null);
+    const out = () => {
+      if (drag !== dg || state.zoom <= 1.001) { holdRing(null); return; }
+      dg.held = true; clearTimeout(clickTimer);
+      const w = world(pt), z = state.zoom / 2, h = R_KM / Math.max(z, 1);
+      setState(z <= 1.001 ? { zoom: 1, pan: '' } : { zoom: z, pan: `${(w.x - w.u * h).toFixed(2)},${(w.y + w.v * h).toFixed(2)}` });
+      dg.cx = vp.cx; dg.cy = vp.cy;
+      if (state.zoom > 1.001) holdTimer = setTimeout(out, 400); else holdRing(null);
+    };
+    clearTimeout(holdTimer); holdTimer = setTimeout(out, 500);
+  });
+  svg.addEventListener('contextmenu', e => { if (drag) e.preventDefault(); });
+  svg.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const r = svg.getBoundingClientRect(), k = 2 * vp.h / r.width, dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (!drag.moved && Math.hypot(dx, dy) >= 5) { clearTimeout(holdTimer); holdRing(null); }
+    if (drag.held || (!drag.moved && (Math.hypot(dx, dy) < 5 || state.zoom <= 1.001))) return;
+
+    if (!drag.moved) { drag.moved = true; svg.setPointerCapture(drag.id); svg.classList.add('grabbing'); }
+    instant = true; setState({ pan: `${(drag.cx - dx * k).toFixed(2)},${(drag.cy + dy * k).toFixed(2)}` });
+  });
+  const endDrag = e => {
+    clearTimeout(holdTimer); holdRing(null);
+    if (!drag) return;
+    const click = !drag.moved && !drag.held && e.type === 'pointerup';
+    svg.classList.remove('grabbing'); drag = null;
+    if (click) { const w = world(e); clearTimeout(clickTimer); clickTimer = setTimeout(() => openSpot(w), 250); }
+  };
+  svg.addEventListener('pointerup', endDrag); svg.addEventListener('pointercancel', endDrag);
+  // double-click: zoom one step (x2) about that point
+  svg.addEventListener('dblclick', e => {
+    if (e.target.dataset.id || e.target.dataset.lander || state.view === 'compare') return;
+    clearTimeout(clickTimer);
+    const w = world(e), z = clamp(state.zoom * 2, 1, ZOOM.spot), h = R_KM / z;
+    setState({ zoom: z, pan: `${(w.x - w.u * h).toFixed(2)},${(w.y + w.v * h).toFixed(2)}` });
+  });
   svg.addEventListener('wheel', e => {
-    e.preventDefault();
-    setState({ zoom: state.zoom * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.002)) });
+    e.preventDefault(); clearTimeout(clickTimer);
+    const w = world(e), z = clamp(state.zoom * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.002)), 1, ZOOM.spot), h = R_KM / z;
+    instant = true;
+    setState(z <= 1.001 ? { zoom: 1, pan: '' } : { zoom: z, pan: `${(w.x - w.u * h).toFixed(2)},${(w.y + w.v * h).toFixed(2)}` });
   }, { passive: false });
-  document.querySelectorAll('#zoom button').forEach(b => b.addEventListener('click', () => setState({ zoom: b.dataset.z === 'spot' ? ZOOM.spot : Number(b.dataset.z) })));
+  document.querySelectorAll('#zoom button').forEach(b => b.addEventListener('click', () => setState(b.dataset.z === '1' ? { zoom: 1, pan: '' } : { zoom: b.dataset.z === 'spot' ? ZOOM.spot : Number(b.dataset.z) })));
   onHover(() => render(state, data));
 }
 
@@ -122,6 +167,8 @@ export function sitePos(id) {
 function targetVp(st) {
   if (st.view === 'compare' || st.zoom <= 1.001) return { cx: 0, cy: 0, h: R_KM };
   const s = data.index.byId[st.site], h = R_KM / st.zoom, lim = R_KM - h;
+  const pan = /^(-?[\d.]+),(-?[\d.]+)$/.exec(st.pan || '');
+  if (pan) return { cx: clamp(+pan[1], -lim, lim), cy: clamp(+pan[2], -lim, lim), h };
   return { cx: clamp(s.x_m / 1000, -lim, lim), cy: clamp(s.y_m / 1000, -lim, lim), h };
 }
 
@@ -134,7 +181,7 @@ export function render(st, d) {
   if (anim) { anim.to = tg; return; }
   const same = ['cx', 'cy', 'h'].every(k => Math.abs(vp[k] - tg[k]) < 1e-6);
   if (same) return draw(st);
-  if (noMotion()) { Object.assign(vp, tg); return draw(st); }
+  if (noMotion() || instant) { instant = false; Object.assign(vp, tg); return draw(st); }
   const from = { ...vp }, t0 = performance.now();
   anim = { to: tg };
   const step = now => {
@@ -152,7 +199,7 @@ function draw(st) {
   ppk = S / (2 * vp.h);
   const compare = st.view === 'compare', siteLevel = vp.h < R_KM - 1;
   clear(svg);
-  document.getElementById('where').textContent = where(data.index.byId[st.site]);
+  document.getElementById('where').textContent = st.pan && !compare && vp.h < R_KM - 1 ? where({ x_m: vp.cx * 1000, y_m: vp.cy * 1000 }) : where(data.index.byId[st.site]);
   { const eb = document.getElementById('expo'); eb.textContent = t('expo', st.mission); eb.setAttribute('aria-pressed', String(!!st.expo)); }
   document.getElementById('zoom').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(Math.abs((b.dataset.z === 'spot' ? ZOOM.spot : Number(b.dataset.z)) / st.zoom - 1) < 0.02)));
 
@@ -160,9 +207,18 @@ function draw(st) {
   const iw = 2 * R_KM * ppk;
     el('image', { href: 'data/hillshade.jpg', x: px(-R_KM), y: py(R_KM), width: iw, height: iw }, svg);
   if (hill !== 'data/hillshade.jpg') el('image', { href: hill, x: px(-R_KM), y: py(R_KM), width: iw, height: iw }, svg);
+  // LOLA hillshade tiles wherever the view is close enough to need them: 40 m (10 km tiles), 20 m (5 km) when closer
+  for (const [res, T, n, hmax] of [[40, 10, 40, 30], [20, 5, 80, 8]]) {
+    if (vp.h >= hmax) continue;
+    const c0 = Math.max(0, Math.floor((vp.cx - vp.h + R_KM) / T)), c1 = Math.min(n - 1, Math.floor((vp.cx + vp.h + R_KM) / T));
+    const r0 = Math.max(0, Math.floor((R_KM - (vp.cy + vp.h)) / T)), r1 = Math.min(n - 1, Math.floor((R_KM - (vp.cy - vp.h)) / T));
+    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++)
+      el('image', { href: `data/t${res}/${c}_${r}.jpg`, x: px(-R_KM + c * T) - .5, y: py(R_KM - r * T) - .5, width: T * ppk + 1, height: T * ppk + 1, preserveAspectRatio: 'none' }, svg);
+  }
   // 20 m LOLA hillshade patches (+-4.5 km) around each site, faded in as you zoom past Site
   const sharp = Math.max(0, Math.min(1, (14 - vp.h) / 8));
   if (sharp > 0.01) for (const s of data.index.sites) {
+    if (s.isPin) continue;
     const x = s.x_m / 1000, y = s.y_m / 1000;
     if (Math.abs(x - vp.cx) > vp.h + 5 || Math.abs(y - vp.cy) > vp.h + 5) continue;
     el('image', { href: `data/${SPOT5.has(s.id) ? 'spot5' : 'spot'}/${s.id}.jpg`, x: px(x - 4.5), y: py(y + 4.5), width: 9 * ppk, height: 9 * ppk, opacity: sharp, preserveAspectRatio: 'none' }, svg);
@@ -331,7 +387,7 @@ function draw(st) {
   const dotOf = id => dots.find(d => d.s.id === id);
   const onScreen = (x, y) => x > 0 && y > 0 && x < S && y < S;
   // edge arrows to tier-1 landmarks that are off screen (Site level)
-  if (siteLevel && !compare && vp.h > 8) {
+  if (siteLevel && !compare) {
     const ax = px(site.x_m / 1000), ay = py(site.y_m / 1000), used = [];
     for (const l of lms) {
       if (l.tier !== 1 || l.kind === 'point') continue;
@@ -345,7 +401,7 @@ function draw(st) {
       used.push([bx, by]);
       const ang = Math.atan2(y - ay, x - ax), ux = Math.cos(ang), uy = Math.sin(ang);
       el('path', { d: `M${bx + ux * 5},${by + uy * 5}L${bx - ux * 5 - uy * 4},${by - uy * 5 + ux * 4}L${bx - ux * 5 + uy * 4},${by - uy * 5 - ux * 4}Z`, fill: '#fff', 'fill-opacity': .9, stroke: '#000', 'stroke-width': 1 }, svg);
-      const km = Math.round(Math.hypot(l.x - site.x_m / 1000, l.y - site.y_m / 1000));
+      const km = Math.round(st.pan ? Math.hypot(l.x - vp.cx, l.y - vp.cy) : Math.hypot(l.x - site.x_m / 1000, l.y - site.y_m / 1000));
       const nearPlate = plate && by > plate[1] - 20 && bx < plate[2] + 150;
       const left = bx < S / 2, vert = Math.abs(bx - S / 2) < S / 2 - 70 && (by < 30 || by > S - 30);
       const tx = text(svg, `${siteName(l).toUpperCase()} ${km} km`, {
@@ -380,7 +436,7 @@ function draw(st) {
   document.dispatchEvent(new Event('mapframe'));
 }
 
-let lastLanders = [];
+let lastLanders = [], pinOpener = null, clickTimer = 0, holdTimer = 0;
 
 // spacecraft card: name, what happened, when, what it was for
 function landerCard(id, e) {
@@ -405,4 +461,21 @@ function landerCard(id, e) {
   card.hidden = false;
   card.style.left = Math.min(x + 12, r.width - 250) + 'px';
   card.style.top = Math.max(8, Math.min(y + 12, r.height - card.offsetHeight - 8)) + 'px';
+}
+
+// single click on empty map (no second click within 250 ms): open that point as the pin, in place
+function openSpot(w) {
+  if (!w || Math.abs(w.x) > R_KM || Math.abs(w.y) > R_KM || !pinOpener) return;
+  pinOpener(Math.round(w.x * 1000), Math.round(w.y * 1000));
+}
+
+// shrinking ring under a held pointer (zoom-out cue); appears only once the press lasts
+function holdRing(pt) {
+  const panel = document.getElementById('map-panel');
+  let r = document.getElementById('hold-ring');
+  if (!pt) { if (r) r.remove(); return; }
+  if (r) r.remove();
+  r = document.createElement('div'); r.id = 'hold-ring'; panel.appendChild(r);
+  const b = panel.getBoundingClientRect();
+  r.style.left = (pt.clientX - b.left) + 'px'; r.style.top = (pt.clientY - b.top) + 'px';
 }
