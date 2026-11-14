@@ -209,3 +209,6 @@ main[data-view="compare"] #expo{display:none}
 #lander-card a{color:#9cf;font-size:11px}
 #lander-card button{position:absolute;right:6px;top:4px;background:none;border:0;color:#fff;font-size:16px;cursor:pointer}
 #lander-card hr{border:0;border-top:1px solid rgba(255,255,255,.2);margin:8px 0}
+main[data-zoomed="1"]:not([data-view="compare"]) #map{cursor:grab}
+#map.grabbing{cursor:grabbing}
+#map{user-select:none;-webkit-user-select:none}

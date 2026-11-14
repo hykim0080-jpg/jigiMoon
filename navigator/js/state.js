@@ -1,7 +1,7 @@
 import { DEFAULT, MAST_HEIGHTS, ZOOM, FIRST_DAY } from './config.js';
 import { readCrit, saveCrit, critParams } from './criteria.js';
 
-const KEYS = { site: 's', day: 'day', mission: 'm', mast: 'mast', mastMax: 'mx', moveMax: 'vx', waitMax: 'wx', baseline: 'base', view: 'v', hour: 'h', zoom: 'z', mode: 'pm', expo: 'ex' };
+const KEYS = { site: 's', day: 'day', mission: 'm', mast: 'mast', mastMax: 'mx', moveMax: 'vx', waitMax: 'wx', baseline: 'base', view: 'v', hour: 'h', zoom: 'z', mode: 'pm', expo: 'ex', pan: 'c' };
 const subs = [];
 
 function readHash() {
@@ -39,6 +39,7 @@ function writeHash() {
 
 export function setState(patch) {
   Object.assign(state, patch);
+  if ('site' in patch && !('pan' in patch)) state.pan = '';   // picking a site recentres on it
   if (patch.crit) saveCrit(state.crit);
   state.zoom = Math.max(1, Math.min(ZOOM.spot, Number(state.zoom) || 1));
   state.day = Math.max(0, Math.min(364, Math.round(state.day)));
