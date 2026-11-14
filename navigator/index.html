@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lunar Landing Site Navigator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <header id="header"></header>
+  <main id="main" data-view="focus">
+    <section class="panel" id="sky-panel" data-theme="dark">
+      <div class="sky-head"><h2 data-t="sky"></h2><div id="countdowns"></div></div>
+      <svg id="sky"></svg>
+      <svg id="timeline"></svg>
+    </section>
+    <section class="panel" id="metrics-panel"></section>
+    <section class="panel map-panel" id="map-panel" data-theme="dark">
+      <h2 id="map-title"><span data-t="map"></span><b id="where"></b></h2>
+      <div class="seg" id="zoom"><button data-z="1" data-t="zoomRegion"></button><button data-z="4" data-t="zoomSite"></button><button data-z="spot" data-t="zoomSpot"></button></div>
+      <svg id="map"></svg>
+      <div id="globe"><canvas></canvas><svg></svg></div>
+    </section>
+    <div id="fixes"></div>
+    <section class="panel" id="compare"></section>
+    <section class="panel" id="sites"></section>
+    <section class="panel" id="cal-panel"><canvas id="cal"></canvas><div id="cal-overlay"></div></section>
+    <svg id="chain"></svg>
+  </main>
+</div>
+<div id="tip" hidden></div>
+<div id="busy" hidden><i></i></div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

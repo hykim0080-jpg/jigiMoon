@@ -1,0 +1,741 @@
+{
+ "definition": "Robustness of the 'move' prescription.\nFor each site, take the grid points that are prescribed as the nearest feasible alternative on NO-GO days\n(6-day mission, 2027), up to the 8 most-used points. For each such point and each day it is prescribed:\n (1) terrain resolution: recompute with the finer near-field layer removed (5 m tile -> 20 m; sites with\n     no 5 m tile: 20 m -> 80 m) and check whether the verdict stays GO;\n (2) position error: recompute at 8 points 30 m away (N, NE, E, ...) with the full terrain and count how\n     many keep GO on that day.\nReported: share of (point, day) prescriptions that stay GO.",
+ "mission_days": 6,
+ "pooled": {
+  "prescriptions_tested": 430,
+  "base_recompute_consistent_pct": 100.0,
+  "keep_coarser_terrain_pct": 97.2,
+  "keep_30m_offset_pct": 81.6
+ },
+ "sites": [
+  {
+   "id": "peak-near-cabeus-b",
+   "name": "Peak near Cabeus B",
+   "near_layer": "PGDA LOLA LDEM_80S_20MPP_ADJ",
+   "coarser_layer": "PGDA LOLA LDEM_80S_80MPP_ADJ",
+   "prescriptions": 33,
+   "covered_prescriptions_pct": 100.0,
+   "keep_coarser_terrain_pct": 97.0,
+   "keep_30m_offset_pct": 93.6,
+   "points": [
+    {
+     "dx_km": 0.0,
+     "dy_km": 0.25,
+     "days": 29,
+     "base_consistent": 29,
+     "keep_coarser_terrain": 28,
+     "keep_30m_offsets": 221,
+     "offset_trials": 232
+    },
+    {
+     "dx_km": -1.25,
+     "dy_km": 2.25,
+     "days": 1,
+     "base_consistent": 1,
+     "keep_coarser_terrain": 1,
+     "keep_30m_offsets": 5,
+     "offset_trials": 8
+    },
+    {
+     "dx_km": -1.5,
+     "dy_km": 2.0,
+     "days": 1,
+     "base_consistent": 1,
+     "keep_coarser_terrain": 1,
+     "keep_30m_offsets": 8,
+     "offset_trials": 8
+    },
+    {
+     "dx_km": -1.0,
+     "dy_km": 0.75,
+     "days": 1,
+     "base_consistent": 1,
+     "keep_coarser_terrain": 1,
+     "keep_30m_offsets": 5,
+     "offset_trials": 8
+    },
+    {
+     "dx_km": -1.5,
+     "dy_km": 2.25,
+     "days": 1,
+     "base_consistent": 1,
+     "keep_coarser_terrain": 1,
+     "keep_30m_offsets": 8,
+     "offset_trials": 8
+    }
+   ]
+  },
+  {
+   "id": "haworth",
+   "name": "Haworth",
+   "near_layer": "PGDA LOLA 5 m Haworth",
+   "coarser_layer": "PGDA LOLA LDEM_80S_20MPP_ADJ",
+   "prescriptions": 36,
+   "covered_prescriptions_pct": 100.0,
+   "keep_coarser_terrain_pct": 97.2,
+   "keep_30m_offset_pct": 80.2,
+   "points": [
+    {
+     "dx_km": 0.0,
+     "dy_km": 0.25,
+     "days": 16,
+     "base_consistent": 16,
+     "keep_coarser_terrain": 16,
+     "keep_30m_offsets": 120,
+     "offset_trials": 128
+    },
+    {
+     "dx_km": 0.25,
+     "dy_km": 0.25,
+     "days": 8,
+     "base_consistent": 8,
+     "keep_coarser_terrain": 8,
+     "keep_30m_offsets": 58,
+     "offset_trials": 64
+    },
+    {
+     "dx_km": 2.0,
+     "dy_km": -1.25,
+     "days": 6,
+     "base_consistent": 6,
+     "keep_coarser_terrain": 5,
+     "keep_30m_offsets": 13,
+     "offset_trials": 48
+    },
+    {
+     "dx_km": 1.25,
+     "dy_km": 0.0,
+     "days": 3,
+     "base_consistent": 3,
+     "keep_coarser_terrain": 3,
+     "keep_30m_offsets": 24,
+     "offset_trials": 24
+    },
+    {
+     "dx_km": -0.25,
+     "dy_km": 0.0,
+     "days": 2,
+     "base_consistent": 2,
+     "keep_coarser_terrain": 2,
+     "keep_30m_offsets": 12,
+     "offset_trials": 16
+    },
+    {
+     "dx_km": 1.0,
+     "dy_km": 0.0,
+     "days": 1,
+     "base_consistent": 1,
+     "keep_coarser_terrain": 1,
+     "keep_30m_offsets": 4,
+     "offset_trials": 8
+    }
+   ]
+  },
+  {
+   "id": "malapert-massif",
+   "name": "Malapert Massif",
+   "near_layer": "PGDA LOLA 5 m Site23",
+   "coarser_layer": "PGDA LOLA LDEM_80S_20MPP_ADJ",
+   "prescriptions": 76,
+   "covered_prescriptions_pct": 100.0,
+   "keep_coarser_terrain_pct": 100.0,
+   "keep_30m_offset_pct": 77.8,
+   "points": [
+    {
+     "dx_km": 0.25,
+     "dy_km": 0.0,
+     "days": 38,
+     "base_consistent": 38,
+     "keep_coarser_terrain": 38,
+     "keep_30m_offsets": 228,
+     "offset_trials": 304
+    },
+    {
+     "dx_km": -0.25,
+     "dy_km": 0.25,
+     "days": 20,
+     "base_consistent": 20,
+     "keep_coarser_terrain": 20,
+     "keep_30m_offsets": 153,
+     "offset_trials": 160
+    },
+    {
+     "dx_km": 2.5,
+     "dy_km": -0.25,
+     "days": 11,
+     "base_consistent": 11,
+     "keep_coarser_terrain": 11,
+     "keep_30m_offsets": 53,
+     "offset_trials": 88
+    },
+    {
+     "dx_km": -1.5,
+     "dy_km": 0.75,
+     "days": 5,
+     "base_consistent": 5,
+     "keep_coarser_terrain": 5,
+     "keep_30m_offsets": 31,
+     "offset_trials": 40
+    },
+    {
+     "dx_km": -0.75,
+     "dy_km": 0.25,
+     "days": 2,
+     "base_consistent": 2,
+     "keep_coarser_terrain": 2,
+     "keep_30m_offsets": 8,
+     "offset_trials": 16
+    }
+   ]
+  },
+  {
+   "id": "mons-mouton-plateau",
+   "name": "Mons Mouton Plateau",
+   "near_layer": "PGDA LOLA LDEM_80S_20MPP_ADJ",
+   "coarser_layer": "PGDA LOLA LDEM_80S_80MPP_ADJ",
+   "prescriptions": 90,
+   "covered_prescriptions_pct": 98.9,
+   "keep_coarser_terrain_pct": 92.2,
+   "keep_30m_offset_pct": 74.9,
+   "points": [
+    {
+     "dx_km": 0.0,
+     "dy_km": 0.25,
+     "days": 34,
+     "base_consistent": 34,
+     "keep_coarser_terrain": 30,
+     "keep_30m_offsets": 226,
+     "offset_trials": 272
+    },
+    {
+     "dx_km": -1.0,
+     "dy_km": -0.5,
+     "days": 28,
+     "base_consistent": 28,
+     "keep_coarser_terrain": 27,
+     "keep_30m_offsets": 135,
+     "offset_trials": 224
+    },
+    {
+     "dx_km": -0.5,
+     "dy_km": -0.25,
+     "days": 13,
+     "base_consistent": 13,
+     "keep_coarser_terrain": 11,
+     "keep_30m_offsets": 61,
+     "offset_trials": 104
+    },
+    {
+     "dx_km": -0.25,
+     "dy_km": 0.0,
+     "days": 11,
+     "base_consistent": 11,
+     "keep_coarser_terrain": 11,
+     "keep_30m_offsets": 88,
+     "offset_trials": 88
+    },
+    {
+     "dx_km": 0.25,
+     "dy_km": 0.75,
+     "days": 1,
+     "base_consistent": 1,
+     "keep_coarser_terrain": 1,
+     "keep_30m_offsets": 8,
+     "offset_trials": 8
+    },
+    {
+     "dx_km": 0.5,
+     "dy_km": 1.25,
+     "days": 1,
+     "base_consistent": 1,
+     "keep_coarser_terrain": 1,
+     "keep_30m_offsets": 8,
+     "offset_trials": 8
+    },
+    {
+     "dx_km": 0.25,
+     "dy_km": 0.0,
+     "days": 1,
+     "base_consistent": 1,
+     "keep_coarser_terrain": 1,
+     "keep_30m_offsets": 6,
+     "offset_trials": 8
+    },
+    {
+     "dx_km": 0.5,
+     "dy_km": 0.75,
+     "days": 1,
+     "base_consistent": 1,
+     "keep_coarser_terrain": 1,
+     "keep_30m_offsets": 7,
+     "offset_trials": 8
+    }
+   ]
+  },
+  {
+   "id": "mons-mouton",
+   "name": "Mons Mouton",
+   "near_layer": "PGDA LOLA 5 m Site20v2",
+   "coarser_layer": "PGDA LOLA LDEM_80S_20MPP_ADJ",
+   "prescriptions": 76,
+   "covered_prescriptions_pct": 69.7,
+   "keep_coarser_terrain_pct": 98.7,
+   "keep_30m_offset_pct": 83.4,
+   "points": [
+    {
+     "dx_km": -0.25,
+     "dy_km": 1.25,
+     "days": 20,
+     "base_consistent": 20,
+     "keep_coarser_terrain": 20,
+     "keep_30m_offsets": 142,
+     "offset_trials": 160
+    },
+    {
+     "dx_km": -0.5,
+     "dy_km": 0.5,
+     "days": 14,
+     "base_consistent": 14,
+     "keep_coarser_terrain": 14,
+     "keep_30m_offsets": 62,
+     "offset_trials": 112
+    },
+    {
+     "dx_km": 0.0,
+     "dy_km": 0.25,
+     "days": 8,
+     "base_consistent": 8,
+     "keep_coarser_terrain": 8,
+     "keep_30m_offsets": 64,
+     "offset_trials": 64
+    },
+    {
+     "dx_km": 0.25,
+     "dy_km": 1.0,
+     "days": 8,
+     "base_consistent": 8,
+     "keep_coarser_terrain": 8,
+     "keep_30m_offsets": 60,
+     "offset_trials": 64
+    },
+    {
+     "dx_km": 2.0,
+     "dy_km": 1.75,
+     "days": 8,
+     "base_consistent": 8,
+     "keep_coarser_terrain": 8,
+     "keep_30m_offsets": 62,
+     "offset_trials": 64
+    },
+    {
+     "dx_km": 2.25,
+     "dy_km": 1.5,
+     "days": 7,
+     "base_consistent": 7,
+     "keep_coarser_terrain": 7,
+     "keep_30m_offsets": 56,
+     "offset_trials": 56
+    },
+    {
+     "dx_km": 0.25,
+     "dy_km": 0.0,
+     "days": 6,
+     "base_consistent": 6,
+     "keep_coarser_terrain": 6,
+     "keep_30m_offsets": 35,
+     "offset_trials": 48
+    },
+    {
+     "dx_km": 0.0,
+     "dy_km": 1.0,
+     "days": 5,
+     "base_consistent": 5,
+     "keep_coarser_terrain": 4,
+     "keep_30m_offsets": 26,
+     "offset_trials": 40
+    }
+   ]
+  },
+  {
+   "id": "nobile-rim-1",
+   "name": "Nobile Rim 1",
+   "near_layer": "PGDA LOLA 5 m Site06",
+   "coarser_layer": "PGDA LOLA LDEM_80S_20MPP_ADJ",
+   "prescriptions": 41,
+   "covered_prescriptions_pct": 95.3,
+   "keep_coarser_terrain_pct": 95.1,
+   "keep_30m_offset_pct": 83.8,
+   "points": [
+    {
+     "dx_km": 0.0,
+     "dy_km": 2.5,
+     "days": 19,
+     "base_consistent": 19,
+     "keep_coarser_terrain": 19,
+     "keep_30m_offsets": 140,
+     "offset_trials": 152
+    },
+    {
+     "dx_km": -0.25,
+     "dy_km": 0.5,
+     "days": 8,
+     "base_consistent": 8,
+     "keep_coarser_terrain": 7,
+     "keep_30m_offsets": 58,
+     "offset_trials": 64
+    },
+    {
+     "dx_km": 0.0,
+     "dy_km": 0.25,
+     "days": 4,
+     "base_consistent": 4,
+     "keep_coarser_terrain": 4,
+     "keep_30m_offsets": 17,
+     "offset_trials": 32
+    },
+    {
+     "dx_km": 0.75,
+     "dy_km": 0.5,
+     "days": 3,
+     "base_consistent": 3,
+     "keep_coarser_terrain": 3,
+     "keep_30m_offsets": 14,
+     "offset_trials": 24
+    },
+    {
+     "dx_km": 0.25,
+     "dy_km": 2.5,
+     "days": 3,
+     "base_consistent": 3,
+     "keep_coarser_terrain": 2,
+     "keep_30m_offsets": 20,
+     "offset_trials": 24
+    },
+    {
+     "dx_km": -0.25,
+     "dy_km": 1.75,
+     "days": 2,
+     "base_consistent": 2,
+     "keep_coarser_terrain": 2,
+     "keep_30m_offsets": 16,
+     "offset_trials": 16
+    },
+    {
+     "dx_km": 0.25,
+     "dy_km": 1.75,
+     "days": 1,
+     "base_consistent": 1,
+     "keep_coarser_terrain": 1,
+     "keep_30m_offsets": 2,
+     "offset_trials": 8
+    },
+    {
+     "dx_km": 0.0,
+     "dy_km": 1.25,
+     "days": 1,
+     "base_consistent": 1,
+     "keep_coarser_terrain": 1,
+     "keep_30m_offsets": 8,
+     "offset_trials": 8
+    }
+   ]
+  },
+  {
+   "id": "nobile-rim-2",
+   "name": "Nobile Rim 2",
+   "near_layer": "PGDA LOLA 5 m DM2",
+   "coarser_layer": "PGDA LOLA LDEM_80S_20MPP_ADJ",
+   "prescriptions": 4,
+   "covered_prescriptions_pct": 100.0,
+   "keep_coarser_terrain_pct": 100.0,
+   "keep_30m_offset_pct": 84.4,
+   "points": [
+    {
+     "dx_km": -1.0,
+     "dy_km": -0.25,
+     "days": 2,
+     "base_consistent": 2,
+     "keep_coarser_terrain": 2,
+     "keep_30m_offsets": 12,
+     "offset_trials": 16
+    },
+    {
+     "dx_km": 0.0,
+     "dy_km": 0.25,
+     "days": 1,
+     "base_consistent": 1,
+     "keep_coarser_terrain": 1,
+     "keep_30m_offsets": 7,
+     "offset_trials": 8
+    },
+    {
+     "dx_km": 0.5,
+     "dy_km": 0.5,
+     "days": 1,
+     "base_consistent": 1,
+     "keep_coarser_terrain": 1,
+     "keep_30m_offsets": 8,
+     "offset_trials": 8
+    }
+   ]
+  },
+  {
+   "id": "de-gerlache-rim-2",
+   "name": "de Gerlache Rim 2",
+   "near_layer": "PGDA LOLA 5 m SL2",
+   "coarser_layer": "PGDA LOLA LDEM_80S_20MPP_ADJ",
+   "prescriptions": 5,
+   "covered_prescriptions_pct": 100.0,
+   "keep_coarser_terrain_pct": 100.0,
+   "keep_30m_offset_pct": 92.5,
+   "points": [
+    {
+     "dx_km": -2.25,
+     "dy_km": 0.25,
+     "days": 2,
+     "base_consistent": 2,
+     "keep_coarser_terrain": 2,
+     "keep_30m_offsets": 13,
+     "offset_trials": 16
+    },
+    {
+     "dx_km": -3.0,
+     "dy_km": 0.0,
+     "days": 1,
+     "base_consistent": 1,
+     "keep_coarser_terrain": 1,
+     "keep_30m_offsets": 8,
+     "offset_trials": 8
+    },
+    {
+     "dx_km": -2.0,
+     "dy_km": 0.25,
+     "days": 1,
+     "base_consistent": 1,
+     "keep_coarser_terrain": 1,
+     "keep_30m_offsets": 8,
+     "offset_trials": 8
+    },
+    {
+     "dx_km": 2.5,
+     "dy_km": -1.25,
+     "days": 1,
+     "base_consistent": 1,
+     "keep_coarser_terrain": 1,
+     "keep_30m_offsets": 8,
+     "offset_trials": 8
+    }
+   ]
+  },
+  {
+   "id": "slater-plain",
+   "name": "Slater Plain",
+   "near_layer": "PGDA LOLA LDEM_80S_20MPP_ADJ",
+   "coarser_layer": "PGDA LOLA LDEM_80S_80MPP_ADJ",
+   "prescriptions": 7,
+   "covered_prescriptions_pct": 100.0,
+   "keep_coarser_terrain_pct": 100.0,
+   "keep_30m_offset_pct": 73.2,
+   "points": [
+    {
+     "dx_km": 0.25,
+     "dy_km": -0.25,
+     "days": 6,
+     "base_consistent": 6,
+     "keep_coarser_terrain": 6,
+     "keep_30m_offsets": 33,
+     "offset_trials": 48
+    },
+    {
+     "dx_km": -1.5,
+     "dy_km": -0.25,
+     "days": 1,
+     "base_consistent": 1,
+     "keep_coarser_terrain": 1,
+     "keep_30m_offsets": 8,
+     "offset_trials": 8
+    }
+   ]
+  },
+  {
+   "id": "shackleton-rim",
+   "name": "Shackleton rim",
+   "near_layer": "PGDA LOLA 5 m Site04",
+   "coarser_layer": "PGDA LOLA LDEM_80S_20MPP_ADJ",
+   "prescriptions": 14,
+   "covered_prescriptions_pct": 100.0,
+   "keep_coarser_terrain_pct": 100.0,
+   "keep_30m_offset_pct": 92.9,
+   "points": [
+    {
+     "dx_km": 0.0,
+     "dy_km": -0.25,
+     "days": 13,
+     "base_consistent": 13,
+     "keep_coarser_terrain": 13,
+     "keep_30m_offsets": 96,
+     "offset_trials": 104
+    },
+    {
+     "dx_km": 0.0,
+     "dy_km": 0.25,
+     "days": 1,
+     "base_consistent": 1,
+     "keep_coarser_terrain": 1,
+     "keep_30m_offsets": 8,
+     "offset_trials": 8
+    }
+   ]
+  },
+  {
+   "id": "connecting-ridge",
+   "name": "Connecting Ridge",
+   "near_layer": "PGDA LOLA 5 m Site01",
+   "coarser_layer": "PGDA LOLA LDEM_80S_20MPP_ADJ",
+   "prescriptions": 28,
+   "covered_prescriptions_pct": 100.0,
+   "keep_coarser_terrain_pct": 100.0,
+   "keep_30m_offset_pct": 83.5,
+   "points": [
+    {
+     "dx_km": -0.75,
+     "dy_km": -0.75,
+     "days": 17,
+     "base_consistent": 17,
+     "keep_coarser_terrain": 17,
+     "keep_30m_offsets": 114,
+     "offset_trials": 136
+    },
+    {
+     "dx_km": 0.5,
+     "dy_km": -0.25,
+     "days": 3,
+     "base_consistent": 3,
+     "keep_coarser_terrain": 3,
+     "keep_30m_offsets": 24,
+     "offset_trials": 24
+    },
+    {
+     "dx_km": -0.25,
+     "dy_km": 0.0,
+     "days": 3,
+     "base_consistent": 3,
+     "keep_coarser_terrain": 3,
+     "keep_30m_offsets": 23,
+     "offset_trials": 24
+    },
+    {
+     "dx_km": -0.5,
+     "dy_km": -0.5,
+     "days": 2,
+     "base_consistent": 2,
+     "keep_coarser_terrain": 2,
+     "keep_30m_offsets": 6,
+     "offset_trials": 16
+    },
+    {
+     "dx_km": -1.0,
+     "dy_km": -0.75,
+     "days": 2,
+     "base_consistent": 2,
+     "keep_coarser_terrain": 2,
+     "keep_30m_offsets": 12,
+     "offset_trials": 16
+    },
+    {
+     "dx_km": 0.0,
+     "dy_km": -0.25,
+     "days": 1,
+     "base_consistent": 1,
+     "keep_coarser_terrain": 1,
+     "keep_30m_offsets": 8,
+     "offset_trials": 8
+    }
+   ]
+  },
+  {
+   "id": "im-2-athena",
+   "name": "IM-2 Athena (Mons Mouton)",
+   "near_layer": "PGDA LOLA LDEM_80S_20MPP_ADJ",
+   "coarser_layer": "PGDA LOLA LDEM_80S_80MPP_ADJ",
+   "prescriptions": 20,
+   "covered_prescriptions_pct": 87.0,
+   "keep_coarser_terrain_pct": 100.0,
+   "keep_30m_offset_pct": 87.5,
+   "points": [
+    {
+     "dx_km": -0.75,
+     "dy_km": -0.75,
+     "days": 5,
+     "base_consistent": 5,
+     "keep_coarser_terrain": 5,
+     "keep_30m_offsets": 39,
+     "offset_trials": 40
+    },
+    {
+     "dx_km": -0.5,
+     "dy_km": -0.75,
+     "days": 4,
+     "base_consistent": 4,
+     "keep_coarser_terrain": 4,
+     "keep_30m_offsets": 29,
+     "offset_trials": 32
+    },
+    {
+     "dx_km": -0.25,
+     "dy_km": -0.25,
+     "days": 3,
+     "base_consistent": 3,
+     "keep_coarser_terrain": 3,
+     "keep_30m_offsets": 18,
+     "offset_trials": 24
+    },
+    {
+     "dx_km": -0.25,
+     "dy_km": 0.0,
+     "days": 2,
+     "base_consistent": 2,
+     "keep_coarser_terrain": 2,
+     "keep_30m_offsets": 16,
+     "offset_trials": 16
+    },
+    {
+     "dx_km": -0.5,
+     "dy_km": -1.0,
+     "days": 2,
+     "base_consistent": 2,
+     "keep_coarser_terrain": 2,
+     "keep_30m_offsets": 10,
+     "offset_trials": 16
+    },
+    {
+     "dx_km": -0.5,
+     "dy_km": -0.5,
+     "days": 2,
+     "base_consistent": 2,
+     "keep_coarser_terrain": 2,
+     "keep_30m_offsets": 15,
+     "offset_trials": 16
+    },
+    {
+     "dx_km": -0.25,
+     "dy_km": 2.0,
+     "days": 1,
+     "base_consistent": 1,
+     "keep_coarser_terrain": 1,
+     "keep_30m_offsets": 5,
+     "offset_trials": 8
+    },
+    {
+     "dx_km": 0.0,
+     "dy_km": 0.75,
+     "days": 1,
+     "base_consistent": 1,
+     "keep_coarser_terrain": 1,
+     "keep_30m_offsets": 8,
+     "offset_trials": 8
+    }
+   ]
+  }
+ ]
+}

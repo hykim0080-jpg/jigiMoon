@@ -1,0 +1,66 @@
+// Right panel: the pin card — verdict first, then fixes, checks, sky, GO calendar, link.
+import { state, setState } from './state.js';
+import { pinInfo, isoOfDay } from './pin.js';
+import { layerColor } from './ramps.js';
+import { fmt } from './data.js';
+import { t, lang, unitOf, layerName } from './strings.js';
+import { skyAt, skyCached, drawPinSky } from './time.js';
+import { critName, critValue } from './criteria.js';
+
+let el, data, key = '', drag = false;
+const KIND = { go: 'ok', wait: 'wait', move: 'move', mast: 'mast', none: 'block' };
+const doy = m => (Date.UTC(2027, m, 1) - Date.UTC(2027, 0, 1)) / 864e5;
+const setDay = d => { d = Math.max(0, Math.min(364, Math.round(d))); if (d !== state.tDay) setState({ tDay: d, tTouched: true }, 'time'); };
+export function initPinCard(root, d) {
+  el = root; data = d;
+  const dayFrom = e => { const cv = el.querySelector('.lyr-pcal'); if (!cv) return; const b = cv.getBoundingClientRect(); setDay((e.clientX - b.left) / b.width * 365 - .5); };
+  el.addEventListener('pointerdown', e => { if (e.target.closest('.lyr-pcal')) { drag = true; el.setPointerCapture(e.pointerId); dayFrom(e); } });
+  el.addEventListener('pointermove', e => { if (drag) dayFrom(e); });
+  el.addEventListener('pointerup', () => { drag = false; });
+  el.addEventListener('click', e => { const b = e.target.closest('[data-step]'); if (b) setDay(state.tDay + +b.dataset.step); });
+}
+function verdictHtml(v) {
+  const dot = `<i class="lyr-dot" style="background:var(--${v.kind === 'go' ? 'ok' : 'block'})"></i>`;
+  if (v.kind === 'go') return `${dot}<span style="color:var(--ok)">${t('go_run', v.run)}</span>`;
+  const head = t('nogo') + (v.steep ? ' · ' + t('slope_fail', v.slopeV.toFixed(0)) : '');
+  const tail = v.kind === 'wait' ? t('avail_wait', v.wait) : v.kind === 'move' ? t('avail_move_dir', v.move.km.toFixed(1), lang === 'en' ? v.move.dir.toUpperCase() : v.move.dir) : v.kind === 'mast' ? t('avail_mast', 20) : t('noFix', 10, 20, 365 - v.d);
+  return `${dot}<span>${head} → <span style="color:var(--${KIND[v.kind]})">${tail}</span></span>`;
+}
+export function renderPinCard(st) {
+  const inf = pinInfo(st);
+  const k = inf ? `${inf.col},${inf.row},${st.tDay},${st.adv},${JSON.stringify(st.threshold)},${JSON.stringify(st.on.mask)}` : '';
+  if (k === key) return; key = k;
+  if (!inf) { el.innerHTML = ''; return; }
+  const v = inf.v, f = (kind, label, val, title = '') => `<div class="lyr-fx${v.kind === kind ? ' pick' : ''}${val == null ? ' na' : ''}" style="--c:var(--${kind})" title="${title}"><span>${label}</span><span class="n">${val ?? '—'}</span></div>`;
+  const mv = v.move ? (v.move.here ? t('here') : t('move_txt', v.move.dir, v.move.km.toFixed(1))) : null;
+  const checks = data.layers.filter(m => m.threshold != null).map(m => {
+    const val = inf.values[m.id], fail = state.threshold[m.id] != null && val != null && (m.direction === '<=' ? val > st.threshold[m.id] : val < st.threshold[m.id]);
+    const pc = x => Math.max(0, Math.min(100, 100 * (x - m.min) / (m.max - m.min)));
+    return `<div class="lyr-ck${st.on.mask[m.id] ? '' : ' off'}"><i class="lyr-tg" style="--c:${layerColor(m.id, false)}"></i><span class="lyr-nm">${critName(m)}</span><span class="lyr-ckb"><b style="width:${val == null ? 0 : pc(val)}%;background:${fail ? 'var(--block)' : layerColor(m.id, false)}"></b><u style="left:${pc(st.threshold[m.id])}%"></u></span><span class="n lyr-ckv${fail ? ' fail' : ''}">${val == null ? '–' : fmt(m, val) + unitOf(m)}</span></div>`;
+  }).join('');
+  const adv = st.adv ? `<div class="lyr-tbl">${data.layers.map(m => { const val = inf.values[m.id]; return `<span>${layerName(m)}</span><span class="n">${val == null ? '–' : (val === Infinity ? '>' : '') + fmt(m, val) + unitOf(m)}</span>`; }).join('')}<span>${t('lat')}</span><span class="n">${Math.abs(inf.ll.lat).toFixed(2)}°${inf.ll.lat < 0 ? 'S' : 'N'} ${Math.abs(inf.ll.lon).toFixed(1)}°${inf.ll.lon < 0 ? 'W' : 'E'}</span></div>` : '';
+  el.innerHTML = `<div class="lyr-pt">${inf.title}</div>
+<div class="lyr-dt"><button data-step="-1">◀</button><span class="n">${isoOfDay(st.tDay)}</span><button data-step="1">▶</button></div>
+<div class="lyr-vd">${verdictHtml(v)}</div>
+<div class="lyr-fxs">${f('move', t('move'), mv)}${f('mast', t('mast'), v.mast ? t('mast_gain', v.mast.gain) : null, v.mast ? t('mast_title', v.mast.from, v.mast.to) : '')}${f('wait', t('wait'), v.goNow ? t('days', 0) : v.wait != null ? t('days', v.wait) : null)}</div>
+<div class="lyr-cks">${checks}</div>${adv}
+<svg class="lyr-sky"></svg>
+${inf.go ? `<div class="lyr-cal"><canvas class="lyr-pcal"></canvas><span class="n lyr-go-n">${t('go')} ${t('days', inf.go.count)}</span></div>` : ''}
+<a class="lyr-link" href="${inf.link}">${t('open_cmp')}</a>`;
+  drawCal(inf, st);
+  renderPinSky(st);
+}
+function drawCal(inf, st) {
+  const cv = el.querySelector('.lyr-pcal'); if (!cv) return;
+  const w = cv.clientWidth || 200, h = 10, g = (cv.width = w, cv.height = h, cv.getContext('2d')), cw = w / 365, cs = getComputedStyle(el);
+  g.fillStyle = cs.getPropertyValue('--line').trim() || '#ccc'; g.fillRect(0, 0, w, h);
+  g.fillStyle = cs.getPropertyValue('--ok').trim() || '#1f8a5b'; for (let d = 0; d < 365; d++) if (inf.go.go[d]) g.fillRect(d * cw, 0, Math.max(.7, cw), h);
+  g.fillStyle = cs.getPropertyValue('--surface').trim() || '#fff'; for (let m = 1; m < 12; m++) g.fillRect(Math.round(doy(m) * cw), 0, 1, h);
+  g.fillStyle = cs.getPropertyValue('--ink').trim() || '#000'; g.fillRect(Math.round((st.tDay + .5) * cw) - 1, 0, 2, h);
+}
+export function renderPinSky(st) {
+  const svg = el && el.querySelector('.lyr-sky'); if (!svg || !st.pin) return;
+  if (skyCached(st.pin.col, st.pin.row)) drawPinSky(svg, st);
+  else skyAt(st.pin.col, st.pin.row).then(() => { if (el.querySelector('.lyr-sky') === svg) drawPinSky(svg, state); });
+}
+// redraw the calendar cursor without rebuilding the card (time changes rebuild it anyway through the key)

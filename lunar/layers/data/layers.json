@@ -1,0 +1,179 @@
+{
+ "grid": {
+  "nx": 800,
+  "ny": 800,
+  "res_m": 500.0,
+  "x_min": -199750.0,
+  "x_max": 199750.0,
+  "y_min": -199750.0,
+  "y_max": 199750.0,
+  "row0": "max_y",
+  "projection": "+proj=stere +lat_0=-90 +lon_0=0 +R=1737400; x = rho sin(lon), y = rho cos(lon); pixel centres"
+ },
+ "encoding": "uint8 v -> min + v*(max-min)/250; 255 = no data (mast: higher than 20 m)",
+ "period_utc": [
+  "2027-01-01",
+  "2027-12-31"
+ ],
+ "step_h": 2.0,
+ "observer_m": 2,
+ "criteria": {
+  "min_sun_pct": 70,
+  "max_dark_h": 50,
+  "min_earth_pct": 50,
+  "max_slope_deg": 8
+ },
+ "masts_m": [
+  2,
+  10,
+  20
+ ],
+ "definitions": {
+  "sun": "2027 mean visible fraction of the solar disc, observer 2 m",
+  "earth": "2027 mean fraction of time the Earth centre is above the terrain horizon",
+  "both": "2027 fraction of time with sun > 50% of disc and Earth visible",
+  "dark14": "median over 2027 landing days of the longest continuous darkness (sun < 10% of disc) in a 14-day mission",
+  "dark6": "same for a 6-day mission (Artemis III surface stay)",
+  "slope": "median slope of LOLA 80 m DEM over 25 sub-samples (100 m apart) of the 500 m pixel",
+  "mast": "optimal mast of 2/10/20 m, as lunar/masts.py: lowest height reaching 90% of the gain in feasible 6-day landing days (2027) available up to 20 m; gain < 10 days -> 2 m",
+  "days14": "number of 2027 landing days on which a 14-day mission meets sun >= 70%, longest dark <= 50 h, Earth >= 50% (2 m)",
+  "days6": "same for a 6-day mission",
+  "psr": "1 = never sunlit (disc fraction 0) at any 2 h step of 2027 (proxy for permanent shadow at 500 m)",
+  "days6_m20": "days6_m20.bin: feasible 6-day landing days with a 20 m mast, encoded 0..365",
+  "sun_days": "number of 2027 landing days on which a 14-day mission (2 m) gets sun >= 70% of the time",
+  "earth_days": "number of 2027 landing days on which a 14-day mission sees the Earth >= 50% of the time",
+  "dark_days": "number of 2027 landing days on which the longest darkness in a 14-day mission is <= 50 h",
+  "days14_month": "days14_month.bin: raw uint8 12x800x800, feasible 14-day landing days per month of 2027 (0..31), not 0..250 encoded",
+  "ok14": "ok14_idx.bin uint32 pixel indices that are ever GO; ok14_bits.bin n x 46 bytes np.packbits (big-endian) of the 365-day GO calendar"
+ },
+ "method": "per pixel horizon table (1 deg azimuth, LOLA 80 m DEM + 240 m beyond 80S, out to 150 km, curvature) interpolated at the Sun/Earth azimuth each 2 h; Sun/Earth from JPL DE421 + IAU 2009 lunar rotation",
+ "sources": [
+  "NASA GSFC PGDA LOLA LDEM_80S_80MPP_ADJ, LDEM_60S_240MPP_ADJ (https://pgda.gsfc.nasa.gov/products/90), public domain",
+  "JPL DE421 via skyfield-data (public domain); skyfield (MIT)"
+ ],
+ "layers": [
+  {
+   "id": "sun_days",
+   "name": "햇빛 충족일",
+   "unit": "일",
+   "min": 0,
+   "max": 365,
+   "threshold": 60,
+   "direction": ">=",
+   "weight": 3,
+   "nodata": 255
+  },
+  {
+   "id": "earth_days",
+   "name": "지구 충족일",
+   "unit": "일",
+   "min": 0,
+   "max": 365,
+   "threshold": 60,
+   "direction": ">=",
+   "weight": 3,
+   "nodata": 255
+  },
+  {
+   "id": "dark_days",
+   "name": "어둠 충족일",
+   "unit": "일",
+   "min": 0,
+   "max": 365,
+   "threshold": 60,
+   "direction": ">=",
+   "weight": 2,
+   "nodata": 255
+  },
+  {
+   "id": "slope",
+   "name": "경사",
+   "unit": "°",
+   "min": 0,
+   "max": 40,
+   "threshold": 8,
+   "direction": "<=",
+   "weight": 2,
+   "nodata": 255
+  },
+  {
+   "id": "mast",
+   "name": "마스트",
+   "unit": "m",
+   "min": 0,
+   "max": 25,
+   "threshold": null,
+   "direction": "<=",
+   "weight": 0,
+   "nodata": 255
+  },
+  {
+   "id": "days14",
+   "name": "가능 착륙일",
+   "unit": "일",
+   "min": 0,
+   "max": 365,
+   "threshold": null,
+   "direction": ">=",
+   "weight": 0,
+   "nodata": 255
+  },
+  {
+   "id": "days6",
+   "name": "가능 착륙일 (6일)",
+   "unit": "일",
+   "min": 0,
+   "max": 365,
+   "threshold": null,
+   "direction": ">=",
+   "weight": 0,
+   "nodata": 255
+  },
+  {
+   "id": "psr",
+   "name": "영구 그늘",
+   "unit": "",
+   "min": 0,
+   "max": 1,
+   "threshold": null,
+   "direction": ">=",
+   "weight": 0,
+   "nodata": 255
+  },
+  {
+   "id": "sun",
+   "name": "연평균 햇빛",
+   "unit": "%",
+   "min": 0,
+   "max": 100,
+   "threshold": null,
+   "direction": ">=",
+   "weight": 0,
+   "nodata": 255
+  },
+  {
+   "id": "earth",
+   "name": "연평균 지구",
+   "unit": "%",
+   "min": 0,
+   "max": 100,
+   "threshold": null,
+   "direction": ">=",
+   "weight": 0,
+   "nodata": 255
+  },
+  {
+   "id": "both",
+   "name": "햇빛+지구",
+   "unit": "%",
+   "min": 0,
+   "max": 100,
+   "threshold": null,
+   "direction": ">=",
+   "weight": 0,
+   "nodata": 255
+  }
+ ],
+ "compute_s": 1141,
+ "default_thresholds_note": "criterion day-count thresholds default to 60 days (about two months of 2027); adjustable"
+}

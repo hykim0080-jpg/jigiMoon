@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lunar south pole · sunlight and Earth visibility</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0f131b; }
+  #map { position: fixed; inset: 0; }
+</style>
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.js" } }</script>
+</head>
+<body>
+<div id="map"></div>
+<script type="module">
+  import { mountLunarMap } from './map3d.js';
+  // ?data=./some/folder/  or  ?data=./a/,./b/&labels=2027-06,2027-12
+  const q = new URLSearchParams(location.search);
+  const urls = (q.get('data') ?? '../frames/,../frames_dec/').split(',');
+  const labels = (q.get('labels') ?? '2027-06,2027-12').split(',');
+  const opts = urls.length > 1
+    ? { datasets: urls.map((url, i) => ({ url, label: labels[i] || url })), sitesUrl: q.get('sites') ?? '../sites.json' }
+    : { dataUrl: urls[0], sitesUrl: q.get('sites') ?? '../sites.json' };
+  opts.lang = q.get('lang') === 'ko' ? 'ko' : 'en';
+  document.documentElement.lang = opts.lang;
+  opts.landmarksUrl = q.get('landmarks') ?? '../orientation/landmarks.json';
+  opts.landersUrl = q.get('landers') ?? '../orientation/landers.json';
+  const el = document.getElementById('map');
+  window.lunarMap = mountLunarMap(el, opts);
+  el.firstElementChild.focus();
+</script>
+</body>
+</html>

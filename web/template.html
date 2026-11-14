@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>달 남극 착륙 지점 선정 근거</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: wide sheet (1160px). Sections are separated by a heavy rule + short title in a left rail;
+   numbers sit in a mono left column so the 9 -> 15 -> 1 -> 365 sequence reads down the page. */
+:root{
+  --bg:#eef0f4; --surface:#ffffff; --ink:#151b2b; --muted:#5a6377; --line:#d3d7e0;
+  --sun:#b96f00; --earth:#2459b8; --ok:#1f8a5b; --move:#2459b8; --mast:#7446bd; --wait:#d9a24a; --none:#c3c8d2;
+  --box:#d4a017;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f131b; --surface:#181d28; --ink:#e8eaf0; --muted:#98a1b4; --line:#2b3242;
+    --sun:#f0a531; --earth:#74a2f2; --ok:#4cbf82; --move:#74a2f2; --mast:#ab89ec; --wait:#8d6a2c; --none:#394052;
+    --box:#e8bd3a; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f131b; --surface:#181d28; --ink:#e8eaf0; --muted:#98a1b4; --line:#2b3242;
+  --sun:#f0a531; --earth:#74a2f2; --ok:#4cbf82; --move:#74a2f2; --mast:#ab89ec; --wait:#8d6a2c; --none:#394052;
+  --box:#e8bd3a; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.6;-webkit-text-size-adjust:100%}
+.wrap{max-width:1160px;margin:0 auto;padding:56px 24px 72px}
+h1,h2,h3,p,dl,dd,ul,ol{margin:0}
+h1,h2,h3{text-wrap:balance;line-height:1.2}
+h1{font-size:clamp(32px,5.4vw,60px);font-weight:700;letter-spacing:-.025em;max-width:16ch}
+h2{font-size:15px;font-weight:700}
+h3{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.mono,.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+a{color:var(--earth)}
+:focus-visible{outline:2px solid var(--earth);outline-offset:2px}
+svg{display:block;width:100%;height:auto}
+svg text{font-family:var(--f-body)}
+svg g[role="button"]:focus{outline:none}
+svg g[role="button"]:focus-visible circle{stroke:var(--box);stroke-width:4}
+
+/* header */
+header{display:grid;gap:36px;padding-bottom:44px}
+.team{font-family:var(--f-mono);font-size:14px;font-weight:500;margin-bottom:-22px}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:2px solid var(--ink)}
+.facts div{padding:14px 16px 0 0;display:grid;gap:2px}
+.facts b{font-family:var(--f-mono);font-size:clamp(24px,3.4vw,38px);font-weight:500;line-height:1.15;letter-spacing:-.02em}
+.facts span{font-size:14px;color:var(--muted)}
+
+/* section frame: title rail + body */
+section{display:grid;grid-template-columns:120px minmax(0,1fr);gap:0 24px;border-top:2px solid var(--ink);padding:18px 0 64px}
+section>h2{padding-top:2px}
+.body{display:grid;gap:22px;min-width:0}
+
+/* site picker */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:14px;line-height:1.3;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+.chip:hover{border-color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.seg{display:inline-flex;border:1px solid var(--ink);border-radius:8px;overflow:hidden}
+.seg button{font:inherit;font-size:14px;padding:6px 14px;border:0;background:transparent;color:var(--ink);cursor:pointer}
+.seg button+button{border-left:1px solid var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.seg button:focus-visible{outline-offset:-3px}
+
+.mapgrid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px;align-items:start}
+#map{border-radius:6px;background:#222}
+#detail{display:grid;gap:18px;min-width:0}
+.tag{font-size:13px;color:var(--muted)}
+.name{font-size:clamp(24px,3vw,32px);font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--line)}
+.stats div{padding:10px 10px 10px 0;border-bottom:1px solid var(--line);display:grid;gap:0;min-width:0}
+.stats dt{font-size:13px;color:var(--muted)}
+.stats dd{font-family:var(--f-mono);font-size:20px;font-weight:500;white-space:nowrap}
+.stats dd small{font-size:12px;color:var(--muted);font-weight:400}
+.stats .wide{grid-column:1/-1}
+.stats .wide dd{font-size:14px;white-space:normal}
+.stats .wide dd.plain{font-family:var(--f-body);font-size:13px;color:var(--muted);font-weight:400}
+.hz{display:grid;grid-template-columns:minmax(0,1fr) 132px;gap:16px;align-items:end}
+.key{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted);list-style:none;padding:0}
+.key i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.key b{font-family:var(--f-mono);font-weight:500;color:var(--ink)}
+
+/* calendar */
+.cal{display:grid;gap:12px;border-top:1px solid var(--line);padding-top:16px}
+.calhead{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap}
+.calhead .big{font-family:var(--f-mono);font-size:clamp(28px,4vw,44px);font-weight:500;line-height:1;letter-spacing:-.02em}
+.calhead .big small{font-size:15px;color:var(--muted);letter-spacing:0}
+.bar{display:flex;height:10px;border-radius:2px;overflow:hidden;gap:1px}
+.bar i{display:block;min-width:0}
+
+/* steps */
+.steps{list-style:none;padding:0;display:grid}
+.step{display:grid;grid-template-columns:130px minmax(0,1fr) minmax(0,1.35fr);gap:8px 28px;padding:22px 0;border-top:1px solid var(--line);align-items:start}
+.step:first-child{border-top:0;padding-top:0}
+.step:last-child{padding-bottom:0}
+.count{font-family:var(--f-mono);font-size:clamp(40px,6vw,64px);font-weight:500;line-height:.95;letter-spacing:-.04em;position:relative}
+.count small{display:block;font-family:var(--f-body);font-size:14px;font-weight:500;color:var(--muted);letter-spacing:0;line-height:1.5;margin-top:6px}
+.step .what{display:grid;gap:8px}
+.step .what p{font-size:15px;color:var(--muted)}
+.spec{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 16px;font-size:14px}
+.spec dt{color:var(--muted)}
+.spec dd{font-family:var(--f-mono);font-size:13.5px}
+.side{display:grid;gap:14px;min-width:0}
+.th{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.th.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.th.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+#t-fit{font-size:12.5px}
+#t-fit th{font-size:12px}
+#t-fit th,#t-fit td{padding-right:8px}
+#t-fit th:last-child,#t-fit td:last-child{padding-right:0}
+.th div{background:var(--surface);padding:10px 12px;display:grid;gap:1px;align-content:start}
+.th b{font-family:var(--f-mono);font-size:20px;font-weight:500;line-height:1.2}
+.th span{font-size:14px;font-weight:600}
+.th em{font-style:normal;font-size:12.5px;color:var(--muted);line-height:1.45}
+.th i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
+.cmp{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 10px;align-items:center;font-size:14px}
+.cmp .t{height:14px;background:var(--line);border-radius:2px;overflow:hidden}
+.cmp .t i{display:block;height:100%;background:var(--sun)}
+
+/* tables */
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:7px 16px 7px 0;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{font-weight:500;color:var(--muted);font-size:13px;vertical-align:bottom}
+thead tr.grp th{border-bottom:0;padding-bottom:0;color:var(--ink);font-weight:600}
+td.n,th.n{text-align:right}
+#t-sites tbody tr{cursor:pointer}
+#t-sites tbody tr:hover td{background:color-mix(in srgb,var(--ink) 5%,transparent)}
+#t-sites tr.sel td{background:color-mix(in srgb,var(--sun) 14%,transparent)}
+#t-sites td:first-child{font-weight:600}
+.db{display:inline-grid;grid-template-columns:72px 3ch;gap:8px;align-items:center}
+.db u{display:block;height:8px;background:var(--line);border-radius:1px;text-decoration:none}
+.db u i{display:block;height:100%;background:var(--ok);border-radius:1px}
+tr.dim td{color:var(--muted)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;border:1.6px solid currentColor;margin-right:7px}
+.dot.f{background:currentColor}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
+
+/* validation */
+.two{display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:36px;align-items:start}
+.vside{display:grid;gap:20px}
+.pair{display:grid;grid-template-columns:auto auto;justify-content:start;gap:0 36px}
+.pair b{font-family:var(--f-mono);font-size:clamp(36px,5vw,56px);font-weight:500;line-height:1;letter-spacing:-.03em}
+.pair span{font-size:14px;color:var(--muted);grid-row:2}
+.lines{list-style:none;padding:0;display:grid;gap:8px;font-size:15px}
+.lines li{padding-left:14px;border-left:2px solid var(--ink)}
+.limits{padding-left:18px;display:grid;gap:8px;font-size:15px;max-width:76ch}
+.srcs{list-style:none;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 28px;font-size:13px;color:var(--muted)}
+footer{border-top:2px solid var(--ink);padding-top:14px;font-size:13px;color:var(--muted)}
+
+@media (max-width:900px){
+  .wrap{padding:32px 16px 56px}
+  section{grid-template-columns:1fr;gap:14px;padding-bottom:44px}
+  .mapgrid,.two{grid-template-columns:1fr}
+  .facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .facts div{padding-bottom:10px}
+  .step{grid-template-columns:1fr}
+  .count small{display:inline;margin-left:8px}
+  .srcs{grid-template-columns:1fr}
+  .chips.sites{flex-wrap:nowrap;overflow-x:auto;margin:0 -16px;padding:2px 16px 6px}
+  .chips.sites .chip{white-space:nowrap;flex:none}
+}
+@media (max-width:480px){
+  .hz{grid-template-columns:1fr}
+  .hz .gridbox{max-width:160px}
+  .stats dd{font-size:17px}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+<header>
+  <div class="team">Moon-jigi</div>
+  <h1>달 남극 착륙 지점을 어떻게 골랐나</h1>
+  <div class="facts">
+    <div><b>12곳</b><span>Artemis III 후보 9 + 기준점 3</span></div>
+    <div><b>5 m</b><span>LOLA 지형 해상도</span></div>
+    <div><b>≤ 8°</b><span>착륙 경사 한도</span></div>
+    <div><b id="f-val">2.3%p</b><span>NASA 조도 지도 대비 햇빛 오차</span></div>
+  </div>
+</header>
+
+<section aria-labelledby="h-map">
+  <h2 id="h-map">고른 지점</h2>
+  <div class="body">
+    <div class="chips sites" id="sitechips" role="group" aria-label="지점 선택"></div>
+    <div class="mapgrid">
+      <svg id="map" viewBox="0 0 700 700" role="group" aria-label="달 남극 지도. 남극 입체 투영, 위쪽이 경도 0°. 노란 상자는 NASA Artemis III 후보 지역, 점은 고른 지점"></svg>
+      <div id="detail" aria-live="polite"></div>
+    </div>
+    <div class="cal" id="cal"></div>
+  </div>
+</section>
+
+<section aria-labelledby="h-how">
+  <h2 id="h-how">고른 과정</h2>
+  <ol class="steps body" style="gap:0">
+    <li class="step">
+      <div class="count">9<small>지역 상자</small></div>
+      <div class="what">
+        <h3>NASA 지역 지도에 좌표 입히기</h3>
+        <p>NASA는 후보 지역을 그림으로만 발표했습니다. 공식 지도(2024-10)를 PGDA 5 m 지형 타일 5곳에 맞춰 축척을 구했습니다.</p>
+        <dl class="spec">
+          <dt>지도 한 칸</dt><dd>0.2794 km</dd>
+          <dt>맞춤 차이</dt><dd>최대 0.33 km</dd>
+          <dt>나머지 4곳</dt><dd>같은 축척 적용</dd>
+        </dl>
+      </div>
+      <div class="side tablewrap"><table id="t-fit"><thead><tr><th>지역</th><th>PGDA 타일</th><th class="n">지도 중심 km</th><th class="n">타일 중심 km</th><th class="n">차이 km</th></tr></thead><tbody></tbody></table></div>
+    </li>
+    <li class="step">
+      <div class="count">15<small>후보 / 지역</small></div>
+      <div class="what">
+        <h3>조도 지도에서 거르기</h3>
+        <dl class="spec">
+          <dt>지도</dt><dd>PGDA 18.6년 평균 조도, 60 m (85°S 밖 120 m)</dd>
+          <dt>후보 간격</dt><dd>≥ 300 m</dd>
+          <dt>상자 가장자리</dt><dd>3 km 제외</dd>
+        </dl>
+      </div>
+      <div class="side">
+        <div class="th c3">
+          <div><b>≤ 8°</b><span>경사</span></div>
+          <div><b>≥ 50%</b><span>지구 보임</span></div>
+          <div><b>상위 15</b><span>평균 햇빛</span></div>
+        </div>
+      </div>
+    </li>
+    <li class="step">
+      <div class="count">1<small>지점</small></div>
+      <div class="what">
+        <h3>5 m 지형으로 다시 계산</h3>
+        <p>남극의 해는 지평선 위 1.5° 안팎이라 몇 m 높이 차이가 그림자를 만듭니다. 60 m 지도에서 가장 밝은 화소가 5 m 지형에서는 옆 언덕에 가려지기도 합니다.</p>
+        <dl class="spec">
+          <dt>대상</dt><dd>후보 15 + 각 20 m 옆 4곳</dd>
+          <dt>계산</dt><dd>18.6년 · 6시간 간격 · 높이 2 m</dd>
+          <dt>선택</dt><dd>평균 햇빛 최대</dd>
+        </dl>
+      </div>
+      <div class="side">
+        <div class="cmp" role="img" aria-label="Shackleton 가장자리 평균 햇빛: 높이 0.5 m에서 47%, 2 m에서 81%">
+          <span style="grid-column:1/-1;font-weight:600">Shackleton 가장자리 평균 햇빛</span>
+          <span class="mono">0.5 m</span><span class="t"><i style="width:47%"></i></span><span class="mono">47%</span>
+          <span class="mono">2 m</span><span class="t"><i style="width:81%"></i></span><span class="mono">81%</span>
+        </div>
+      </div>
+    </li>
+    <li class="step">
+      <div class="count">365<small>착륙일 × 6일·14일 임무</small></div>
+      <div class="what">
+        <h3>2027년 매일 착륙한다고 보고 판정</h3>
+        <dl class="spec">
+          <dt>지평선</dt><dd>720방향(0.5°) × 150 km, 곡률 포함</dd>
+          <dt>지형</dt><dd>5 m → 20 · 80 · 240 m</dd>
+          <dt>해·지구 위치</dt><dd>JPL 천체력</dd>
+          <dt>관측 높이</dt><dd>2 m</dd>
+          <dt>임무 기간</dt><dd>6일 (Artemis III 체류) / 14일</dd>
+        </dl>
+      </div>
+      <div class="side">
+        <div class="th c2">
+          <div><b>≥ 70%</b><span>햇빛</span><em>태양 원반이 보이는 비율의 평균. 반만 보이면 0.5</em></div>
+          <div><b>≤ 50 h</b><span>연속 어둠</span><em>햇빛 10% 미만이 이어진 최대 시간</em></div>
+          <div><b>≥ 50%</b><span>지구 보임</span><em>지구 중심이 지형 위에 있는 시간</em></div>
+          <div><b>≤ 8°</b><span>경사</span><em>중심과 주변 15 m 8곳 중 최댓값</em></div>
+        </div>
+        <div class="th c3">
+          <div><b>≤ 3 km</b><span><i style="background:var(--move)"></i>옮기기</span><em>0.25 km 격자에서 기준을 맞추는 가장 가까운 곳</em></div>
+          <div><b>5–40 m</b><span><i style="background:var(--mast)"></i>마스트 높이기</span><em>5 · 10 · 20 · 40 m 중 가장 낮은 것</em></div>
+          <div><b>≤ 60일</b><span><i style="background:var(--wait)"></i>기다리기</span><em>며칠 뒤 착륙하면 되는지</em></div>
+        </div>
+      </div>
+    </li>
+  </ol>
+</section>
+
+<section aria-labelledby="h-cmp">
+  <h2 id="h-cmp">12곳 비교</h2>
+  <div class="body tablewrap"><table id="t-sites"><thead>
+    <tr class="grp"><th></th><th colspan="3"></th><th colspan="2" class="n">18.6년 평균 햇빛</th><th></th><th colspan="2">2027년 가능일 / 365</th><th></th></tr>
+    <tr><th>지점</th><th class="n">위도</th><th class="n">경도</th><th class="n">경사</th>
+    <th class="n">NASA 60·120 m</th><th class="n">우리 5 m, 2 m 높이</th><th class="n">지구 보임</th>
+    <th>6일 임무</th><th>14일 임무</th><th>가까운 지형</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section aria-labelledby="h-val">
+  <h2 id="h-val">검증</h2>
+  <div class="body two">
+    <div style="display:grid;gap:12px">
+      <div class="seg" id="vchips" role="group" aria-label="비교에 쓴 지형" style="justify-self:start">
+        <button aria-pressed="true" data-v="coarse">같은 해상도 80 m</button>
+        <button aria-pressed="false" data-v="fine">우리 5 m 지형</button>
+      </div>
+      <svg id="scatter" viewBox="0 0 420 380" role="img" aria-label="NASA 지도 값과 우리 계산 비교 산점도"></svg>
+    </div>
+    <div class="vside">
+      <div class="pair">
+        <b id="v-sun"></b><b id="v-earth"></b>
+        <span><i class="sw" style="background:var(--sun)"></i>햇빛 평균 절대오차</span><span><i class="sw" style="background:var(--earth)"></i>지구 보임 평균 절대오차</span>
+      </div>
+      <div class="tablewrap"><table id="t-val"><thead><tr><th>지형</th><th>지점</th><th class="n"><i class="sw" style="background:var(--sun)"></i>햇빛</th><th class="n"><i class="sw" style="background:var(--earth)"></i>지구 보임</th></tr></thead><tbody></tbody></table></div>
+      <ul class="lines">
+        <li>해상도를 맞추면 NASA 지도와 일치합니다. 천체력·지평선·곡률 계산이 맞다는 뜻입니다.</li>
+        <li>5 m 지형에서는 극 가까운 능선에서 차이가 커집니다. 60 m 지도가 못 보는 바로 옆 경사가 낮은 해를 가립니다.</li>
+      </ul>
+      <dl class="spec">
+        <dt>기준</dt><dd>NASA PGDA 평균 조도 지도, 18.6년 · 1시간 간격</dd>
+        <dt>36곳</dt><dd>고른 12 + 각 1~3 km 옆 임의 2곳</dd>
+        <dt>높이</dt><dd>0.5 m (NASA 지도는 지표 기준)</dd>
+        <dt>지구</dt><dd>원반 일부라도 보이면 보임 (NASA와 동일)</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="h-lim">
+  <h2 id="h-lim">한계</h2>
+  <ul class="limits body" style="gap:8px">
+    <li>지점은 우리 규칙으로 고른 것이고 NASA가 정한 착륙 지점이 아닙니다.</li>
+    <li>5 m 지형도 약 90%는 레이저 측정점 사이를 메운 값입니다(PGDA). 높이 오차 중앙값 0.3~0.5 m, 경사 오차 1.5~2.5°.</li>
+    <li>지구 보임은 지구가 하늘에 있는지만 봅니다. 실제 통신은 DSN 지상국이 그 시간에 달을 볼 수 있는지도 따져야 합니다.</li>
+    <li>달의 자세는 IAU 2009 모델입니다. LOLA 좌표계(ME)를 근사하며, 정밀 SPICE 커널과의 차이는 확인하지 않았습니다.</li>
+  </ul>
+</section>
+
+<section aria-labelledby="h-src">
+  <h2 id="h-src">출처</h2>
+  <ul class="srcs body" style="gap:8px 28px">
+    <li>LOLA 5 m 남극 착륙지 지형·경사: NASA GSFC PGDA <a href="https://pgda.gsfc.nasa.gov/products/78">products/78</a>; Barker et al. 2021, Planetary &amp; Space Science 203, 105119</li>
+    <li>LOLA 20·80·240 m 지형, 20 m 경사: NASA GSFC PGDA <a href="https://pgda.gsfc.nasa.gov/products/90">products/90</a></li>
+    <li>평균 햇빛·지구 보임 지도: NASA GSFC PGDA <a href="https://pgda.gsfc.nasa.gov/products/69">products/69</a>; Mazarico et al. 2011, Icarus 211, 1066–1081</li>
+    <li>Artemis III 후보 지역 지도: <a href="https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/">NASA, 2024-10-28</a> (NASA/GSFC/ASU/JSC/AGDT)</li>
+    <li>Artemis III 체류 기간: George et al., <a href="https://www.hou.usra.edu/meetings/lpsc2026/pdf/1901.pdf">LPSC 2026 abstract 1901</a></li>
+    <li>IM-2 목표 지점: <a href="https://www.lroc.asu.edu/images/1401">LROC (NASA/GSFC/ASU)</a></li>
+    <li>천체력: JPL DE421 (skyfield, skyfield-data). 달 자전: IAU WGCCRE 2009 (Archinal et al. 2011)</li>
+    <li>배경 지도: LOLA LDEM_80S_80MPP_ADJ로 만든 음영도</li>
+  </ul>
+</section>
+
+<footer>NASA Space Apps 2026 · Lunar Landing Site Navigator</footer>
+
+</main>
+<script>
+const DATA = __DATA__;
+const HILL = "data:image/jpeg;base64,__HILL__";
+const NS = "http://www.w3.org/2000/svg";
+const R_KM = 200, W = 700;
+const sx = x => (x/1000 + R_KM) / (2*R_KM) * W;
+const sy = y => (R_KM - y/1000) / (2*R_KM) * W;
+function el(tag, attrs={}, parent){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); if(parent) parent.appendChild(e); return e; }
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmt = (v,d=1) => v==null ? "–" : Number(v).toFixed(d);
+const okCount = s => [...s].filter(c=>c==="1").length;
+const lonStr = (lon,d) => lon>=0 ? fmt(lon,d)+"°E" : fmt(-lon,d)+"°W";
+let current = DATA.sites[0].id, calMode = "6";
+
+/* ---------- map ---------- */
+function drawMap(){
+  const svg = document.getElementById("map"); svg.innerHTML = "";
+  el("image",{href:HILL,x:0,y:0,width:W,height:W,preserveAspectRatio:"none"},svg);
+  const R=1737.4;
+  for(const lat of [-88,-86,-84,-82]){
+    const rho = 2*R*Math.tan(Math.PI/4 + lat*Math.PI/360);
+    el("circle",{cx:W/2,cy:W/2,r:rho/(2*R_KM)*W,fill:"none",stroke:"#fff","stroke-opacity":.35,"stroke-dasharray":"3 4"},svg);
+    const t=el("text",{x:W/2+4,y:W/2 - rho/(2*R_KM)*W - 4,fill:"#fff","font-size":11,"fill-opacity":.85},svg); t.textContent=`${-lat}°S`;
+  }
+  for(const [lab,ax,ay,anc] of [["0°",W/2,16,"middle"],["90°E",W-8,W/2-6,"end"],["180°",W/2,W-8,"middle"],["90°W",8,W/2-6,"start"]]){
+    const t=el("text",{x:ax,y:ay,fill:"#fff","font-size":12,"text-anchor":anc,"fill-opacity":.9},svg); t.textContent=lab;
+  }
+  el("path",{d:`M${W/2-6},${W/2}h12M${W/2},${W/2-6}v12`,stroke:"#fff","stroke-width":1.5},svg);
+  for(const b of Object.values(DATA.boxes)){
+    const [x1,y1,x2,y2]=b.box_m;
+    el("rect",{x:sx(x1),y:sy(y2),width:sx(x2)-sx(x1),height:sy(y1)-sy(y2),fill:"none",stroke:css("--box"),"stroke-width":1.6},svg);
+  }
+  for(const s of DATA.sites){
+    if(s.box && !DATA.boxes[s.name]){
+      const [x1,y1,x2,y2]=s.box;
+      el("rect",{x:sx(x1),y:sy(y2),width:sx(x2)-sx(x1),height:sy(y1)-sy(y2),fill:"none",stroke:"#fff","stroke-width":1.2,"stroke-dasharray":"4 3"},svg);
+    }
+  }
+  const order = DATA.sites.filter(s=>s.id!==current).concat(DATA.sites.filter(s=>s.id===current));
+  for(const s of order){
+    const sel = s.id===current;
+    const g=el("g",{tabindex:0,role:"button","aria-label":s.name,"aria-pressed":sel,style:"cursor:pointer"},svg);
+    el("circle",{cx:sx(s.x),cy:sy(s.y),r:14,fill:"transparent",stroke:"none"},g);
+    el("circle",{cx:sx(s.x),cy:sy(s.y),r:sel?8:5,fill:sel?"#ffb020":"#fff",stroke:"#111","stroke-width":1.5},g);
+    if(sel){
+      const left = sx(s.x) > W-170;
+      const t=el("text",{x:sx(s.x)+(left?-13:13),y:sy(s.y)+5,"text-anchor":left?"end":"start",fill:"#fff","font-size":15,"font-weight":700,stroke:"#000","stroke-width":4,"paint-order":"stroke","stroke-opacity":.7},g);
+      t.textContent=s.name;
+    } else { const ti=el("title",{},g); ti.textContent=s.name; }
+    g.addEventListener("click",()=>select(s.id));
+    g.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();select(s.id,true);}});
+  }
+  const px50 = 50/(2*R_KM)*W;
+  el("rect",{x:16,y:W-22,width:px50,height:4,fill:"#fff"},svg);
+  const t=el("text",{x:16,y:W-28,fill:"#fff","font-size":11},svg); t.textContent="50 km";
+}
+
+/* ---------- detail ---------- */
+function horizonSvg(s){
+  const w=420,h=170,p={l:30,r:6,t:10,b:22};
+  const hz=s.horizon, n=hz.length, max=Math.max(4,Math.ceil(Math.max(...hz))), min=Math.min(-2,Math.floor(Math.min(...hz)));
+  const X=i=>p.l+i/n*(w-p.l-p.r), Y=v=>p.t+(max-v)/(max-min)*(h-p.t-p.b);
+  let d=`M${X(0)},${Y(min)}`; hz.forEach((v,i)=>d+=`L${X(i)},${Y(v)}`); d+=`L${X(n)},${Y(hz[0])}L${X(n)},${Y(min)}Z`;
+  let g=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="높이 2 m에서 본 360° 지평선. 주황 띠는 해가 오르내리는 높이 약 ±1.6°">`;
+  for(const v of [min,0,max]) g+=`<line x1="${p.l}" x2="${w-p.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${p.l-6}" y="${Y(v)+4}" font-size="11" text-anchor="end" fill="var(--muted)">${v}°</text>`;
+  g+=`<rect x="${p.l}" y="${Y(1.6)}" width="${w-p.l-p.r}" height="${Y(-1.6)-Y(1.6)}" fill="var(--sun)" opacity=".2"/>`;
+  g+=`<path d="${d}" fill="var(--muted)" fill-opacity=".45" stroke="var(--ink)" stroke-width="1.2"/>`;
+  g+=`<text x="${w-p.r-4}" y="${Y(1.6)-4}" font-size="11" text-anchor="end" font-weight="600" fill="var(--sun)">해 ±1.6°</text>`;
+  for(const [a,l,anc] of [[0,"북","start"],[90,"동","middle"],[180,"남","middle"],[270,"서","middle"],[360,"북","end"]]) g+=`<text x="${X(a/360*n)}" y="${h-6}" font-size="11" text-anchor="${anc}" fill="var(--muted)">${l}</text>`;
+  return g+"</svg>";
+}
+function gridSvg(s){
+  const w=180, R=3, cell=w/(2*R/0.25+1);
+  const days = s.cal14.ok.length;
+  let g=`<svg viewBox="0 0 ${w} ${w}" role="img" aria-label="반경 3 km, 0.25 km 격자. 초록이 진할수록 14일 임무 가능일이 많고 회색은 경사 8° 초과">`;
+  for(const [dx,dy,sl,n] of s.grid){
+    const x=(dx+R)/(2*R)*(w-cell), y=(R-dy)/(2*R)*(w-cell);
+    let fill = (sl!=null && sl>8) ? "var(--none)" : `color-mix(in srgb, var(--ok) ${Math.round(15+85*n/days)}%, var(--surface))`;
+    if(sl!=null && sl<=8 && n===0) fill="color-mix(in srgb, var(--ink) 18%, var(--surface))";
+    g+=`<rect x="${x}" y="${y}" width="${cell-0.6}" height="${cell-0.6}" fill="${fill}"/>`;
+  }
+  g+=`<circle cx="${w/2}" cy="${w/2}" r="${cell*0.9}" fill="none" stroke="var(--sun)" stroke-width="2"/>`;
+  return g+"</svg>";
+}
+const WAITFILL="var(--wait)";
+function calSvg(s){
+  const c = calMode==="6" ? s.cal6 : s.cal14, n=c.ok.length, cols=53, cw=10, w=cols*cw, h=7*cw+16;
+  const t0=Date.UTC(2027,0,1), dow0=new Date(t0).getUTCDay();
+  let g=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="2027년 착륙일별 판정">`;
+  for(let d=0; d<n; d++){
+    const k=d+dow0, col=Math.floor(k/7), row=k%7, dt=new Date(t0+d*864e5);
+    let f="var(--none)";
+    if(c.ok[d]==="1") f="var(--ok)"; else if(c.move[d]!=null) f="var(--move)"; else if(c.mast[d]!=null) f="var(--mast)"; else if(c.wait[d]!=null) f=WAITFILL;
+    g+=`<rect x="${col*cw}" y="${row*cw+16}" width="${cw-1.4}" height="${cw-1.4}" rx="1.2" fill="${f}"><title>2027-${String(dt.getUTCMonth()+1).padStart(2,"0")}-${String(dt.getUTCDate()).padStart(2,"0")}: 햇빛 ${c.sun[d]}%, 지구 ${c.earth[d]}%</title></rect>`;
+    if(dt.getUTCDate()===1) g+=`<text x="${col*cw}" y="10" font-size="10" fill="var(--muted)">${dt.getUTCMonth()+1}월</text>`;
+  }
+  return g+"</svg>";
+}
+const GROUPS={"Artemis III candidate region (NASA, Oct 2024)":"Artemis III 후보 지역 · NASA 2024-10","PGDA 5 m site (Barker et al. 2021)":"PGDA 5 m 연구 지점 · Barker 외 2021","Actual landing (IM-2, 2025-03-06)":"실제 착륙 · IM-2, 2025-03-06"};
+function renderDetail(){
+  const s = DATA.sites.find(x=>x.id===current);
+  const how = s.id==="im-2-athena" ? "LROC가 공개한 목표 지점. 실제 착지는 약 250 m 떨어진 곳."
+    : s.box_source && s.box_source.startsWith("PGDA") ? `PGDA 5 m 타일(${s.tile}) 범위에서 같은 규칙으로 선택.`
+    : (s.rule && s.rule.includes("no pixel with earth") ? "지구 보임 50% 이상인 곳이 없어 햇빛 + 지구 보임 합이 가장 큰 곳." : "");
+  document.getElementById("detail").innerHTML = `
+    <div><div class="tag">${GROUPS[s.group]||s.group}</div><div class="name">${s.name}</div>${how?`<p class="muted" style="font-size:14px;margin-top:6px">${how}</p>`:""}</div>
+    <dl class="stats">
+      <div><dt>햇빛</dt><dd>${s.our_sun!=null?fmt(s.our_sun)+"%":"–"}${s.pgda_sun!=null?` <small>NASA ${fmt(s.pgda_sun)}</small>`:""}</dd></div>
+      <div><dt>지구 보임</dt><dd>${s.our_earth!=null?fmt(s.our_earth)+"%":"–"}</dd></div>
+      <div><dt>경사</dt><dd>${fmt(s.slope)}°</dd></div>
+      <div class="wide"><dt>좌표</dt><dd>${fmt(-s.lat,4)}°S, ${lonStr(s.lon,4)}</dd></div>
+      <div class="wide"><dt>지형</dt><dd class="plain">${s.layers.join(" → ")}</dd></div>
+    </dl>
+    <div class="hz">
+      <div>${horizonSvg(s)}</div>
+      <div class="gridbox" style="display:grid;gap:6px">${gridSvg(s)}
+        <ul class="key" style="font-size:12px;gap:2px 10px"><li><i style="background:var(--ok)"></i>14일 임무 가능일 많음</li><li><i style="background:var(--none)"></i>경사 &gt; 8°</li><li class="mono">±3 km</li></ul>
+      </div>
+    </div>`;
+  renderCal();
+}
+function renderCal(){
+  const s = DATA.sites.find(x=>x.id===current);
+  const c = calMode==="6" ? s.cal6 : s.cal14;
+  const ok=okCount(c.ok), n=c.ok.length; let mv=0,ma=0,wa=0,no=0;
+  for(let d=0; d<n; d++){ if(c.ok[d]==="1") continue; if(c.move[d]!=null) mv++; else if(c.mast[d]!=null) ma++; else if(c.wait[d]!=null) wa++; else no++; }
+  const parts=[["var(--ok)","그대로",ok],["var(--move)","3 km 안 옮기면",mv],["var(--mast)","마스트 높이면",ma],[WAITFILL,"기다리면",wa],["var(--none)","60일 안 해결 없음",no]];
+  document.getElementById("cal").innerHTML = `
+    <div class="calhead">
+      <div><div class="tag">2027년 착륙 가능일 · ${s.name}</div><div class="big">${ok}<small> / ${n}일</small></div></div>
+      <div class="seg" role="group" aria-label="임무 기간"><button data-cal="6" aria-pressed="${calMode==="6"}">6일 임무</button><button data-cal="14" aria-pressed="${calMode==="14"}">14일 임무</button></div>
+    </div>
+    ${calSvg(s)}
+    <div class="bar" aria-hidden="true">${parts.filter(p=>p[2]>0).map(p=>`<i style="flex:${p[2]} 0 0;background:${p[0]}"></i>`).join("")}</div>
+    <ul class="key">${parts.map(p=>`<li><i style="background:${p[0]}"></i>${p[1]} <b>${p[2]}</b></li>`).join("")}</ul>`;
+  document.querySelectorAll("[data-cal]").forEach(b=>b.addEventListener("click",()=>{calMode=b.dataset.cal; renderCal(); document.querySelector(`[data-cal="${calMode}"]`).focus();}));
+}
+function select(id, refocus){
+  current=id; drawMap(); renderDetail();
+  document.querySelectorAll("#t-sites tbody tr").forEach(tr=>tr.classList.toggle("sel",tr.dataset.id===id));
+  document.querySelectorAll("#sitechips .chip").forEach(b=>b.setAttribute("aria-pressed",b.dataset.id===id));
+  if(refocus){ const g=document.querySelector('#map g[aria-pressed="true"]'); if(g) g.focus(); }
+}
+
+/* ---------- tables ---------- */
+function tables(){
+  const chips=document.getElementById("sitechips");
+  for(const s of DATA.sites){
+    const b=document.createElement("button"); b.className="chip"; b.dataset.id=s.id; b.textContent=s.name; b.setAttribute("aria-pressed","false");
+    b.addEventListener("click",()=>select(s.id)); chips.appendChild(b);
+  }
+  const tb=document.querySelector("#t-sites tbody");
+  const bar=n=>`<span class="db"><u><i style="width:${(n/365*100).toFixed(1)}%"></i></u><span class="n">${n}</span></span>`;
+  for(const s of DATA.sites){
+    const tr=document.createElement("tr"); tr.dataset.id=s.id; tr.tabIndex=0;
+    tr.innerHTML=`<td>${s.name}</td><td class="n">${fmt(-s.lat,2)}°S</td><td class="n">${lonStr(s.lon,2)}</td><td class="n">${fmt(s.slope)}°</td>
+      <td class="n">${s.pgda_sun!=null?fmt(s.pgda_sun)+"%":"–"}</td><td class="n">${s.our_sun!=null?fmt(s.our_sun)+"%":"–"}</td><td class="n">${s.our_earth!=null?fmt(s.our_earth)+"%":"–"}</td>
+      <td>${bar(okCount(s.cal6.ok))}</td><td>${bar(okCount(s.cal14.ok))}</td><td class="mono">${s.tile?"5 m · "+s.tile:"20 m"}</td>`;
+    tr.addEventListener("click",()=>{select(s.id); document.getElementById("map").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"});});
+    tr.addEventListener("keydown",e=>{if(e.key==="Enter") tr.click();});
+    tb.appendChild(tr);
+  }
+  const fit=[["Malapert Massif","Site23"],["Nobile Rim 1","Site06"],["Nobile Rim 2","DM2"],["Haworth","Haworth"],["de Gerlache Rim 2","SL2"]];
+  const tiles={Site23:[-0.5,121.5],Site06:[84,110],DM2:[157,95],Haworth:[-38,90.5],SL2:[-48.5,23]};
+  const ft=document.querySelector("#t-fit tbody");
+  for(const [r,t] of fit){
+    const b=DATA.boxes[r].box_m, cx=(b[0]+b[2])/2000, cy=(b[1]+b[3])/2000, [tx,ty]=tiles[t];
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${r}</td><td class="mono">${t}</td><td class="n">${fmt(cx)}, ${fmt(cy)}</td><td class="n">${fmt(tx)}, ${fmt(ty)}</td><td class="n">${fmt(Math.hypot(cx-tx,cy-ty),2)}</td>`;
+    ft.appendChild(tr);
+  }
+  const vt=document.querySelector("#t-val tbody");
+  for(const [lab,k,sub,who,f] of [["80 m","coarse","random_points","임의 24곳",""],["80 m","coarse","chosen_sites","고른 12곳"," f"],["5 m","fine","random_points","임의 24곳",""],["5 m","fine","chosen_sites","고른 12곳"," f"]]){
+    const v=DATA.val[k][sub]; const tr=document.createElement("tr"); tr.dataset.k=k;
+    tr.innerHTML=`<td class="mono">${lab}</td><td><i class="dot${f}"></i>${who}</td><td class="n">${fmt(v.sun_mae)}%p</td><td class="n">${fmt(v.earth_mae)}%p</td>`; vt.appendChild(tr);
+  }
+}
+
+/* ---------- scatter ---------- */
+let vMode="coarse";
+function scatter(){
+  const svg=document.getElementById("scatter"); svg.innerHTML="";
+  const w=420,h=380,p={l:44,r:12,t:12,b:40}, X=v=>p.l+v/100*(w-p.l-p.r), Y=v=>h-p.b-v/100*(h-p.t-p.b);
+  for(const v of [0,25,50,75,100]){
+    el("line",{x1:X(0),x2:X(100),y1:Y(v),y2:Y(v),stroke:css("--line")},svg);
+    el("line",{x1:X(v),x2:X(v),y1:Y(0),y2:Y(100),stroke:css("--line")},svg);
+    let t=el("text",{x:p.l-6,y:Y(v)+4,"font-size":11,"text-anchor":"end",fill:css("--muted")},svg); t.textContent=v+"%";
+    t=el("text",{x:X(v),y:h-p.b+16,"font-size":11,"text-anchor":"middle",fill:css("--muted")},svg); t.textContent=v+"%";
+  }
+  el("line",{x1:X(0),y1:Y(0),x2:X(100),y2:Y(100),stroke:css("--ink"),"stroke-dasharray":"4 4","stroke-opacity":.5},svg);
+  let t=el("text",{x:(p.l+w-p.r)/2,y:h-6,"font-size":12,"text-anchor":"middle",fill:css("--muted")},svg); t.textContent="NASA PGDA 지도";
+  t=el("text",{x:12,y:(p.t+h-p.b)/2,"font-size":12,"text-anchor":"middle",fill:css("--muted"),transform:`rotate(-90 12 ${(p.t+h-p.b)/2})`},svg); t.textContent="우리 계산";
+  for(const q of DATA.val.points){
+    for(const [kind,col] of [["sun","--sun"],["earth","--earth"]]){
+      const ours=q[vMode+"_"+kind], ref=q["pgda_"+kind];
+      if(ours==null||ref==null) continue;
+      const c=el("circle",{cx:X(ref),cy:Y(ours),r:4.2,fill:q.rand?css("--bg"):css(col),stroke:css(col),"stroke-width":1.6,"fill-opacity":q.rand?.6:.85},svg);
+      const ti=el("title",{},c); ti.textContent=`${q.p.replace("~r0"," 주변 임의 지점 1").replace("~r1"," 주변 임의 지점 2")} · ${kind==="sun"?"햇빛":"지구"}: NASA ${ref}% / 우리 ${ours}%`;
+    }
+  }
+  const v=DATA.val[vMode].random_points;
+  document.getElementById("v-sun").textContent=fmt(v.sun_mae)+"%p";
+  document.getElementById("v-earth").textContent=fmt(v.earth_mae)+"%p";
+  document.querySelectorAll("#t-val tbody tr").forEach(tr=>tr.classList.toggle("dim",tr.dataset.k!==vMode));
+}
+document.querySelectorAll("#vchips button").forEach(b=>b.addEventListener("click",()=>{vMode=b.dataset.v; document.querySelectorAll("#vchips button").forEach(x=>x.setAttribute("aria-pressed",x===b)); scatter();}));
+
+tables(); select(current); scatter();
+document.getElementById("f-val").textContent = fmt(DATA.val.coarse.random_points.sun_mae)+"%p";
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{drawMap();scatter();});
+new MutationObserver(()=>{drawMap();scatter();}).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+</script>
+</body>
+</html>

@@ -1,0 +1,303 @@
+import { N, PX, HALF, GRATICULE_LATS, SCORE_RAMP } from './config.js';
+import { state, setState } from './state.js';
+import { latRadius, cellToLatLon, cellToXY } from './geo.js';
+import { sample, scoreColor, failCount, score100, critIds } from './compose.js';
+import { t, layerName, unitOf } from './strings.js';
+import { fmt } from './data.js';
+import { rampCss } from './ramps.js';
+import { SIMPLE, ZONE } from './config.js';
+import { shadowCanvas, initTime } from './time.js';
+import { pinInfo } from './pin.js';
+import { getZones, hotZoneId, paint, brushCells, saveOverride } from './zones.js';
+import { haloCanvas } from './compose.js';
+import { describe, lmName, drawableLanders, landerPath, landerLabel } from './orient.js';
+
+let pickFn = null, legend, bd, panel, canvas, ctx, svg, comp, data, badge, homeBtn, tip, W = 800, dpr = 1, anim = 0;
+const clampView = v => { const h = N / (2 * v.k); return { k: v.k, cx: Math.max(h, Math.min(N - h, v.cx)), cy: Math.max(h, Math.min(N - h, v.cy)) }; };
+const scale = () => W * state.view.k / N;
+const toScr = (cf, rf) => { const { k, cx, cy } = state.view, s = scale(), w = N / k; return [(cf - (cx - w / 2)) * s, (rf - (cy - w / 2)) * s]; };
+const mToCf = (x, y) => [(x + HALF) / PX, (HALF - y) / PX];
+export function cellFromEvent(e) {
+  const r = canvas.getBoundingClientRect(), { k, cx, cy } = state.view, s = scale(), w = N / k;
+  const col = Math.floor(cx - w / 2 + (e.clientX - r.left) / s), row = Math.floor(cy - w / 2 + (e.clientY - r.top) / s);
+  return col >= 0 && row >= 0 && col < N && row < N ? { col, row } : null;
+}
+export const setPick = fn => { pickFn = fn; };
+export function initMap(el, d, compCanvas) {
+  panel = el; data = d; comp = compCanvas;
+  canvas = Object.assign(document.createElement('canvas'), { className: 'lyr-raster' });
+  svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('class', 'lyr-vec');
+  badge = Object.assign(document.createElement('div'), { className: 'lyr-badge n' });
+  badge.innerHTML = `<span class="bt"></span><span class="bs" hidden><span class="co"></span><span>0</span><span class="lyr-sr" style="background:${rampCss({ id: 'score' })}"><u></u><i></i><b></b></span><span>100</span></span>`;
+  bd = { t: badge.querySelector('.bt'), s: badge.querySelector('.bs'), co: badge.querySelector('.co'), sr: badge.querySelector('.lyr-sr') };
+  bd.rd = bd.sr.querySelector('i'); bd.hd = bd.sr.querySelector('b'); bd.cv = bd.sr.querySelector('u');
+  const setCut = e => { const b = bd.sr.getBoundingClientRect(), v = Math.max(0, Math.min(100, Math.round(100 * (e.clientX - b.left) / b.width))); if (v !== state.cutoff) setState({ cutoff: v }, 'zones'); };
+  bd.sr.onpointerdown = e => { e.stopPropagation(); e.preventDefault(); bd.sr.setPointerCapture(e.pointerId); setCut(e); bd.sr.onpointermove = setCut; };
+  bd.sr.onpointerup = () => { bd.sr.onpointermove = null; };
+  bd.sr.ondblclick = e => { e.stopPropagation(); setState({ cutoff: 70 }, 'zones'); };
+  legend = Object.assign(document.createElement('div'), { className: 'lyr-legend n' }); legend.innerHTML = '<i></i><span></span>';
+  homeBtn = Object.assign(document.createElement('button'), { className: 'lyr-home', textContent: t('home'), hidden: true });
+  homeBtn.onclick = e => { e.stopPropagation(); reset(); };
+  homeBtn.onpointerdown = homeBtn.ondblclick = e => e.stopPropagation();
+  panel.append(canvas, svg, legend, badge, homeBtn); initTime(panel);
+  ctx = canvas.getContext('2d');
+  tip = document.getElementById('tip') || Object.assign(document.createElement('div'), { id: 'tip', hidden: true });
+  if (!tip.parentNode) document.body.append(tip);
+  wire(); resize();
+}
+export function resize() {
+  W = panel.clientWidth; dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = canvas.height = Math.round(W * dpr); canvas.style.width = canvas.style.height = W + 'px';
+  svg.setAttribute('viewBox', `0 0 ${W} ${W}`);
+  setState({ view: clampView(state.view) }, 'view');
+}
+export function blit() {
+  const { k, cx, cy } = state.view, w = N / k;
+  ctx.imageSmoothingEnabled = (W * dpr * k / N) < 1.5;
+  ctx.drawImage(comp, cx - w / 2, cy - w / 2, w, w, 0, 0, canvas.width, canvas.height);
+  if (!state.adv && state.mode === 'mask') {
+    const ga = SIMPLE.haloA * Math.max(0, Math.min(1, (6 - k) / 4));
+    if (ga > 0) { ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = ga; ctx.drawImage(haloCanvas(), cx - w / 2, cy - w / 2, w, w, 0, 0, canvas.width, canvas.height); ctx.restore(); }
+  }
+  const sc = shadowCanvas(); if (sc) ctx.drawImage(sc, cx - w / 2, cy - w / 2, w, w, 0, 0, canvas.width, canvas.height);
+  homeBtn.hidden = k <= 1.0001;
+}
+function reset() { fly({ k: 1, cx: N / 2, cy: N / 2 }); }
+function fly(target) {
+  cancelAnimationFrame(anim);
+  const from = { ...state.view }, to = clampView(target), t0 = performance.now();
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return setState({ view: to }, 'view');
+  const step = now => {
+    const u = Math.min(1, (now - t0) / 250), e = u * (2 - u), k = from.k * Math.pow(to.k / from.k, e);
+    setState({ view: clampView({ k, cx: from.cx + (to.cx - from.cx) * e, cy: from.cy + (to.cy - from.cy) * e }) }, 'view');
+    if (u < 1) anim = requestAnimationFrame(step);
+  };
+  anim = requestAnimationFrame(step);
+}
+export function flyTo(site, instant) {
+  if (!site) return;
+  let tg;
+  if (site.box_m) {
+    const [a, b] = mToCf(site.box_m[0], site.box_m[3]), [c, d] = mToCf(site.box_m[2], site.box_m[1]);
+    tg = { k: Math.max(1, Math.min(16, N / (Math.max(c - a, d - b) * 1.4))), cx: (a + c) / 2, cy: (b + d) / 2 };
+  } else { const [x, y] = mToCf(site.x_m, site.y_m); tg = { k: 8, cx: x, cy: y }; }
+  if (instant) setState({ view: clampView(tg) }, 'view'); else fly(tg);
+}
+export function flyToCell(col, row, k, instant) {
+  const tg = { k, cx: col + .5, cy: row + .5 };
+  if (instant) setState({ view: clampView(tg) }, 'view'); else fly(tg);
+}
+export function flyToCells([c0, r0, c1, r1], maxK = 16) {
+  const w = c1 - c0 + 1, h = r1 - r0 + 1;
+  fly({ k: Math.max(1, Math.min(maxK, N / (Math.max(w, h) * 1.8 + 6))), cx: (c0 + c1 + 1) / 2, cy: (r0 + r1 + 1) / 2 });
+}
+function zoomAt(mx, my, f) {
+  const { k, cx, cy } = state.view, w = N / k, s = scale();
+  const cf = cx - w / 2 + mx / s, rf = cy - w / 2 + my / s, nk = Math.max(1, Math.min(16, k * f)), nw = N / nk, ns = W * nk / N;
+  setState({ view: clampView({ k: nk, cx: cf - mx / ns + nw / 2, cy: rf - my / ns + nw / 2 }) }, 'view');
+}
+function hitSite(mx, my) {
+  let best = null, bd = 1e9;
+  for (const s of data.sites) {
+    const [sx, sy] = toScr(...mToCf(s.x_m, s.y_m)), d = Math.hypot(sx - mx, sy - my);
+    if (d < 9 && d < bd) { best = s; bd = d; }
+  }
+  if (best) return best;
+  let ba = 1e18;
+  for (const s of data.sites) {
+    if (!s.box_m) continue;
+    const [x0, y0] = toScr(...mToCf(s.box_m[0], s.box_m[3])), [x1, y1] = toScr(...mToCf(s.box_m[2], s.box_m[1]));
+    const inX = mx > x0 - 5 && mx < x1 + 5, inY = my > y0 - 5 && my < y1 + 5;
+    const edge = inX && inY && (Math.abs(mx - x0) < 5 || Math.abs(mx - x1) < 5 || Math.abs(my - y0) < 5 || Math.abs(my - y1) < 5);
+    if (edge && (x1 - x0) * (y1 - y0) < ba) { best = s; ba = (x1 - x0) * (y1 - y0); }
+  }
+  return best;
+}
+// numbered badges of zones 1..simpleTop: stem from the best pixel, flipped below when two would touch
+function badges(s) {
+  const out = [];
+  for (const z of getZones().slice(0, ZONE.simpleTop)) {
+    const [x, y] = toScr(z.col + .5, z.row + .5);
+    if (x < -20 || y < -40 || x > W + 20 || y > W + 40) continue;
+    const flip = out.some(b => Math.hypot(b.x - x, b.cy - (y - 21)) < 24) || (state.pin && state.pin.col === z.col && state.pin.row === z.row);
+    out.push({ z, id: z.id, x, y, cy: flip ? y + 21 : y - 21, flip });
+  }
+  return out;
+}
+function hitBadge(mx, my) {
+  let best = null, bd = 13;
+  for (const b of badges()) { const d = Math.hypot(b.x - mx, b.cy - my); if (d < bd) { best = b; bd = d; } }
+  return best ? best.z : null;
+}
+function hitLander(mx, my) {
+  let best = null, bd = 9;
+  for (const l of drawableLanders(data.landers)) { const [x, y] = toScr(...mToCf(l.x_m, l.y_m)), d = Math.hypot(x - mx, y - my); if (d < bd) { best = l; bd = d; } }
+  return best;
+}
+const where = (x, y) => describe(x, y, data.landmarks);
+function wire() {
+  let drag = null, painting = null, badgeHot = null;
+  const stroke = c => {
+    const rc = brushCells(scale()), l = painting.last || c, n = Math.max(Math.abs(c.col - l.col), Math.abs(c.row - l.row), 1);
+    for (let i = 1; i <= n; i++) paint(l.col + (c.col - l.col) * i / n, l.row + (c.row - l.row) * i / n, rc, painting.val);
+    painting.last = c; setState({}, 'pixels');
+  };
+  panel.addEventListener('wheel', e => { e.preventDefault(); const r = canvas.getBoundingClientRect(); zoomAt(e.clientX - r.left, e.clientY - r.top, Math.pow(1.2, e.deltaY < 0 ? 1 : -1)); }, { passive: false });
+  panel.addEventListener('dblclick', e => { const r = canvas.getBoundingClientRect(); zoomAt(e.clientX - r.left, e.clientY - r.top, 2); });
+  panel.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    if (state.edit && !e.shiftKey) { const c = cellFromEvent(e); painting = { last: null, val: state.edit === 'add' ? 1 : -1 }; panel.setPointerCapture(e.pointerId); if (c) stroke(c); return; }
+    drag = { x: e.clientX, y: e.clientY, v: { ...state.view }, moved: false }; cancelAnimationFrame(anim);
+    panel.setPointerCapture(e.pointerId);
+  });
+  panel.addEventListener('pointermove', e => {
+    const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+    if (painting) { const c = cellFromEvent(e); if (c) stroke(c); }
+    if (drag) {
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (!drag.moved && Math.hypot(dx, dy) > 3) { drag.moved = true; panel.classList.add('grab'); }
+      if (drag.moved) { const s = W * drag.v.k / N; setState({ view: clampView({ k: drag.v.k, cx: drag.v.cx - dx / s, cy: drag.v.cy - dy / s }) }, 'view'); }
+    }
+    const cell = cellFromEvent(e), hs = state.adv ? hitSite(mx, my) : null, hl = hitLander(mx, my), hb = hitBadge(mx, my);
+    if ((hb ? hb.id : null) !== (badgeHot ?? null)) { badgeHot = hb ? hb.id : null; setState({ hoverZone: badgeHot }, 'hover'); }
+    const same = state.hover && cell && state.hover.col === cell.col && state.hover.row === cell.row;
+    if (!same || (hs?.id ?? null) !== state.hoverSite || (hl?.id ?? null) !== state.hoverLander) setState({ hover: cell, hoverSite: hs ? hs.id : null, hoverLander: hl ? hl.id : null }, 'hover');
+    showTip(e, cell);
+  });
+  panel.addEventListener('pointerup', e => {
+    if (painting) { painting = null; saveOverride(state.ov); return; }
+    if (!drag) return; const moved = drag.moved; drag = null; panel.classList.remove('grab');
+    if (moved) return;
+    const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top, hb = hitBadge(mx, my), hs = state.adv ? hitSite(mx, my) : null, cell = cellFromEvent(e);
+    if (hb) { if (pickFn) pickFn(hb); }
+    else if (hs) { setState({ site: hs.id }, 'site'); flyTo(hs); }
+    else if (cell) setState({ pin: cell, autoPin: false }, 'panel');
+  });
+  panel.addEventListener('pointerleave', () => { tip.hidden = true; if (!drag) setState({ hover: null, hoverSite: null, hoverLander: null }, 'hover'); });
+}
+function showTip(e, cell) {
+  if (!cell) { tip.hidden = true; return; }
+  const { lat, lon } = cellToLatLon(cell.col, cell.row), sm = sample(cell.col, cell.row), { x, y } = cellToXY(cell.col, cell.row), rel = where(x, y);
+  tip.innerHTML = '';
+  const add = (cls, txt, css) => tip.append(Object.assign(document.createElement('div'), { className: cls, textContent: txt, style: css || '' }));
+  if (rel) add('tip-rel', rel);
+  if (sm && state.mode === 'mask' && sm.nCrit && sm.fails != null) {
+    if (sm.fails === 0) add('tip-sub', t('suitable'), `color:${SIMPLE.pass};font-weight:600`);
+    else if (sm.failIds.length) add('tip-sub n', sm.failIds.map(id => { const m = data.layers.find(q => q.id === id); return `${layerName(m).split(' ')[0]} ${fmt(m, sm.values[id])}${unitOf(m)}`; }).join(' · '), 'color:var(--block)');
+  }
+  if (state.adv) {
+    let txt = `${Math.abs(lat).toFixed(2)}°${lat < 0 ? 'S' : 'N'} ${Math.abs(lon).toFixed(1)}°${lon < 0 ? 'W' : 'E'}`;
+    if (sm) { if (sm.fails != null) txt += ` · ${sm.nCrit - sm.fails}/${sm.nCrit}`; else if (sm.score != null) txt += ` · ${sm.score}`; }
+    add('tip-sub n', txt);
+  }
+  tip.hidden = !tip.childNodes.length;
+  tip.style.left = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 6) + 'px'; tip.style.top = (e.clientY + 14) + 'px';
+}
+const thin = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+export function renderBadge(passPx, readoutScore) {
+  const sc = state.mode === 'score', km2 = thin(passPx * PX * PX / 1e6);
+  legend.hidden = state.adv || state.mode !== 'mask';
+  legend.lastChild.textContent = `${t('suitable')} ${km2} km²`;
+  bd.s.hidden = !sc; bd.t.textContent = state.adv && state.mode === 'mask' && critIds(state).length + (state.month != null ? 1 : 0) ? km2 + ' km²' : '';
+  if (sc) {
+    const c = state.cutoff;
+    bd.co.textContent = '≥' + c; bd.hd.style.left = c + '%'; bd.cv.style.width = c + '%';
+    bd.rd.style.display = readoutScore == null ? 'none' : 'block'; bd.rd.style.left = readoutScore + '%';
+  }
+}
+const SVGNS = 'http://www.w3.org/2000/svg';
+const tw = (str, px) => [...str].reduce((a, c) => a + (c.charCodeAt(0) > 255 ? px : px * .55), 0);
+const overlaps = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
+function landmarkSvg(k, s) {
+  const shown = data.landmarks.filter(L => L.always_show || L.tier === 1 || (L.tier === 2 && k >= 2) || (L.tier === 3 && k >= 4));
+  shown.sort((a, b) => a.tier - b.tier);
+  let g = '', t = '';
+  const boxes = [];
+  for (const L of shown) {
+    const [x, y] = toScr(...mToCf(L.x_m, L.y_m)), r = (L.radius_km || 0) * 1000 / PX * s;
+    if (x < -r - 80 || y < -r - 20 || x > W + r + 80 || y > W + r + 20) continue;
+    const crater = L.kind === 'crater' && r > 0 && L.tier <= 2;
+    if (crater) g += `<circle cx="${x}" cy="${y}" r="${r}" class="cr"/>`;
+    const name = lmName(L), w = tw(name, 12), fs = L.tier === 1 ? 13 : 12;
+    // crater: label centred inside if it fits, otherwise to the right of the rim; others: dot + label to the right
+    const inside = crater && r * 2 > w + 8, lx = inside ? x - w / 2 : crater ? x + r + 4 : L.id === 'south-pole' ? x - 6 - w : x + 6, ly = inside ? y + 4 : crater ? y + 4 : y + 4;
+    const bb = [lx - 2, ly - 12, lx + w + 2, ly + 4];
+    if (L.tier > 1 && (boxes.some(b => overlaps(b, bb)) || bb[0] < 0 || bb[2] > W || bb[1] < 0 || bb[3] > W)) continue;
+    boxes.push(bb);
+    if (!crater) g += `<circle cx="${x}" cy="${y}" r="2" class="ld"/>`;
+    t += `<text x="${lx}" y="${ly}" class="lm t${L.tier}">${name}</text>`;
+  }
+  return g + t;
+}
+function landerSvg(st) {
+  let g = '', lab = '';
+  for (const l of drawableLanders(data.landers)) {
+    const [x, y] = toScr(...mToCf(l.x_m, l.y_m));
+    if (x < -10 || y < -10 || x > W + 10 || y > W + 10) continue;
+    const cls = `ls ${l.kind === 'landed' || l.kind === 'planned' ? 'f' : 'x'}${l.verify || l.kind === 'planned' ? ' v' : ''}`;
+    g += `<path transform="translate(${x} ${y})" d="${landerPath(l.kind)}" class="${cls}"/>`;
+    if (st.hoverLander === l.id) lab += `<text x="${x + 8}" y="${y + 4}" class="lbl">${landerLabel(l)}</text>`;
+  }
+  return g + lab;
+}
+function compassSvg() {
+  // Earth direction = map up; the map never rotates, so the icon is fixed
+  return `<g transform="translate(${W - 26} 58)" class="cp"><path d="M0 18V-2M-3.5 3L0 -2L3.5 3"/><circle cx="0" cy="-9" r="5" class="ce"/></g>`;
+}
+export function drawOverlay(st, siteFill) {
+  const { k } = st.view, s = scale(); let h = '';
+  panel.classList.toggle('edit', !!st.edit);
+  const [px, py] = toScr(N / 2, N / 2);
+  for (const lat of GRATICULE_LATS) {
+    const r = latRadius(lat) / PX * s;
+    h += `<circle cx="${px}" cy="${py}" r="${r}" class="g"/><text x="${px + 3}" y="${py - r - 3}" class="gt">${lat}°</text>`;
+  }
+  h += `<line x1="0" x2="${W}" y1="${py}" y2="${py}" class="g"/><line y1="0" y2="${W}" x1="${px}" x2="${px}" class="g"/>`;
+  const hot = id => id === st.site || id === st.hoverSite;
+  const pi = st.pin ? pinInfo(st) : null, Zs = st.mode === 'layers' ? [] : getZones(), hotZ = hotZoneId(st);
+  const boxOf = si => { const [x0, y0] = toScr(...mToCf(si.box_m[0], si.box_m[3])), [x1, y1] = toScr(...mToCf(si.box_m[2], si.box_m[1])); return [x0, y0, x1, y1]; };
+  for (const si of data.sites) {
+    if (!si.box_m) continue;
+    const pinBox = pi && pi.siteId === si.id;
+    if (!st.adv && !pinBox) continue;
+    const [x0, y0, x1, y1] = boxOf(si);
+    h += `<rect x="${x0}" y="${y0}" width="${x1 - x0}" height="${y1 - y0}" class="${hot(si.id) || pinBox ? 'box hot' : 'box'}"/>`;
+    if (pinBox && !st.adv) h += `<text x="${x0 + 4}" y="${y0 - 5}" class="lbl">${si.name}</text>`;
+  }
+  if (Zs.length) {
+    const [ox, oy] = toScr(0, 0); let hp = '';
+    h += `<g transform="translate(${ox} ${oy}) scale(${s})">`;
+    for (const z of Zs) { if (z.id === hotZ) hp = z.path; else if (st.adv) h += `<path d="${z.path}" class="zc"/><path d="${z.path}" class="zo"/>`; }
+    if (hp) h += `<path d="${hp}" class="zh1"/><path d="${hp}" class="zh2"/>`;
+    h += '</g>';
+  }
+  h += landmarkSvg(k, s);
+  if (st.adv) for (const z of Zs.slice(ZONE.simpleTop)) {
+    const [x, y] = toScr(z.col + .5, z.row + .5); if (x < 0 || y < 0 || x > W || y > W) continue;
+    h += `<text x="${x}" y="${y + 4}" text-anchor="middle" class="zr${z.id === hotZ ? ' hot' : ''}">${z.id}</text>`;
+  }
+  let lab = '';
+  if (st.adv) for (const si of data.sites) {
+    const [x, y] = toScr(...mToCf(si.x_m, si.y_m)), f = siteFill(si);
+    h += `<circle cx="${x}" cy="${y}" r="3.5" class="mk" style="fill:${f}"/>`;
+    if (hot(si.id)) lab += `<text x="${x + 8}" y="${y + 4}" class="lbl">${si.name}</text>`;
+  }
+  h += lab;
+  if (st.edit && st.hover) { const [x, y] = toScr(st.hover.col + .5, st.hover.row + .5); h += `<circle cx="${x}" cy="${y}" r="${brushCells(s) * s}" class="brush ${st.edit}"/>`; }
+  else if (st.hover && k >= 4) { const [x, y] = toScr(st.hover.col, st.hover.row); h += `<rect x="${x}" y="${y}" width="${s}" height="${s}" class="hv"/>`; }
+  h += landerSvg(st);
+  if (st.mode !== 'layers') for (const b of badges()) {
+    const sg = b.flip ? 1 : -1, hotB = b.id === hotZ;
+    h += `<path d="M${b.x} ${b.y}V${b.y + sg * 10}" class="zbs0"/><path d="M${b.x} ${b.y}V${b.y + sg * 10}" class="zbs"/><circle cx="${b.x}" cy="${b.cy}" r="11" class="zb${hotB ? ' hot' : ''}"/><text x="${b.x}" y="${b.cy + 4.5}" text-anchor="middle" class="zbt">${b.id}</text>`;
+  }
+  if (pi) {
+    const [x, y] = toScr(pi.col + .5, pi.row + .5), mv = pi.v.kind === 'move' && pi.v.move && !pi.v.move.here ? pi.v.move : null;
+    if (mv) { const [nx, ny] = toScr(mv.col + .5, mv.row + .5); h += `<line x1="${x}" y1="${y}" x2="${nx}" y2="${ny}" class="pln"/><circle cx="${nx}" cy="${ny}" r="2.5" class="plt"/>`; }
+    h += `<path d="M${x} ${y}l-5 -12a5.5 5.5 0 1 1 10 0z" class="pinm"/><circle cx="${x}" cy="${y - 14}" r="1.8" class="pind"/>`;
+  }
+  h += compassSvg();
+  let km = [100, 50, 20, 10, 5].find(v => v * 1000 / PX * s <= 120) ?? 5, bw = km * 1000 / PX * s;
+  h += `<g transform="translate(${W - 12 - bw} ${W - 14})" class="sb"><path d="M0 -4v4h${bw}v-4"/><text x="${bw / 2}" y="-8" text-anchor="middle" class="lbl">${km} ${t('km')}</text></g>`;
+  svg.innerHTML = h;
+}
+export const mapHome = reset;

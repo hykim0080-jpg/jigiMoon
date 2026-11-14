@@ -1,0 +1,1214 @@
+{
+ "definition": "Optimal mast = lowest height that captures >= 90% of the gain in 2027 feasible landing days (6-day mission, criteria sun>=70%, dark<=50 h, Earth>=50%) available between 2 m and the height limit. practical: limit 20 m (NASA VSAT: >=10 m baseline, 15 m deployable demo boom, 16 m Langley reference design, up to 20 m explored). concept: limit 100 m (Honeybee LUNARSABER ~100 m concept, DARPA LunA-10; Astrobotic VSAT-XL >30 m). If the gain is under 10 days, the base 2 m is kept.",
+ "heights_m": [
+  2,
+  3,
+  5,
+  7,
+  10,
+  15,
+  20,
+  30,
+  50,
+  75,
+  100
+ ],
+ "criteria": {
+  "min_sun_pct": 70,
+  "max_dark_h": 50,
+  "min_earth_pct": 50
+ },
+ "period": "2027-01-01..2027-12-31 UTC hourly",
+ "practical_max_m": 20,
+ "concept_max_m": 100,
+ "sites": [
+  {
+   "id": "peak-near-cabeus-b",
+   "name": "Peak near Cabeus B",
+   "curve": [
+    {
+     "mast_m": 2,
+     "sun_pct": 69.9,
+     "earth_pct": 63.0,
+     "longest_dark_h": 288.0,
+     "ok_days_6d": 139,
+     "ok_days_14d": 92
+    },
+    {
+     "mast_m": 3,
+     "sun_pct": 69.9,
+     "earth_pct": 68.2,
+     "longest_dark_h": 288.0,
+     "ok_days_6d": 150,
+     "ok_days_14d": 97
+    },
+    {
+     "mast_m": 5,
+     "sun_pct": 69.9,
+     "earth_pct": 72.8,
+     "longest_dark_h": 288.0,
+     "ok_days_6d": 161,
+     "ok_days_14d": 113
+    },
+    {
+     "mast_m": 7,
+     "sun_pct": 69.9,
+     "earth_pct": 75.9,
+     "longest_dark_h": 288.0,
+     "ok_days_6d": 168,
+     "ok_days_14d": 141
+    },
+    {
+     "mast_m": 10,
+     "sun_pct": 69.9,
+     "earth_pct": 80.8,
+     "longest_dark_h": 288.0,
+     "ok_days_6d": 182,
+     "ok_days_14d": 141
+    },
+    {
+     "mast_m": 15,
+     "sun_pct": 69.9,
+     "earth_pct": 82.4,
+     "longest_dark_h": 288.0,
+     "ok_days_6d": 185,
+     "ok_days_14d": 141
+    },
+    {
+     "mast_m": 20,
+     "sun_pct": 69.9,
+     "earth_pct": 82.5,
+     "longest_dark_h": 288.0,
+     "ok_days_6d": 185,
+     "ok_days_14d": 141
+    },
+    {
+     "mast_m": 30,
+     "sun_pct": 70.0,
+     "earth_pct": 82.5,
+     "longest_dark_h": 288.0,
+     "ok_days_6d": 186,
+     "ok_days_14d": 141
+    },
+    {
+     "mast_m": 50,
+     "sun_pct": 70.0,
+     "earth_pct": 82.6,
+     "longest_dark_h": 288.0,
+     "ok_days_6d": 187,
+     "ok_days_14d": 141
+    },
+    {
+     "mast_m": 75,
+     "sun_pct": 70.1,
+     "earth_pct": 82.8,
+     "longest_dark_h": 287.0,
+     "ok_days_6d": 187,
+     "ok_days_14d": 141
+    },
+    {
+     "mast_m": 100,
+     "sun_pct": 70.2,
+     "earth_pct": 82.9,
+     "longest_dark_h": 287.0,
+     "ok_days_6d": 188,
+     "ok_days_14d": 142
+    }
+   ],
+   "optimal_mast_practical_m": 10,
+   "optimal_mast_concept_m": 15,
+   "gain_days_6d_to_20m": 46,
+   "gain_days_6d_to_100m": 49
+  },
+  {
+   "id": "haworth",
+   "name": "Haworth",
+   "curve": [
+    {
+     "mast_m": 2,
+     "sun_pct": 72.9,
+     "earth_pct": 60.8,
+     "longest_dark_h": 327.0,
+     "ok_days_6d": 144,
+     "ok_days_14d": 126
+    },
+    {
+     "mast_m": 3,
+     "sun_pct": 73.7,
+     "earth_pct": 62.5,
+     "longest_dark_h": 313.0,
+     "ok_days_6d": 148,
+     "ok_days_14d": 129
+    },
+    {
+     "mast_m": 5,
+     "sun_pct": 73.8,
+     "earth_pct": 65.9,
+     "longest_dark_h": 313.0,
+     "ok_days_6d": 154,
+     "ok_days_14d": 135
+    },
+    {
+     "mast_m": 7,
+     "sun_pct": 73.8,
+     "earth_pct": 69.5,
+     "longest_dark_h": 313.0,
+     "ok_days_6d": 165,
+     "ok_days_14d": 146
+    },
+    {
+     "mast_m": 10,
+     "sun_pct": 73.8,
+     "earth_pct": 72.5,
+     "longest_dark_h": 313.0,
+     "ok_days_6d": 171,
+     "ok_days_14d": 174
+    },
+    {
+     "mast_m": 15,
+     "sun_pct": 73.9,
+     "earth_pct": 73.8,
+     "longest_dark_h": 312.0,
+     "ok_days_6d": 174,
+     "ok_days_14d": 190
+    },
+    {
+     "mast_m": 20,
+     "sun_pct": 73.9,
+     "earth_pct": 74.1,
+     "longest_dark_h": 312.0,
+     "ok_days_6d": 175,
+     "ok_days_14d": 190
+    },
+    {
+     "mast_m": 30,
+     "sun_pct": 74.0,
+     "earth_pct": 74.3,
+     "longest_dark_h": 312.0,
+     "ok_days_6d": 175,
+     "ok_days_14d": 193
+    },
+    {
+     "mast_m": 50,
+     "sun_pct": 74.2,
+     "earth_pct": 74.6,
+     "longest_dark_h": 311.0,
+     "ok_days_6d": 176,
+     "ok_days_14d": 199
+    },
+    {
+     "mast_m": 75,
+     "sun_pct": 74.4,
+     "earth_pct": 75.1,
+     "longest_dark_h": 311.0,
+     "ok_days_6d": 178,
+     "ok_days_14d": 212
+    },
+    {
+     "mast_m": 100,
+     "sun_pct": 74.6,
+     "earth_pct": 75.6,
+     "longest_dark_h": 310.0,
+     "ok_days_6d": 179,
+     "ok_days_14d": 212
+    }
+   ],
+   "optimal_mast_practical_m": 15,
+   "optimal_mast_concept_m": 50,
+   "gain_days_6d_to_20m": 31,
+   "gain_days_6d_to_100m": 35
+  },
+  {
+   "id": "malapert-massif",
+   "name": "Malapert Massif",
+   "curve": [
+    {
+     "mast_m": 2,
+     "sun_pct": 81.3,
+     "earth_pct": 70.2,
+     "longest_dark_h": 259.0,
+     "ok_days_6d": 180,
+     "ok_days_14d": 166
+    },
+    {
+     "mast_m": 3,
+     "sun_pct": 81.6,
+     "earth_pct": 74.5,
+     "longest_dark_h": 259.0,
+     "ok_days_6d": 195,
+     "ok_days_14d": 225
+    },
+    {
+     "mast_m": 5,
+     "sun_pct": 81.9,
+     "earth_pct": 81.6,
+     "longest_dark_h": 258.0,
+     "ok_days_6d": 221,
+     "ok_days_14d": 240
+    },
+    {
+     "mast_m": 7,
+     "sun_pct": 82.2,
+     "earth_pct": 92.8,
+     "longest_dark_h": 258.0,
+     "ok_days_6d": 276,
+     "ok_days_14d": 240
+    },
+    {
+     "mast_m": 10,
+     "sun_pct": 82.7,
+     "earth_pct": 100.0,
+     "longest_dark_h": 257.0,
+     "ok_days_6d": 276,
+     "ok_days_14d": 247
+    },
+    {
+     "mast_m": 15,
+     "sun_pct": 83.2,
+     "earth_pct": 100.0,
+     "longest_dark_h": 256.0,
+     "ok_days_6d": 279,
+     "ok_days_14d": 254
+    },
+    {
+     "mast_m": 20,
+     "sun_pct": 83.6,
+     "earth_pct": 100.0,
+     "longest_dark_h": 159.0,
+     "ok_days_6d": 280,
+     "ok_days_14d": 254
+    },
+    {
+     "mast_m": 30,
+     "sun_pct": 84.2,
+     "earth_pct": 100.0,
+     "longest_dark_h": 159.0,
+     "ok_days_6d": 286,
+     "ok_days_14d": 261
+    },
+    {
+     "mast_m": 50,
+     "sun_pct": 84.5,
+     "earth_pct": 100.0,
+     "longest_dark_h": 158.0,
+     "ok_days_6d": 287,
+     "ok_days_14d": 261
+    },
+    {
+     "mast_m": 75,
+     "sun_pct": 84.9,
+     "earth_pct": 100.0,
+     "longest_dark_h": 158.0,
+     "ok_days_6d": 291,
+     "ok_days_14d": 262
+    },
+    {
+     "mast_m": 100,
+     "sun_pct": 85.2,
+     "earth_pct": 100.0,
+     "longest_dark_h": 158.0,
+     "ok_days_6d": 291,
+     "ok_days_14d": 262
+    }
+   ],
+   "optimal_mast_practical_m": 7,
+   "optimal_mast_concept_m": 20,
+   "gain_days_6d_to_20m": 100,
+   "gain_days_6d_to_100m": 111
+  },
+  {
+   "id": "mons-mouton-plateau",
+   "name": "Mons Mouton Plateau",
+   "curve": [
+    {
+     "mast_m": 2,
+     "sun_pct": 75.5,
+     "earth_pct": 64.7,
+     "longest_dark_h": 229.0,
+     "ok_days_6d": 159,
+     "ok_days_14d": 108
+    },
+    {
+     "mast_m": 3,
+     "sun_pct": 75.6,
+     "earth_pct": 66.9,
+     "longest_dark_h": 229.0,
+     "ok_days_6d": 168,
+     "ok_days_14d": 114
+    },
+    {
+     "mast_m": 5,
+     "sun_pct": 75.8,
+     "earth_pct": 71.2,
+     "longest_dark_h": 229.0,
+     "ok_days_6d": 179,
+     "ok_days_14d": 119
+    },
+    {
+     "mast_m": 7,
+     "sun_pct": 76.0,
+     "earth_pct": 76.0,
+     "longest_dark_h": 229.0,
+     "ok_days_6d": 194,
+     "ok_days_14d": 165
+    },
+    {
+     "mast_m": 10,
+     "sun_pct": 76.2,
+     "earth_pct": 83.6,
+     "longest_dark_h": 229.0,
+     "ok_days_6d": 213,
+     "ok_days_14d": 166
+    },
+    {
+     "mast_m": 15,
+     "sun_pct": 76.4,
+     "earth_pct": 87.6,
+     "longest_dark_h": 229.0,
+     "ok_days_6d": 233,
+     "ok_days_14d": 168
+    },
+    {
+     "mast_m": 20,
+     "sun_pct": 76.5,
+     "earth_pct": 93.1,
+     "longest_dark_h": 228.0,
+     "ok_days_6d": 246,
+     "ok_days_14d": 169
+    },
+    {
+     "mast_m": 30,
+     "sun_pct": 76.6,
+     "earth_pct": 100.0,
+     "longest_dark_h": 228.0,
+     "ok_days_6d": 253,
+     "ok_days_14d": 169
+    },
+    {
+     "mast_m": 50,
+     "sun_pct": 76.9,
+     "earth_pct": 100.0,
+     "longest_dark_h": 227.0,
+     "ok_days_6d": 254,
+     "ok_days_14d": 169
+    },
+    {
+     "mast_m": 75,
+     "sun_pct": 77.1,
+     "earth_pct": 100.0,
+     "longest_dark_h": 226.0,
+     "ok_days_6d": 254,
+     "ok_days_14d": 169
+    },
+    {
+     "mast_m": 100,
+     "sun_pct": 77.4,
+     "earth_pct": 100.0,
+     "longest_dark_h": 224.0,
+     "ok_days_6d": 256,
+     "ok_days_14d": 170
+    }
+   ],
+   "optimal_mast_practical_m": 20,
+   "optimal_mast_concept_m": 30,
+   "gain_days_6d_to_20m": 87,
+   "gain_days_6d_to_100m": 97
+  },
+  {
+   "id": "mons-mouton",
+   "name": "Mons Mouton",
+   "curve": [
+    {
+     "mast_m": 2,
+     "sun_pct": 77.7,
+     "earth_pct": 59.4,
+     "longest_dark_h": 215.0,
+     "ok_days_6d": 138,
+     "ok_days_14d": 144
+    },
+    {
+     "mast_m": 3,
+     "sun_pct": 78.4,
+     "earth_pct": 61.3,
+     "longest_dark_h": 215.0,
+     "ok_days_6d": 151,
+     "ok_days_14d": 151
+    },
+    {
+     "mast_m": 5,
+     "sun_pct": 79.0,
+     "earth_pct": 65.0,
+     "longest_dark_h": 215.0,
+     "ok_days_6d": 160,
+     "ok_days_14d": 159
+    },
+    {
+     "mast_m": 7,
+     "sun_pct": 79.5,
+     "earth_pct": 68.3,
+     "longest_dark_h": 185.0,
+     "ok_days_6d": 168,
+     "ok_days_14d": 166
+    },
+    {
+     "mast_m": 10,
+     "sun_pct": 80.1,
+     "earth_pct": 69.4,
+     "longest_dark_h": 185.0,
+     "ok_days_6d": 174,
+     "ok_days_14d": 172
+    },
+    {
+     "mast_m": 15,
+     "sun_pct": 80.7,
+     "earth_pct": 71.3,
+     "longest_dark_h": 185.0,
+     "ok_days_6d": 179,
+     "ok_days_14d": 178
+    },
+    {
+     "mast_m": 20,
+     "sun_pct": 81.3,
+     "earth_pct": 73.3,
+     "longest_dark_h": 185.0,
+     "ok_days_6d": 186,
+     "ok_days_14d": 222
+    },
+    {
+     "mast_m": 30,
+     "sun_pct": 82.5,
+     "earth_pct": 77.8,
+     "longest_dark_h": 184.0,
+     "ok_days_6d": 204,
+     "ok_days_14d": 267
+    },
+    {
+     "mast_m": 50,
+     "sun_pct": 84.8,
+     "earth_pct": 90.4,
+     "longest_dark_h": 184.0,
+     "ok_days_6d": 275,
+     "ok_days_14d": 279
+    },
+    {
+     "mast_m": 75,
+     "sun_pct": 85.5,
+     "earth_pct": 92.1,
+     "longest_dark_h": 184.0,
+     "ok_days_6d": 291,
+     "ok_days_14d": 283
+    },
+    {
+     "mast_m": 100,
+     "sun_pct": 86.0,
+     "earth_pct": 93.7,
+     "longest_dark_h": 137.0,
+     "ok_days_6d": 295,
+     "ok_days_14d": 286
+    }
+   ],
+   "optimal_mast_practical_m": 20,
+   "optimal_mast_concept_m": 75,
+   "gain_days_6d_to_20m": 48,
+   "gain_days_6d_to_100m": 157
+  },
+  {
+   "id": "nobile-rim-1",
+   "name": "Nobile Rim 1",
+   "curve": [
+    {
+     "mast_m": 2,
+     "sun_pct": 85.1,
+     "earth_pct": 61.0,
+     "longest_dark_h": 230.0,
+     "ok_days_6d": 176,
+     "ok_days_14d": 168
+    },
+    {
+     "mast_m": 3,
+     "sun_pct": 86.1,
+     "earth_pct": 62.2,
+     "longest_dark_h": 230.0,
+     "ok_days_6d": 186,
+     "ok_days_14d": 173
+    },
+    {
+     "mast_m": 5,
+     "sun_pct": 87.5,
+     "earth_pct": 63.3,
+     "longest_dark_h": 229.0,
+     "ok_days_6d": 190,
+     "ok_days_14d": 181
+    },
+    {
+     "mast_m": 7,
+     "sun_pct": 88.1,
+     "earth_pct": 63.9,
+     "longest_dark_h": 229.0,
+     "ok_days_6d": 192,
+     "ok_days_14d": 184
+    },
+    {
+     "mast_m": 10,
+     "sun_pct": 88.2,
+     "earth_pct": 64.2,
+     "longest_dark_h": 229.0,
+     "ok_days_6d": 193,
+     "ok_days_14d": 185
+    },
+    {
+     "mast_m": 15,
+     "sun_pct": 88.3,
+     "earth_pct": 64.9,
+     "longest_dark_h": 228.0,
+     "ok_days_6d": 194,
+     "ok_days_14d": 186
+    },
+    {
+     "mast_m": 20,
+     "sun_pct": 88.3,
+     "earth_pct": 65.6,
+     "longest_dark_h": 228.0,
+     "ok_days_6d": 195,
+     "ok_days_14d": 187
+    },
+    {
+     "mast_m": 30,
+     "sun_pct": 88.4,
+     "earth_pct": 66.9,
+     "longest_dark_h": 228.0,
+     "ok_days_6d": 203,
+     "ok_days_14d": 194
+    },
+    {
+     "mast_m": 50,
+     "sun_pct": 88.6,
+     "earth_pct": 69.8,
+     "longest_dark_h": 226.0,
+     "ok_days_6d": 213,
+     "ok_days_14d": 207
+    },
+    {
+     "mast_m": 75,
+     "sun_pct": 88.9,
+     "earth_pct": 73.6,
+     "longest_dark_h": 225.0,
+     "ok_days_6d": 225,
+     "ok_days_14d": 258
+    },
+    {
+     "mast_m": 100,
+     "sun_pct": 89.1,
+     "earth_pct": 77.6,
+     "longest_dark_h": 224.0,
+     "ok_days_6d": 237,
+     "ok_days_14d": 297
+    }
+   ],
+   "optimal_mast_practical_m": 15,
+   "optimal_mast_concept_m": 100,
+   "gain_days_6d_to_20m": 19,
+   "gain_days_6d_to_100m": 61
+  },
+  {
+   "id": "nobile-rim-2",
+   "name": "Nobile Rim 2",
+   "curve": [
+    {
+     "mast_m": 2,
+     "sun_pct": 52.2,
+     "earth_pct": 72.6,
+     "longest_dark_h": 357.0,
+     "ok_days_6d": 123,
+     "ok_days_14d": 62
+    },
+    {
+     "mast_m": 3,
+     "sun_pct": 52.2,
+     "earth_pct": 73.4,
+     "longest_dark_h": 357.0,
+     "ok_days_6d": 124,
+     "ok_days_14d": 64
+    },
+    {
+     "mast_m": 5,
+     "sun_pct": 52.3,
+     "earth_pct": 73.5,
+     "longest_dark_h": 357.0,
+     "ok_days_6d": 124,
+     "ok_days_14d": 64
+    },
+    {
+     "mast_m": 7,
+     "sun_pct": 52.3,
+     "earth_pct": 73.5,
+     "longest_dark_h": 357.0,
+     "ok_days_6d": 124,
+     "ok_days_14d": 64
+    },
+    {
+     "mast_m": 10,
+     "sun_pct": 52.3,
+     "earth_pct": 73.6,
+     "longest_dark_h": 357.0,
+     "ok_days_6d": 124,
+     "ok_days_14d": 64
+    },
+    {
+     "mast_m": 15,
+     "sun_pct": 52.3,
+     "earth_pct": 73.7,
+     "longest_dark_h": 356.0,
+     "ok_days_6d": 124,
+     "ok_days_14d": 65
+    },
+    {
+     "mast_m": 20,
+     "sun_pct": 52.3,
+     "earth_pct": 73.8,
+     "longest_dark_h": 356.0,
+     "ok_days_6d": 124,
+     "ok_days_14d": 69
+    },
+    {
+     "mast_m": 30,
+     "sun_pct": 52.4,
+     "earth_pct": 74.0,
+     "longest_dark_h": 356.0,
+     "ok_days_6d": 124,
+     "ok_days_14d": 70
+    },
+    {
+     "mast_m": 50,
+     "sun_pct": 52.5,
+     "earth_pct": 74.4,
+     "longest_dark_h": 356.0,
+     "ok_days_6d": 126,
+     "ok_days_14d": 79
+    },
+    {
+     "mast_m": 75,
+     "sun_pct": 52.7,
+     "earth_pct": 74.9,
+     "longest_dark_h": 356.0,
+     "ok_days_6d": 126,
+     "ok_days_14d": 79
+    },
+    {
+     "mast_m": 100,
+     "sun_pct": 52.8,
+     "earth_pct": 75.3,
+     "longest_dark_h": 354.0,
+     "ok_days_6d": 126,
+     "ok_days_14d": 80
+    }
+   ],
+   "optimal_mast_practical_m": 2,
+   "optimal_mast_concept_m": 2,
+   "gain_days_6d_to_20m": 1,
+   "gain_days_6d_to_100m": 3
+  },
+  {
+   "id": "de-gerlache-rim-2",
+   "name": "de Gerlache Rim 2",
+   "curve": [
+    {
+     "mast_m": 2,
+     "sun_pct": 76.7,
+     "earth_pct": 53.4,
+     "longest_dark_h": 155.0,
+     "ok_days_6d": 137,
+     "ok_days_14d": 94
+    },
+    {
+     "mast_m": 3,
+     "sun_pct": 77.3,
+     "earth_pct": 53.4,
+     "longest_dark_h": 155.0,
+     "ok_days_6d": 137,
+     "ok_days_14d": 94
+    },
+    {
+     "mast_m": 5,
+     "sun_pct": 77.8,
+     "earth_pct": 53.4,
+     "longest_dark_h": 155.0,
+     "ok_days_6d": 137,
+     "ok_days_14d": 101
+    },
+    {
+     "mast_m": 7,
+     "sun_pct": 78.0,
+     "earth_pct": 53.4,
+     "longest_dark_h": 155.0,
+     "ok_days_6d": 137,
+     "ok_days_14d": 101
+    },
+    {
+     "mast_m": 10,
+     "sun_pct": 78.1,
+     "earth_pct": 53.4,
+     "longest_dark_h": 154.0,
+     "ok_days_6d": 138,
+     "ok_days_14d": 101
+    },
+    {
+     "mast_m": 15,
+     "sun_pct": 78.2,
+     "earth_pct": 53.4,
+     "longest_dark_h": 154.0,
+     "ok_days_6d": 138,
+     "ok_days_14d": 104
+    },
+    {
+     "mast_m": 20,
+     "sun_pct": 78.4,
+     "earth_pct": 53.5,
+     "longest_dark_h": 153.0,
+     "ok_days_6d": 138,
+     "ok_days_14d": 112
+    },
+    {
+     "mast_m": 30,
+     "sun_pct": 78.6,
+     "earth_pct": 53.5,
+     "longest_dark_h": 153.0,
+     "ok_days_6d": 139,
+     "ok_days_14d": 112
+    },
+    {
+     "mast_m": 50,
+     "sun_pct": 79.2,
+     "earth_pct": 53.6,
+     "longest_dark_h": 153.0,
+     "ok_days_6d": 140,
+     "ok_days_14d": 123
+    },
+    {
+     "mast_m": 75,
+     "sun_pct": 79.8,
+     "earth_pct": 53.6,
+     "longest_dark_h": 153.0,
+     "ok_days_6d": 142,
+     "ok_days_14d": 132
+    },
+    {
+     "mast_m": 100,
+     "sun_pct": 80.3,
+     "earth_pct": 53.7,
+     "longest_dark_h": 152.0,
+     "ok_days_6d": 146,
+     "ok_days_14d": 134
+    }
+   ],
+   "optimal_mast_practical_m": 2,
+   "optimal_mast_concept_m": 2,
+   "gain_days_6d_to_20m": 1,
+   "gain_days_6d_to_100m": 9
+  },
+  {
+   "id": "slater-plain",
+   "name": "Slater Plain",
+   "curve": [
+    {
+     "mast_m": 2,
+     "sun_pct": 64.9,
+     "earth_pct": 43.5,
+     "longest_dark_h": 356.0,
+     "ok_days_6d": 101,
+     "ok_days_14d": 60
+    },
+    {
+     "mast_m": 3,
+     "sun_pct": 65.2,
+     "earth_pct": 43.5,
+     "longest_dark_h": 355.0,
+     "ok_days_6d": 102,
+     "ok_days_14d": 61
+    },
+    {
+     "mast_m": 5,
+     "sun_pct": 65.5,
+     "earth_pct": 43.5,
+     "longest_dark_h": 353.0,
+     "ok_days_6d": 103,
+     "ok_days_14d": 62
+    },
+    {
+     "mast_m": 7,
+     "sun_pct": 65.8,
+     "earth_pct": 43.5,
+     "longest_dark_h": 351.0,
+     "ok_days_6d": 103,
+     "ok_days_14d": 63
+    },
+    {
+     "mast_m": 10,
+     "sun_pct": 66.2,
+     "earth_pct": 43.5,
+     "longest_dark_h": 347.0,
+     "ok_days_6d": 104,
+     "ok_days_14d": 63
+    },
+    {
+     "mast_m": 15,
+     "sun_pct": 66.8,
+     "earth_pct": 43.6,
+     "longest_dark_h": 340.0,
+     "ok_days_6d": 107,
+     "ok_days_14d": 65
+    },
+    {
+     "mast_m": 20,
+     "sun_pct": 67.0,
+     "earth_pct": 43.6,
+     "longest_dark_h": 337.0,
+     "ok_days_6d": 107,
+     "ok_days_14d": 65
+    },
+    {
+     "mast_m": 30,
+     "sun_pct": 67.1,
+     "earth_pct": 43.6,
+     "longest_dark_h": 335.0,
+     "ok_days_6d": 108,
+     "ok_days_14d": 65
+    },
+    {
+     "mast_m": 50,
+     "sun_pct": 67.4,
+     "earth_pct": 43.8,
+     "longest_dark_h": 334.0,
+     "ok_days_6d": 109,
+     "ok_days_14d": 66
+    },
+    {
+     "mast_m": 75,
+     "sun_pct": 67.9,
+     "earth_pct": 43.9,
+     "longest_dark_h": 333.0,
+     "ok_days_6d": 109,
+     "ok_days_14d": 67
+    },
+    {
+     "mast_m": 100,
+     "sun_pct": 68.3,
+     "earth_pct": 44.1,
+     "longest_dark_h": 332.0,
+     "ok_days_6d": 109,
+     "ok_days_14d": 67
+    }
+   ],
+   "optimal_mast_practical_m": 2,
+   "optimal_mast_concept_m": 2,
+   "gain_days_6d_to_20m": 6,
+   "gain_days_6d_to_100m": 8
+  },
+  {
+   "id": "shackleton-rim",
+   "name": "Shackleton rim",
+   "curve": [
+    {
+     "mast_m": 2,
+     "sun_pct": 82.0,
+     "earth_pct": 49.6,
+     "longest_dark_h": 203.0,
+     "ok_days_6d": 139,
+     "ok_days_14d": 132
+    },
+    {
+     "mast_m": 3,
+     "sun_pct": 84.2,
+     "earth_pct": 49.6,
+     "longest_dark_h": 163.0,
+     "ok_days_6d": 145,
+     "ok_days_14d": 138
+    },
+    {
+     "mast_m": 5,
+     "sun_pct": 86.3,
+     "earth_pct": 49.6,
+     "longest_dark_h": 64.0,
+     "ok_days_6d": 155,
+     "ok_days_14d": 150
+    },
+    {
+     "mast_m": 7,
+     "sun_pct": 86.9,
+     "earth_pct": 49.6,
+     "longest_dark_h": 64.0,
+     "ok_days_6d": 156,
+     "ok_days_14d": 152
+    },
+    {
+     "mast_m": 10,
+     "sun_pct": 87.2,
+     "earth_pct": 49.6,
+     "longest_dark_h": 64.0,
+     "ok_days_6d": 158,
+     "ok_days_14d": 155
+    },
+    {
+     "mast_m": 15,
+     "sun_pct": 87.5,
+     "earth_pct": 49.6,
+     "longest_dark_h": 63.0,
+     "ok_days_6d": 159,
+     "ok_days_14d": 157
+    },
+    {
+     "mast_m": 20,
+     "sun_pct": 87.8,
+     "earth_pct": 49.6,
+     "longest_dark_h": 63.0,
+     "ok_days_6d": 160,
+     "ok_days_14d": 157
+    },
+    {
+     "mast_m": 30,
+     "sun_pct": 88.3,
+     "earth_pct": 49.6,
+     "longest_dark_h": 60.0,
+     "ok_days_6d": 162,
+     "ok_days_14d": 159
+    },
+    {
+     "mast_m": 50,
+     "sun_pct": 89.3,
+     "earth_pct": 49.6,
+     "longest_dark_h": 50.0,
+     "ok_days_6d": 163,
+     "ok_days_14d": 166
+    },
+    {
+     "mast_m": 75,
+     "sun_pct": 90.3,
+     "earth_pct": 49.7,
+     "longest_dark_h": 46.0,
+     "ok_days_6d": 167,
+     "ok_days_14d": 172
+    },
+    {
+     "mast_m": 100,
+     "sun_pct": 90.9,
+     "earth_pct": 49.8,
+     "longest_dark_h": 42.0,
+     "ok_days_6d": 170,
+     "ok_days_14d": 178
+    }
+   ],
+   "optimal_mast_practical_m": 10,
+   "optimal_mast_concept_m": 75,
+   "gain_days_6d_to_20m": 21,
+   "gain_days_6d_to_100m": 31
+  },
+  {
+   "id": "connecting-ridge",
+   "name": "Connecting Ridge",
+   "curve": [
+    {
+     "mast_m": 2,
+     "sun_pct": 86.6,
+     "earth_pct": 50.9,
+     "longest_dark_h": 120.0,
+     "ok_days_6d": 157,
+     "ok_days_14d": 133
+    },
+    {
+     "mast_m": 3,
+     "sun_pct": 87.3,
+     "earth_pct": 50.9,
+     "longest_dark_h": 110.0,
+     "ok_days_6d": 158,
+     "ok_days_14d": 139
+    },
+    {
+     "mast_m": 5,
+     "sun_pct": 88.3,
+     "earth_pct": 50.9,
+     "longest_dark_h": 90.0,
+     "ok_days_6d": 162,
+     "ok_days_14d": 140
+    },
+    {
+     "mast_m": 7,
+     "sun_pct": 89.1,
+     "earth_pct": 50.9,
+     "longest_dark_h": 82.0,
+     "ok_days_6d": 163,
+     "ok_days_14d": 154
+    },
+    {
+     "mast_m": 10,
+     "sun_pct": 90.0,
+     "earth_pct": 50.9,
+     "longest_dark_h": 74.0,
+     "ok_days_6d": 166,
+     "ok_days_14d": 154
+    },
+    {
+     "mast_m": 15,
+     "sun_pct": 91.3,
+     "earth_pct": 50.9,
+     "longest_dark_h": 69.0,
+     "ok_days_6d": 170,
+     "ok_days_14d": 173
+    },
+    {
+     "mast_m": 20,
+     "sun_pct": 92.2,
+     "earth_pct": 50.9,
+     "longest_dark_h": 68.0,
+     "ok_days_6d": 181,
+     "ok_days_14d": 186
+    },
+    {
+     "mast_m": 30,
+     "sun_pct": 93.7,
+     "earth_pct": 51.0,
+     "longest_dark_h": 66.0,
+     "ok_days_6d": 185,
+     "ok_days_14d": 187
+    },
+    {
+     "mast_m": 50,
+     "sun_pct": 94.3,
+     "earth_pct": 51.0,
+     "longest_dark_h": 38.0,
+     "ok_days_6d": 187,
+     "ok_days_14d": 189
+    },
+    {
+     "mast_m": 75,
+     "sun_pct": 94.8,
+     "earth_pct": 51.1,
+     "longest_dark_h": 38.0,
+     "ok_days_6d": 187,
+     "ok_days_14d": 191
+    },
+    {
+     "mast_m": 100,
+     "sun_pct": 95.2,
+     "earth_pct": 51.1,
+     "longest_dark_h": 37.0,
+     "ok_days_6d": 188,
+     "ok_days_14d": 191
+    }
+   ],
+   "optimal_mast_practical_m": 20,
+   "optimal_mast_concept_m": 30,
+   "gain_days_6d_to_20m": 24,
+   "gain_days_6d_to_100m": 31
+  },
+  {
+   "id": "im-2-athena",
+   "name": "IM-2 Athena (Mons Mouton)",
+   "curve": [
+    {
+     "mast_m": 2,
+     "sun_pct": 43.6,
+     "earth_pct": 80.4,
+     "longest_dark_h": 452.0,
+     "ok_days_6d": 109,
+     "ok_days_14d": 49
+    },
+    {
+     "mast_m": 3,
+     "sun_pct": 43.7,
+     "earth_pct": 80.4,
+     "longest_dark_h": 452.0,
+     "ok_days_6d": 109,
+     "ok_days_14d": 49
+    },
+    {
+     "mast_m": 5,
+     "sun_pct": 43.8,
+     "earth_pct": 80.5,
+     "longest_dark_h": 451.0,
+     "ok_days_6d": 110,
+     "ok_days_14d": 49
+    },
+    {
+     "mast_m": 7,
+     "sun_pct": 44.0,
+     "earth_pct": 80.6,
+     "longest_dark_h": 451.0,
+     "ok_days_6d": 110,
+     "ok_days_14d": 50
+    },
+    {
+     "mast_m": 10,
+     "sun_pct": 44.2,
+     "earth_pct": 80.6,
+     "longest_dark_h": 451.0,
+     "ok_days_6d": 111,
+     "ok_days_14d": 50
+    },
+    {
+     "mast_m": 15,
+     "sun_pct": 44.5,
+     "earth_pct": 80.8,
+     "longest_dark_h": 450.0,
+     "ok_days_6d": 113,
+     "ok_days_14d": 51
+    },
+    {
+     "mast_m": 20,
+     "sun_pct": 44.8,
+     "earth_pct": 81.0,
+     "longest_dark_h": 450.0,
+     "ok_days_6d": 115,
+     "ok_days_14d": 51
+    },
+    {
+     "mast_m": 30,
+     "sun_pct": 45.6,
+     "earth_pct": 81.3,
+     "longest_dark_h": 447.0,
+     "ok_days_6d": 118,
+     "ok_days_14d": 56
+    },
+    {
+     "mast_m": 50,
+     "sun_pct": 47.3,
+     "earth_pct": 82.0,
+     "longest_dark_h": 397.0,
+     "ok_days_6d": 123,
+     "ok_days_14d": 64
+    },
+    {
+     "mast_m": 75,
+     "sun_pct": 49.3,
+     "earth_pct": 82.9,
+     "longest_dark_h": 391.0,
+     "ok_days_6d": 129,
+     "ok_days_14d": 70
+    },
+    {
+     "mast_m": 100,
+     "sun_pct": 50.5,
+     "earth_pct": 83.8,
+     "longest_dark_h": 387.0,
+     "ok_days_6d": 130,
+     "ok_days_14d": 74
+    }
+   ],
+   "optimal_mast_practical_m": 2,
+   "optimal_mast_concept_m": 75,
+   "gain_days_6d_to_20m": 6,
+   "gain_days_6d_to_100m": 21
+  }
+ ],
+ "height_limits": {
+  "lander_mounted_m": 10,
+  "practical_max_m": 20,
+  "concept_max_m": 100,
+  "sources": [
+   "NASA BEACON executive summary (VSAT >=10 m mast; demo boom >=15 m): https://ntrs.nasa.gov/api/citations/20240015887/downloads/BEACON%20Exec%20Summary.pdf",
+   "NASA Langley VSAT mechanisms abstract (16 m reference design): https://ntrs.nasa.gov/api/citations/20240004914/downloads/VSAT%20Mechanisms%20Abstract%2020240418.pdf",
+   "NASA GCD VSAT annual review 2023 (states masts up to 20 m were explored; exact year of that statement not verified): https://ntrs.nasa.gov/api/citations/20230012849/downloads/GCD%20Annual%20Review%20VSAT%20September%202023%20Final.pdf",
+   "Honeybee Robotics LUNARSABER ~100 m concept (DARPA LunA-10), press coverage e.g. https://www.techspot.com/news/104156-company-proposes-100-meter-towers-provide-power-other.html",
+   "Astrobotic VSAT-XL >30 m: https://www.aviation-defence-universe.com/astrobotics-xl-solar-array-tech-for-lunar-power-infrastructure/"
+  ]
+ }
+}
