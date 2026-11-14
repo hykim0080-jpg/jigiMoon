@@ -101,27 +101,33 @@ export function init(node, d) {
   let drag = null;
   svg.addEventListener('pointerdown', e => {
     const d = e.target.dataset || {};
-    if (e.button !== 0 || d.id || d.lander || d.expo || state.view === 'compare' || state.zoom <= 1.001) return;
+    if (e.button !== 0 || d.id || d.lander || d.expo || state.view === 'compare') return;
     drag = { x: e.clientX, y: e.clientY, cx: vp.cx, cy: vp.cy, moved: false, id: e.pointerId };
   });
   svg.addEventListener('pointermove', e => {
     if (!drag) return;
     const r = svg.getBoundingClientRect(), k = 2 * vp.h / r.width, dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-    if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+    if (!drag.moved && (Math.hypot(dx, dy) < 4 || state.zoom <= 1.001)) return;
+    if (!drag.moved) spotBtn(null);
     if (!drag.moved) { drag.moved = true; svg.setPointerCapture(drag.id); svg.classList.add('grabbing'); }
     instant = true; setState({ pan: `${(drag.cx - dx * k).toFixed(2)},${(drag.cy + dy * k).toFixed(2)}` });
   });
-  const endDrag = () => { if (drag) { svg.classList.remove('grabbing'); drag = null; } };
+  const endDrag = e => {
+    if (!drag) return;
+    const click = !drag.moved && e.type === 'pointerup';
+    svg.classList.remove('grabbing'); drag = null;
+    if (click) spotBtn(world(e), e);
+  };
   svg.addEventListener('pointerup', endDrag); svg.addEventListener('pointercancel', endDrag);
+  // double-click: zoom one step (x2) about that point
   svg.addEventListener('dblclick', e => {
     if (e.target.dataset.id || e.target.dataset.lander || state.view === 'compare') return;
-    const w = world(e), l = new URLSearchParams(location.hash.slice(1)).get('lang');
-    if (Math.abs(w.x) > R_KM || Math.abs(w.y) > R_KM) return;
-    location.hash = `pin=${Math.round(w.x * 1000)},${Math.round(w.y * 1000)}&d=${isoDate(state.day)}&z=${state.zoom}${l ? '&lang=' + l : ''}${critQuery(state.crit)}`;
-    location.reload();
+    spotBtn(null);
+    const w = world(e), z = clamp(state.zoom * 2, 1, ZOOM.spot), h = R_KM / z;
+    setState({ zoom: z, pan: `${(w.x - w.u * h).toFixed(2)},${(w.y + w.v * h).toFixed(2)}` });
   });
   svg.addEventListener('wheel', e => {
-    e.preventDefault();
+    e.preventDefault(); spotBtn(null);
     const w = world(e), z = clamp(state.zoom * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.002)), 1, ZOOM.spot), h = R_KM / z;
     instant = true;
     setState(z <= 1.001 ? { zoom: 1, pan: '' } : { zoom: z, pan: `${(w.x - w.u * h).toFixed(2)},${(w.y + w.v * h).toFixed(2)}` });
@@ -441,4 +447,24 @@ function landerCard(id, e) {
   card.hidden = false;
   card.style.left = Math.min(x + 12, r.width - 250) + 'px';
   card.style.top = Math.max(8, Math.min(y + 12, r.height - card.offsetHeight - 8)) + 'px';
+}
+
+// single click on empty map: a small "Analyze this spot" button there; it opens the point as a pin
+function spotBtn(w, e) {
+  const panel = document.getElementById('map-panel');
+  let b = document.getElementById('spot-btn');
+  if (!w || Math.abs(w.x) > R_KM || Math.abs(w.y) > R_KM) { if (b) b.hidden = true; return; }
+  if (!b) {
+    b = document.createElement('button'); b.id = 'spot-btn'; panel.appendChild(b);
+    addEventListener('keydown', ev => { if (ev.key === 'Escape') b.hidden = true; });
+  }
+  b.textContent = t('analyzeSpot');
+  b.onclick = () => {
+    const l = new URLSearchParams(location.hash.slice(1)).get('lang');
+    location.hash = `pin=${Math.round(w.x * 1000)},${Math.round(w.y * 1000)}&d=${isoDate(state.day)}&z=${Math.max(state.zoom, ZOOM.site)}${l ? '&lang=' + l : ''}${critQuery(state.crit)}`;
+    location.reload();
+  };
+  const r = panel.getBoundingClientRect();
+  b.hidden = false;
+  b.style.left = (e.clientX - r.left) + 'px'; b.style.top = (e.clientY - r.top) + 'px';
 }
