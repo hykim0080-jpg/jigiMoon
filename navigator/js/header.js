@@ -69,7 +69,8 @@ export function render(st, data) {
   root.querySelector('#adv-btn').classList.toggle('changed', !isDefault(st.crit));
   refs.date.textContent = isoDate(st.day);
   const slip = st.day - st.baseline;
-  refs.slip.textContent = slip ? (slip > 0 ? t('slip', slip) : `−${-slip} d`) : '';
+  refs.slip.textContent = slip ? t('slip', slip) : '';
+  refs.slip.title = t('slipTip', isoDate(st.baseline));
   root.querySelectorAll('.seg').forEach(g => g.querySelectorAll('button').forEach(b => {
     b.setAttribute('aria-pressed', String(String(st[g.dataset.key]) === b.dataset.v));
   }));
