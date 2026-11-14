@@ -59,6 +59,10 @@ export function init(el, data) {
 }
 
 export function render(st, data) {
+  { // the pin can be (re)created from the map: keep the options in step with the index
+    const html = data.index.sites.map(s => `<option value="${s.id}">${siteName(s)}</option>`).join('');
+    if (refs.select.dataset.html !== html) { refs.select.innerHTML = html; refs.select.dataset.html = html; }
+  }
   refs.select.value = st.site;
   { // link to the layer viewer at the selected site and month
     const s = data.index.byId[st.site], mon = dateOf(st.day).getUTCMonth() + 1;

@@ -63,8 +63,8 @@ const py = y => (vp.cy + vp.h - y) / (2 * vp.h) * S;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const noMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export function init(node, d) {
-  svg = node; data = d;
+export function init(node, d, openPin) {
+  svg = node; data = d; pinOpener = openPin;
   // sharp hillshade when present, the 700 px one otherwise
   const im = new Image();
   im.onload = () => { hill = 'data/hillshade_4000.jpg'; render(state, data); };
@@ -75,9 +75,8 @@ export function init(node, d) {
   svg.addEventListener('pointerdown', e => {
     const xy = e.target.dataset && e.target.dataset.expo;
     if (!xy) return;
-    const l = new URLSearchParams(location.hash.slice(1)).get('lang');
-    location.hash = `pin=${xy}&d=${isoDate(state.day)}&ex=1${l ? '&lang=' + l : ''}${critQuery(state.crit)}`;
-    location.reload();
+    const [x, y] = xy.split(',').map(Number);
+    if (pinOpener) pinOpener(x, y);
   });
 
   svg.addEventListener('pointermove', e => {
@@ -108,7 +107,7 @@ export function init(node, d) {
     if (!drag) return;
     const r = svg.getBoundingClientRect(), k = 2 * vp.h / r.width, dx = e.clientX - drag.x, dy = e.clientY - drag.y;
     if (!drag.moved && (Math.hypot(dx, dy) < 4 || state.zoom <= 1.001)) return;
-    if (!drag.moved) spotBtn(null);
+
     if (!drag.moved) { drag.moved = true; svg.setPointerCapture(drag.id); svg.classList.add('grabbing'); }
     instant = true; setState({ pan: `${(drag.cx - dx * k).toFixed(2)},${(drag.cy + dy * k).toFixed(2)}` });
   });
@@ -116,18 +115,18 @@ export function init(node, d) {
     if (!drag) return;
     const click = !drag.moved && e.type === 'pointerup';
     svg.classList.remove('grabbing'); drag = null;
-    if (click) spotBtn(world(e), e);
+    if (click) { const w = world(e); clearTimeout(clickTimer); clickTimer = setTimeout(() => openSpot(w), 250); }
   };
   svg.addEventListener('pointerup', endDrag); svg.addEventListener('pointercancel', endDrag);
   // double-click: zoom one step (x2) about that point
   svg.addEventListener('dblclick', e => {
     if (e.target.dataset.id || e.target.dataset.lander || state.view === 'compare') return;
-    spotBtn(null);
+    clearTimeout(clickTimer);
     const w = world(e), z = clamp(state.zoom * 2, 1, ZOOM.spot), h = R_KM / z;
     setState({ zoom: z, pan: `${(w.x - w.u * h).toFixed(2)},${(w.y + w.v * h).toFixed(2)}` });
   });
   svg.addEventListener('wheel', e => {
-    e.preventDefault(); spotBtn(null);
+    e.preventDefault(); clearTimeout(clickTimer);
     const w = world(e), z = clamp(state.zoom * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.002)), 1, ZOOM.spot), h = R_KM / z;
     instant = true;
     setState(z <= 1.001 ? { zoom: 1, pan: '' } : { zoom: z, pan: `${(w.x - w.u * h).toFixed(2)},${(w.y + w.v * h).toFixed(2)}` });
@@ -422,7 +421,7 @@ function draw(st) {
   document.dispatchEvent(new Event('mapframe'));
 }
 
-let lastLanders = [];
+let lastLanders = [], pinOpener = null, clickTimer = 0;
 
 // spacecraft card: name, what happened, when, what it was for
 function landerCard(id, e) {
@@ -449,22 +448,8 @@ function landerCard(id, e) {
   card.style.top = Math.max(8, Math.min(y + 12, r.height - card.offsetHeight - 8)) + 'px';
 }
 
-// single click on empty map: a small "Analyze this spot" button there; it opens the point as a pin
-function spotBtn(w, e) {
-  const panel = document.getElementById('map-panel');
-  let b = document.getElementById('spot-btn');
-  if (!w || Math.abs(w.x) > R_KM || Math.abs(w.y) > R_KM) { if (b) b.hidden = true; return; }
-  if (!b) {
-    b = document.createElement('button'); b.id = 'spot-btn'; panel.appendChild(b);
-    addEventListener('keydown', ev => { if (ev.key === 'Escape') b.hidden = true; });
-  }
-  b.textContent = t('analyzeSpot');
-  b.onclick = () => {
-    const l = new URLSearchParams(location.hash.slice(1)).get('lang');
-    location.hash = `pin=${Math.round(w.x * 1000)},${Math.round(w.y * 1000)}&d=${isoDate(state.day)}&z=${Math.max(state.zoom, ZOOM.site)}${l ? '&lang=' + l : ''}${critQuery(state.crit)}`;
-    location.reload();
-  };
-  const r = panel.getBoundingClientRect();
-  b.hidden = false;
-  b.style.left = (e.clientX - r.left) + 'px'; b.style.top = (e.clientY - r.top) + 'px';
+// single click on empty map (no second click within 250 ms): open that point as the pin, in place
+function openSpot(w) {
+  if (!w || Math.abs(w.x) > R_KM || Math.abs(w.y) > R_KM || !pinOpener) return;
+  pinOpener(Math.round(w.x * 1000), Math.round(w.y * 1000));
 }

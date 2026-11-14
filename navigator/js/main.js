@@ -2,6 +2,7 @@ import { state, setState, subscribe } from './state.js';
 import { loadIndex, loadSite, getSite, preloadCals, metricsOf } from './data.js';
 import { applyCriteria, critKey } from './criteria.js';
 import { t } from './strings.js';
+import { ZOOM } from './config.js';
 import * as header from './header.js';
 import * as calendar from './calendar.js';
 import * as map from './map.js';
@@ -52,6 +53,21 @@ function render(st) {
   if (st.view === 'focus') { sky.render(st, data); timeline.render(st, data); chain.render(); }
 }
 
+// open any point as the pin without reloading (map click)
+async function openPin(x, y) {
+  $('busy').hidden = false;
+  await new Promise(r => requestAnimationFrame(() => setTimeout(r, 30)));
+  try {
+    const i = data.index.sites.findIndex(s => s.id === 'pin');
+    if (i >= 0) data.index.sites.splice(i, 1);
+    delete data.index.byId.pin;
+    await pin.setup(data.index, x, y);
+    for (const k in applied) delete applied[k];
+    setState({ site: 'pin', pinXY: `${x},${y}`, pinned: state.pinned.filter(id => id !== 'pin'), zoom: Math.max(state.zoom, ZOOM.site) });
+  } catch (e) { console.error(e); }
+  $('busy').hidden = true;
+}
+
 async function boot() {
   document.querySelectorAll('[data-t]').forEach(n => { n.textContent = t(n.dataset.t); });
   data.index = await loadIndex();
@@ -67,7 +83,7 @@ async function boot() {
   await loadSite(state.site, state.mission);
   header.init($('header'), data);
   calendar.init($('cal-panel'), data);
-  map.init($('map'), data);
+  map.init($('map'), data, openPin);
   globe.init($('globe'), data);
   metrics.init($('metrics-panel'));
   sky.init($('sky'), $('countdowns'));
