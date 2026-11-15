@@ -4,7 +4,7 @@
 // February, June and December 2027 (4 h steps); other dates show the same day-of-month and hour of the nearer
 // computed month, and say so.
 import { state, setState, limitsOf } from './state.js';
-import { mastShown, nearestOk } from './logic.js';
+import { mastShown, nearestOk, status } from './logic.js';
 import { ZOOM } from './config.js';
 import { FIRST_DAY } from './config.js';
 import { SPOT5 } from './map.js';
@@ -229,7 +229,7 @@ function sync(st) {
   // the same mark as the 2D map: MOVE to the nearest GO cell, labelled with the distance the verdict and Fixes show
   const marks = [];
   if (s && e && data.site) {
-    if (!e.ok[st.day]) {
+    if (status(e, st.day, st.mast, limitsOf(st)).kind !== 'ok') {   // GO with a mast: no MOVE mark
       const n = nearestOk(data.site, st.day);
       if (n && n.d > 0) marks.push({ x1: s.x_m, y1: s.y_m, x2: s.x_m + n.c.dx * 1000, y2: s.y_m + n.c.dy * 1000, color: '#fff', w: 2, end: 'ring', label: t('moveToGo', e.move?.[st.day] ?? +n.d.toFixed(1)) });
     }

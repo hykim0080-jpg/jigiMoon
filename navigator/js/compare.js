@@ -4,7 +4,7 @@ import { t, siteName, PIN_IC } from './strings.js';
 import { THRESHOLDS } from './config.js';
 import { bar, el } from './svg.js';
 import { loadSite, getSite, calOf } from './data.js';
-import { fixes, bestFix, status, fixText } from './logic.js';
+import { fixes, bestFix, status, fixText, mastTag } from './logic.js';
 import { where } from './orient.js';
 import { drawSky } from './sky.js';
 import { drawStrips } from './timeline.js';
@@ -57,15 +57,16 @@ export function render(st, d) {
   ids.forEach((id, i) => { if (!sites[i]) loadSite(id, st.mission).then(() => render(state, data)); });
   if (sites.some(s => !s)) return;
 
-  const mv = (s, k) => (st.mast && s.mast ? s.mast[k][st.mast][st.day] : s.cal[k][st.day]);
   const lim = limitsOf(st), mode = data.index.modes[st.mission].sites;
+  const mh = s => status(mode[s.id], st.day, st.mast, lim).mast || st.mast;   // the numbers at the mast top when GO needs one
+  const mv = (s, k) => { const h = mh(s); return h && s.mast && s.mast[k][h] ? s.mast[k][h][st.day] : s.cal[k][st.day]; };
   const sel = s => !noSel && s.id === st.site ? ' sel' : '';
   const cells = (label, fn) => `<div class="lab">${label}</div>` + sites.map(s => `<div class="cell${sel(s)}" data-pick="${s.id}">${fn(s)}</div>`).join('');
   const opts = cur => data.index.sites.map(o => `<option value="${o.id}"${o.id === cur ? ' selected' : ''}>${siteName(o)}</option>`).join('');
 
   const verdict = id => {
     const s = status(mode[id], st.day, st.mast, lim);
-    if (s.kind === 'ok') return `${dot('ok')}${t('go')}`;
+    if (s.kind === 'ok') return `${dot('ok')}${t('go')}${s.capped ? ' ' + mastTag(s.mast) : ''}`;
     return `${dot('block')}${t('nogo')}${s.kind === 'none' ? '' : ` → <span style="color:var(--${s.kind})">${fixText(s)}</span>`}`;
   };
 

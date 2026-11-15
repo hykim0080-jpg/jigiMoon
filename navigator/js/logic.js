@@ -26,12 +26,20 @@ export function mastShown(e, d, mast, lim) {
   return m != null && m <= lim.mast ? m : 0;
 }
 
-// 'ok' | 'move' | 'mast' | 'wait' | 'none' (+ capped when OK only through the applied mast)
+// 'ok' | 'move' | 'wait' | 'none'; capped + mast (m) when OK only with a mast: the applied one, else the lowest
+// computed height within the Max mast limit (a mast up to the limit counts as GO, 현기 11-16)
 export function status(e, d, mast, lim) {
   if (e.ok[d]) return { kind: 'ok' };
-  if (mast && e.mastOk[mast][d]) return { kind: 'ok', capped: true };
+  if (mast && e.mastOk[mast][d]) return { kind: 'ok', capped: true, mast };
+  const m = e.mast[d];
+  if (m != null && m > 0 && m <= lim.mast) return { kind: 'ok', capped: true, mast: m };
   const b = bestFix(e, d, lim);
   return b ? { kind: b.kind, value: b.value } : { kind: 'none' };
+}
+
+// 'with 12 m mast' (+ HIGH from 15 m: 20 m is the practical limit, lunar/README.md), in the mast colour
+export function mastTag(h) {
+  return h ? `<span class="mtag" style="color:var(--mast)">${t('withMast', h)}${h >= 15 ? ` <em>${t('mastTall')}</em>` : ''}</span>` : '';
 }
 
 export function fixText(s) {

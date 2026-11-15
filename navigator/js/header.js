@@ -4,7 +4,7 @@ import { MAST_SLIDER, BUDGET, THRESHOLDS } from './config.js';
 import { ranked } from './rank3d.js';
 import { bestFix } from './logic.js';
 import { t, siteName, PIN_IC } from './strings.js';
-import { status, fixText, isoDate, nearestOk, goRuns, shortDate, dateOf } from './logic.js';
+import { status, fixText, isoDate, nearestOk, goRuns, shortDate, dateOf, mastTag } from './logic.js';
 import { moveShort } from './orient.js';
 import { LEVELS, critQuery, isDefault } from './criteria.js';
 import { verdictFor } from './verdict.js';
@@ -167,7 +167,7 @@ export function render(st, data) {
   let html;
   if (s.kind === 'ok') {
     html = s.capped
-      ? `<i class="dot"></i>${t('go')}<span class="fix" style="color:var(--mast)">· ${t('mast')} ${t('m', st.mast)}</span>`
+      ? `<i class="dot"></i>${t('go')}<span class="fix">${mastTag(s.mast)}</span>`
       : `<i class="dot"></i>${t('go')}`;
   } else if (s.kind === 'none') {
     html = `<i class="dot"></i>${t('nogo')}<span class="fix small">→ ${t('noFix', lim.move, st.mastMax, lim.wait)}</span>`;
@@ -233,7 +233,7 @@ function answer(st, data, lim, s, slip) {
   if (v && !v.go) {
     const miss = v.fails.map(f => f.text.split(' · ')[0]).join(', ');
     tail = `${miss ? `&ensp;${miss}` : ''}.${v.fix ? ` <span style="color:var(--${v.fixKind})">${v.fix}.</span>` : ''}`;
-  } else if (v && v.capped) tail = ` <span style="color:var(--mast)">${t('mast')} ${t('m', st.mast)}</span>.`;
+  } else if (v && v.capped) tail = ` ${mastTag(v.mastH)}.`;
   else tail = '.';
   const word = `<b class="${s.kind === 'ok' ? 'hb-go' : 'hb-nogo'}">${s.kind === 'ok' ? t('go') : t('nogo')}</b>`;
   refs.ans.innerHTML = t('hbAns', `<b>${name}</b>`, `<b>${longDate(st.day)}</b>`, `<b>${t('hbDays', st.mission)}</b>`, slip ? t('hbSlip', slip) : '', word) + tail;
