@@ -5,6 +5,8 @@ import { t, siteName } from './strings.js';
 import { status, fixText, isoDate, nearestOk, goRuns, shortDate, dateOf } from './logic.js';
 import { moveShort } from './orient.js';
 import { LEVELS, critQuery, isDefault } from './criteria.js';
+import { verdictFor } from './verdict.js';
+import { isFull } from './full.js';
 
 let root, refs;
 
@@ -14,15 +16,20 @@ export function init(el, data) {
   root = el;
   root.innerHTML = `
     <span class="app-name">${t('app')}</span>
-    <select id="site-select">${data.index.sites.map(s => `<option value="${s.id}">${siteName(s)}</option>`).join('')}</select>
-    ${seg([['date', t('modeDate')], ['site', t('modeSite')]], 'mode')}
-    <div class="stepper">
-      <button id="prev" aria-label="${t('prev')}">◀</button><span class="date n"></span><button id="next" aria-label="${t('next')}">▶</button>
-      <span class="slip n"></span>
+    <div class="hb-trip">
+      <button type="button" class="hb-tb" id="when-btn" aria-expanded="false"><span>${t('hbWhen')}</span><b class="hb-when"></b></button>
+      <label class="hb-tb hb-where"><span>${t('hbWhere')}</span><b class="hb-wn"></b><select id="site-select">${data.index.sites.map(s => `<option value="${s.id}">${siteName(s)}</option>`).join('')}</select></label>
+      <div id="when-pop" hidden>
+        <div class="stepper">
+          <button id="prev" aria-label="${t('prev')}">◀</button><span class="date n"></span><button id="next" aria-label="${t('next')}">▶</button>
+          <span class="slip n"></span>
+        </div>
+        ${seg([[14, t('d', 14)], [6, t('d', 6)]], 'mission')}
+        ${seg([['date', t('modeDate')], ['site', t('modeSite')]], 'mode')}
+        <div class="chips" hidden></div>
+      </div>
     </div>
-    ${seg([[14, t('d', 14)], [6, t('d', 6)]], 'mission')}
-    <div class="chips" hidden></div>
-    <span class="grow"></span>
+    <p class="hb-ans" aria-live="polite"></p>
     <div class="verdict"></div>
     <a id="api-link" class="api-link" target="_blank" rel="noopener" title="${t('apiTip')}">${t('apiLabel')}</a>
     <div class="adv"><button id="adv-btn" aria-label="${t('advanced')}" aria-expanded="false">⋯</button>
@@ -35,8 +42,16 @@ export function init(el, data) {
     slip: root.querySelector('.slip'),
     verdict: root.querySelector('.verdict'),
     stepper: root.querySelector('.stepper'),
-    chips: root.querySelector('.chips')
+    chips: root.querySelector('.chips'),
+    side: root.querySelector('#side-btn'), advWrap: root.querySelector('.adv'), advBtn: root.querySelector('#adv-btn'),
+    when: root.querySelector('.hb-when'), wn: root.querySelector('.hb-wn'), ans: root.querySelector('.hb-ans')
   };
+  // WHEN: the date, stay and GO windows in one pop-up under the box, like Find a site
+  const wpop = root.querySelector('#when-pop'), wbtn = root.querySelector('#when-btn');
+  const wopen = on => { wpop.hidden = !on; wbtn.setAttribute('aria-expanded', String(on)); };
+  wbtn.addEventListener('click', () => wopen(wpop.hidden));
+  document.addEventListener('pointerdown', e => { if (!wpop.hidden && !wpop.contains(e.target) && !wbtn.contains(e.target)) wopen(false); });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && !wpop.hidden) { e.stopImmediatePropagation(); wopen(false); } }, true);
   const adv = root.querySelector('#adv-panel'), btn = root.querySelector('#adv-btn');
   btn.addEventListener('click', () => { adv.hidden = !adv.hidden; btn.setAttribute('aria-expanded', String(!adv.hidden)); });
   adv.addEventListener('click', e => {
@@ -76,8 +91,16 @@ export function render(st, data) {
   }
   refs.select.value = st.site;
   refs.adv.querySelectorAll('.crit').forEach(r => r.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(st.crit[r.dataset.c] === Number(b.dataset.v)))));
-  root.querySelector('#adv-btn').classList.toggle('changed', !isDefault(st.crit));
+  refs.advBtn.classList.toggle('changed', !isDefault(st.crit));
   refs.date.textContent = isoDate(st.day);
+  refs.when.textContent = `${longDate(st.day)} · ${t('d', st.mission)}`;
+  refs.wn.textContent = refs.select.selectedOptions[0]?.textContent || '';
+  { // Limits and Side by side: in the dock beside the map on the full map, else at the right of the bar
+    const dock = isFull(st) && document.getElementById('dock'), adv = refs.advWrap, sb = refs.side;
+    const home = dock || root, before = dock ? null : root.querySelector('.seg[data-key="view"]');
+    if (adv.parentNode !== home) { home.insertBefore(adv, before); home.insertBefore(sb, before); }
+    adv.classList.toggle('in-dock', !!dock); adv.firstElementChild.textContent = dock ? t('advanced') : '⋯';
+  }
   const slip = st.day - st.baseline;
   refs.slip.textContent = slip ? t('slip', slip) : '';
   refs.slip.title = t('slipTip', isoDate(st.baseline));
@@ -85,7 +108,7 @@ export function render(st, data) {
     const v = g.dataset.key === 'view' && st.view === 'compare' ? 'focus' : String(st[g.dataset.key]);
     b.setAttribute('aria-pressed', String(v === b.dataset.v));
   }));
-  const side = root.querySelector('#side-btn');
+  const side = refs.side;
   side.hidden = st.view === 'find';
   side.setAttribute('aria-pressed', String(st.view === 'compare'));
 
@@ -115,9 +138,24 @@ export function render(st, data) {
     if (s.kind === 'move' && data.site) { const n = nearestOk(data.site, st.day); if (n && n.d > 0) extra = t('avail_move_dir', s.value, moveShort(n.c.dx, n.c.dy)); }
     html = `<i class="dot"></i>${t('nogo')}<span>→</span><span class="fix" style="color:var(--${s.kind})">${extra || fixText(s)}</span>`;
   }
+  answer(st, data, lim, s, slip);
   refs.verdict.className = 'verdict' + (s.kind === 'ok' ? '' : ' nogo');
   refs.verdict.innerHTML = html;
   apiLink(st);
+}
+
+const longDate = d => dateOf(d).toLocaleDateString(document.documentElement.lang === 'ko' ? 'ko-KR' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+// one sentence, like Find a site's: where, when, how long, the verdict, what misses, and the fix
+function answer(st, data, lim, s, slip) {
+  const v = data.site ? verdictFor(st, data, lim) : null, name = refs.wn.textContent;
+  let tail = '';
+  if (v && !v.go) {
+    const miss = v.fails.map(f => f.text.split(' · ')[0]).join(', ');
+    tail = `${miss ? ` — ${miss}` : ''}.${v.fix ? ` <span style="color:var(--${v.fixKind})">${v.fix}.</span>` : ''}`;
+  } else if (v && v.capped) tail = ` <span style="color:var(--mast)">${t('mast')} ${t('m', st.mast)}</span>.`;
+  else tail = '.';
+  const word = `<b class="${s.kind === 'ok' ? 'hb-go' : 'hb-nogo'}">${s.kind === 'ok' ? t('go') : t('nogo')}</b>`;
+  refs.ans.innerHTML = t('hbAns', `<b>${name}</b>`, `<b>${longDate(st.day)}</b>`, `<b>${t('hbDays', st.mission)}</b>`, slip ? t('hbSlip', slip) : '', word) + tail;
 }
 
 // the same verdict as JSON from the Cloudflare Pages Functions API (/api/check); custom pins are not served
