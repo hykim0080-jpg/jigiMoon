@@ -11,11 +11,20 @@ import { SPOT5 } from './map.js';
 import * as intro from './intro.js';
 import { openMastPop } from './mastpop.js';
 import { t } from './strings.js';
+import { initHover, hover } from './hover3d.js';
+import { ranked } from './rank3d.js';
+import { nearestField, nearestOf, linkOf } from './nearestgo.js';
+import * as findlink from './findlink.js';
+import * as timebar from './timebar.js';
+import * as gomask from './gomask3d.js';
+import { loadCam, saveCam, share, onShare } from './cam3d.js';
+import { isDefault } from './criteria.js';
 
 const SETS = [{ label: '2027-02', url: 'data/3d/frames_feb/', y: 2027, m: 1 }, { label: '2027-06', url: 'data/3d/frames/', y: 2027, m: 5 }, { label: '2027-12', url: 'data/3d/frames_dec/', y: 2027, m: 11 }];
 const STEP_H = 4;
 let lastCells = '', mapReady = false, lastZoom = null, onPin = null, hint, box, note, btns, map = null, loading = null, order = null, lastKey = '', lastSite = '', data = null;
-let landerOn = false, landerBtn = null;   // Lander view
+let landerOn = false, landerBtn = null, poleBtn = null;
+export function poleView() { landerOn = false; if (map && mapReady) map.focus(0, 0, 200, { dur: 1300, polar: 0.0005 }); render(state); }   // Lander view
 
 export function init(panel, d, pinAt) {
   data = d; onPin = pinAt;
@@ -28,6 +37,10 @@ export function init(panel, d, pinAt) {
   // Lander view (3D only): down beside the lander, looking toward Earth, close enough to see it and the mast whole
   const zoom = document.getElementById('zoom');
   if (zoom) {
+    // Pole: the whole south pole (±200 km) from straight above, Earth up; the selected place stays selected
+    poleBtn = document.createElement('button'); poleBtn.type = 'button'; poleBtn.className = 'z-pole'; poleBtn.textContent = t('zoomPole');
+    poleBtn.addEventListener('click', e => { e.stopPropagation(); poleView(); });
+    zoom.prepend(poleBtn);
     landerBtn = document.createElement('button'); landerBtn.type = 'button'; landerBtn.dataset.z = 'lander'; landerBtn.textContent = t('zoomLander');
     landerBtn.addEventListener('click', () => { landerOn = true; landerView(); render(state); });
     // Region / Site / Spot leave it: first (capture) so their own move is the usual one; same zoom as before: move back here
@@ -40,6 +53,7 @@ export function init(panel, d, pinAt) {
   hint = document.createElement('div'); hint.id = 'space-hint'; hint.hidden = true; hint.textContent = t('spaceHint'); panel.appendChild(hint);
   note = document.createElement('div'); note.id = 'note3d'; note.hidden = true;
   panel.append(box, note);
+  timebar.init(box, { pole: () => poleView() });   // one time bar for both tabs
   addEventListener('resize', place);
 }
 
@@ -61,7 +75,7 @@ function place() {
   const svg = document.getElementById('map'), zoom = document.getElementById('zoom'), seg = document.getElementById('dim');
   if (seg && zoom) seg.style.right = (8 + zoom.offsetWidth + 6) + 'px';
   if (!box || box.hidden) return;
-  if (document.getElementById('main').classList.contains('full')) { Object.assign(box.style, { left: '0px', top: '0px', width: '100%', height: '100%' }); return; }
+  if (document.getElementById('main').classList.contains('full') || state.view === 'find') { Object.assign(box.style, { left: '0px', top: '0px', width: '100%', height: '100%' }); return; }
   const r = svg.getBoundingClientRect(), b = box.parentNode.getBoundingClientRect();   // an <svg> has no offsetLeft
   // down to the bottom of the panel: in Detail the map column is taller than the square 2D map
   Object.assign(box.style, { left: r.left - b.left + 'px', top: r.top - b.top + 'px', width: r.width + 'px', height: Math.max(r.height, b.bottom - r.top - 1) + 'px' });
@@ -73,6 +87,7 @@ async function mount() {
   order = [f.k, ...SETS.map((_, j) => j).filter(j => j !== f.k)];      // the month in use loads first; the others on first switch
   const lang = (new URLSearchParams(location.search).get('lang') || 'en').startsWith('ko') ? 'ko' : 'en';
   box.classList.add('loading');
+  initHover(box);
   loading = import('../map3d/map3d.js').then(({ mountLunarMap }) => {
     map = mountLunarMap(box, {
       datasets: order.map(j => ({ label: SETS[j].label, url: SETS[j].url })),
@@ -81,12 +96,14 @@ async function mount() {
       onSpace: () => recenter(),
       onMastClick: () => openMastPop(data),   // Space: back to the selected site, Earth side up
       // clicks pick like the 2D map: a marker selects that site, the ground drops a pin there
-      onSiteClick: id => { if (data.index.byId[id]) setState({ site: id }); },
-      onMapClick: (x, y) => { if (onPin) onPin(Math.round(x), Math.round(y)); },
+      onSiteClick: id => { const s = data.index.byId[id]; if (!s) return; if (state.view === 'find') findlink.send({ type: 'click', x: s.x_m, y: s.y_m }); else setState({ site: id }); },
+      onMapClick: (x, y) => { if (state.view === 'find') findlink.send({ type: 'click', x, y }); else if (onPin) onPin(Math.round(x), Math.round(y)); },
+      onPinClick: p => { if (state.view === 'find') { findlink.send({ type: 'pick', col: p.col, row: p.row }); map.focus(p.x, p.y, 14); } else if (onPin) onPin(Math.round(p.x), Math.round(p.y)); },
+      style: 'glow', psrUrl: 'layers/data/psr.wasm', onHover: hover, onCamera: c => { if (!entering && performance.now() > quietUntil) saveCam(c, 'detail'); },   // LLSN-like look: stars, gold where Sun and Earth are in view, soft blue permanent shadow; a card follows the cursor
       moonUrl: 'data/moon.jpg', sunUrl: 'data/sun_sdo_512.png', earthUrl: 'data/earth_bluemarble_1024.jpg', bodyMarkers: false,   // NASA SVS CGI Moon Kit, the globe under the terrain patch
     });
     return map.ready;
-  }).then(() => { box.classList.remove('loading'); lastKey = ''; lastSite = ''; lastCells = ''; mapReady = true; return arrive(); })
+  }).then(() => { if (map.setBottom) map.setBottom(64); box.classList.remove('loading'); lastKey = ''; lastSite = ''; lastCells = ''; mapReady = true; return arrive(); })
     .catch(e => { console.error('[3d]', e); box.classList.remove('loading'); });
   return loading;
 }
@@ -96,6 +113,25 @@ async function mount() {
 // chosen yet, tilts to the oblique view of the whole region
 const TOP_R = 1390, REGION_R = 760;
 let entering = false;
+const HASH0 = location.hash;   // as opened (the page rewrites the hash with the default site soon after)
+const CAM0 = loadCam('detail');   // read before this page saves its own view
+let quietUntil = 0, shareKey = { day: '', spot: '' };
+// Find a site (in its frame) moved the view, changed the day or picked a spot: follow it
+onShare('detail', (k, v) => {
+  if (k === 'cam3d' && map && mapReady && map.setCam) { quietUntil = performance.now() + 900; map.setCam(v); }
+  else if (k === 'day' && Number.isFinite(v.day)) { shareKey.day = `${v.day}|${v.mission}`; if (v.day !== state.day || v.mission !== state.mission) setState({ day: v.day, mission: v.mission === 6 ? 6 : 14 }); }
+  else if (k === 'spot' && Number.isFinite(v.x_m) && onPin) {
+    shareKey.spot = `${Math.round(v.x_m / 500)},${Math.round(v.y_m / 500)}`;
+    const s = data && data.index && data.index.byId[state.site];
+    if (!s || Math.hypot(s.x_m - v.x_m, s.y_m - v.y_m) > 400) onPin(Math.round(v.x_m), Math.round(v.y_m));
+  }
+});
+function shareOut(st) {
+  const dk = `${st.day}|${st.mission}`;
+  if (dk !== shareKey.day) { shareKey.day = dk; share('day', { day: st.day, mission: st.mission }, 'detail'); }
+  const s = data && data.index && data.index.byId[st.site];
+  if (s) { const sk = `${Math.round(s.x_m / 500)},${Math.round(s.y_m / 500)}`; if (sk !== shareKey.spot) { shareKey.spot = sk; share('spot', { x_m: s.x_m, y_m: s.y_m }, 'detail'); } }
+}
 async function arrive() {
   const fromIntro = intro.phase === 'playing';
   entering = true;
@@ -104,11 +140,65 @@ async function arrive() {
   if (fromIntro) { await intro.arrived; const skip = intro.phase === 'skipped'; intro.handOver(); await map.focus(0, 0, 0, { r: REGION_R, polar: 0.0005, dur: skip ? 0 : 1600 }); }
   entering = false;
   if (window.__fresh) { await map.focus(0, 0, 0, { r: 700, dur: 1300 }); return; }
+  // the same view as the other screen (Find a site) when it was used a moment ago
+  const c = !fromIntro && map.setCam && !/[#&]s=/.test(HASH0) ? CAM0 : null;   // a link naming a site wins
+  if (c) { map.setCam(c); return; }
   recenter(1300);
 }
 
+let maskKey = '';
+function syncMask(st) {
+  // GO for the chosen day (14-day stay, default criteria: the per-cell calendar exists for those): blue on the map
+  const on = st.mission === 14 && isDefault(st.crit), k = on ? 'd' + st.day : 'off';
+  if (k === maskKey) return; maskKey = k;
+  if (!on) { map.setMask(null); return; }
+  gomask.load().then(() => { if (maskKey === k) { map.setMask(gomask.maskFor(st.day)); rankKey = ''; syncRank(state); } });
+}
+// Find a site tab: its GO ground, ranked spots and picked spot on this map (js/findlink.js)
+let findShown = false;
+function syncFind() {
+  findShown = true;
+  const d = findlink.data();
+  map.setMask(findlink.mask());
+  const pins = d.rank.slice(0, 5).map(r => { const x = (r.col + .5) * 500 - 200000, y = 200000 - (r.row + .5) * 500; return { x, y, col: r.col, row: r.row, label: '#' + r.id, kind: 'rank' }; });
+  if (d.pin && !d.rank.slice(0, 5).some(r => r.col === d.pin.col && r.row === d.pin.row)) pins.push({ x: (d.pin.col + .5) * 500 - 200000, y: 200000 - (d.pin.row + .5) * 500, col: d.pin.col, row: d.pin.row, kind: 'pin' });
+  map.setPins(pins);
+  setNear(findlink.near(), d.rank);
+  syncLink(state);
+}
+// the picked spot (Find a site's pin, or Detail's selected place), when NO-GO: a dashed line to the nearest GO ground
+let nearCur = null, rankCur = [], linkKey = '', nearGen = 0;
+function setNear(f, list) { nearCur = f; rankCur = list || []; nearGen++; }
+function syncLink(st) {
+  let c = null;
+  if (st.view === 'find') { const p = findlink.data().pin; if (p) c = p; }
+  // Detail: its own 'Move N km to GO' mark already does this for the selected place
+  const k = c && nearCur ? `${st.view}|${c.col},${c.row}|${nearGen}` : '';
+  if (k === linkKey) return; linkKey = k;
+  map.setLink(k ? linkOf(nearestOf(nearCur, c.col, c.row, rankCur), (new URLSearchParams(location.search).get('lang') || 'en').startsWith('ko') ? 'ko' : 'en') : null);
+}
+findlink.onHl((c, r) => { if (map && mapReady && map.highlightPin) map.highlightPin(c, r); });
+findlink.onFly((x, y, half) => { if (map && mapReady) map.focus(x, y, half, { dur: 1400 }); });
+findlink.onChange(() => { if (map && mapReady && state.view === 'find') syncFind(); });
+export const getMap = () => map;
+// the best spots for the day and stay: green numbered markers; NO-GO cursor cards point to the nearest GO ground
+let rankKey = '';
+function syncRank(st) {
+  const k = `${st.day}|${st.mission}|${st.crit.sun}|${st.crit.earth}|${st.crit.dark}|${maskKey}`;
+  if (k === rankKey) return; rankKey = k;
+  ranked(st.day, st.mission, st.crit).then(list => {
+    if (rankKey !== k) return;
+    const top = list.slice(0, 5);
+    map.setPins(top.map(r => ({ x: r.x, y: r.y, col: r.col, row: r.row, label: '#' + r.id, kind: 'rank' })));
+    const ga = maskKey !== 'off' ? gomask.goArr() : null;   // the GO mask of the day when it exists, else the ranked GO spots
+    const set = ga ? null : new Set(list.map(r => r.row * 800 + r.col));
+    setNear(ga ? nearestField(i => ga[i] === 1) : list.length ? nearestField(i => set.has(i)) : null, list.map(r => r.id <= 5 ? r : { ...r, id: 0 }));   // numbers only for the spots marked on the map
+    syncLink(state);
+  }).catch(e => console.error('[rank]', e));
+}
 function sync(st) {
   if (!map || !mapReady || !data.index) return;
+  if (map.setMask) { if (st.view === 'find') syncFind(); else { if (findShown) { findShown = false; maskKey = ''; rankKey = ''; } syncMask(st); syncRank(st); syncLink(st); } }
   const f = frameFor(st.day, st.hour), key = `${f.k}:${f.i}`;
   if (key !== lastKey) {
     lastKey = key;
@@ -133,7 +223,8 @@ function sync(st) {
     }
   }
   // the 3 km MOVE grid on the ground, as on the MOVE card: GO cells blue, the rest dark; ring and cross as marks
-  const ck = s && data.site ? `${st.site}:${s.x_m},${s.y_m}:${st.day}` : '';
+  const det = st.view !== 'find';   // Find a site tab: no Detail grid, ring, mast or MOVE marks on the shared map
+  const ck = det && s && data.site ? `${st.site}:${s.x_m},${s.y_m}:${st.day}` : '';
   if (map.setCells && ck !== lastCells) {
     lastCells = ck;
     map.setCells(ck ? data.site.grid.map(c => {
@@ -149,8 +240,8 @@ function sync(st) {
     }
     marks.push({ x1: s.x_m - 150, y1: s.y_m, x2: s.x_m + 150, y2: s.y_m, color: '#fff', w: 1.5 }, { x1: s.x_m, y1: s.y_m - 150, x2: s.x_m, y2: s.y_m + 150, color: '#fff', w: 1.5 });
   }
-  if (map.setMarks) map.setMarks(marks);
-  const h = s && e ? mastShown(e, st.day, st.mast, limitsOf(st)) : 0;
+  if (map.setMarks) map.setMarks(det ? marks : []);
+  const h = det && s && e ? mastShown(e, st.day, st.mast, limitsOf(st)) : 0;
   if (map.setMast) map.setMast(h, s?.x_m, s?.y_m, h ? t('mastPole', h) : '');
   note.hidden = f.exact;
   if (!f.exact) {
@@ -191,10 +282,13 @@ export function recenter(dur) {
 }
 export const isOn = () => !!box && !box.hidden;
 
+let sentTime = '';
 export function render(st) {
   if (!box) return;
-  const on = !!st.d3 && st.view === 'focus';
+  if (data && data.index) shareOut(st);
+  const on = st.view === 'find' || (!!st.d3 && st.view === 'focus');   // Find a site lays its panels over this same map
   btns.forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.d) === (on ? 1 : 0))));
+  if (poleBtn) poleBtn.hidden = !on;
   if (landerBtn) {
     landerBtn.hidden = !on;
     if (!on) landerOn = false;
@@ -203,6 +297,8 @@ export function render(st) {
   }
   document.getElementById('main').dataset.d3 = on ? '1' : '';
   box.hidden = !on;
+  timebar.show(on); timebar.render(st);
+  if (st.view === 'find') { const tk = `${st.day}|${st.mission}|${st.hour}`; if (tk !== sentTime) { sentTime = tk; findlink.send({ type: 'settime', day: st.day, mission: st.mission, hour: st.hour }); } } else sentTime = '';
   hint.hidden = !on;
   if (!on) { note.hidden = true; place(); intro.arrived.then(intro.handOver); return; }
   place();

@@ -211,6 +211,7 @@ function loadHeavy() {
   shadow.load().then(() => render(state, data));
 }
 
+let stale = false;
 export function render(st, d) {
   data = d;
   if (st.view === 'sites') return;
@@ -219,6 +220,8 @@ export function render(st, d) {
   if (!S) return;
   svg.setAttribute('viewBox', `0 0 ${S} ${S}`);
   const tg = targetVp(st), dur = nextDur; nextDur = ZOOM.slideMs;
+  if (st.view === 'focus' && +st.d3) { anim = null; Object.assign(vp, tg); stale = true; return; }   // the 3D map covers it: skip the (heavy) shadow redraw, e.g. on every step of play
+  if (stale) { stale = false; anim = null; Object.assign(vp, tg); return draw(st); }
   const near = (a, b) => ['cx', 'cy', 'h'].every(k => Math.abs(a[k] - b[k]) < 1e-6);
   if (noMotion() || instant) { instant = false; anim = null; Object.assign(vp, tg); return draw(st); }
   if (anim && near(anim.to, tg)) return;          // already heading there; the running frame loop draws

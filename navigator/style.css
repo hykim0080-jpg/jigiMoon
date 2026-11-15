@@ -427,10 +427,15 @@ input[type=range]{accent-color:var(--accent)}
 .mastlab{font-size:12px;font-weight:600;fill:#fff;paint-order:stroke;stroke:#0f131b;stroke-width:3px}
 /* Find a site as a view of this page (the layer viewer in a frame) */
 #find{display:none;grid-area:find;padding:0;overflow:hidden;border:0}
-#find iframe{width:100%;height:100%;border:0;display:block;background:var(--bg)}
+#find iframe{width:100%;height:100%;border:0;display:block;background:transparent;color-scheme:dark;pointer-events:none}
 main[data-view="find"]{display:block}
-main[data-view="find"]>*:not(#find){display:none!important}
-main[data-view="find"] #find{display:block;position:absolute;inset:0}
+main[data-view="find"]>*:not(#find):not(#map-panel){display:none!important}
+/* one screen: Find a site's panels (frame, see-through, js/findlink.js) over the same 3D map as Detail */
+main[data-view="find"] #map-panel{display:block!important;position:absolute;inset:0;border:0}
+main[data-view="find"] #map-panel>:not(#map3d):not(#note3d){display:none!important}
+main[data-view="find"] #map3d .lmap-bar,main[data-view="find"] #map3d .lmap-tl,main[data-view="find"] #map3d .lmap-tr,main[data-view="find"] #map3d .lmap-strip{display:none!important}
+main[data-view="find"] #map3d{left:0!important;top:0!important;width:100%!important;height:100%!important}
+main[data-view="find"] #find{display:block;position:absolute;inset:0;z-index:40;pointer-events:none;background:transparent}
 body[data-view="find"] header>*:not(.app-name):not([data-key="view"]):not(.grow){display:none}
 #space-hint{position:absolute;right:12px;bottom:86px;z-index:6;font-size:11px;color:#c9cfdb;background:rgba(15,19,27,.75);padding:3px 7px;pointer-events:none}
 #space-hint[hidden]{display:none}
@@ -474,3 +479,36 @@ main.full #dock{top:calc(104px + var(--vbh, 0px))}
 main.full #sky-panel{top:calc(104px + var(--vbh, 0px))}
 #map3d .lmap-tl{top:calc(12px + var(--vbh, 0px))}
 @media (max-width:700px){#vbadge b{font-size:26px}#vbadge{top:34px;max-width:70%}}
+
+/* Detail 3D: the card that follows the cursor (js/hover3d.js) */
+.h3d-tip{position:absolute;left:0;top:0;z-index:6;min-width:210px;max-width:290px;padding:10px 12px;background:rgba(10,12,16,.93);border:1px solid rgba(255,255,255,.22);border-radius:0;color:#e8eaf0;font:12px/1.45 Inter,system-ui,sans-serif;pointer-events:none;font-variant-numeric:tabular-nums}
+.h3d-tip[hidden]{display:none}
+.h3d-tip .v{font-size:18px;font-weight:700;letter-spacing:.03em;line-height:1.15;margin-bottom:6px;color:#fff}
+.h3d-tip .v small{display:block;font-size:10.5px;font-weight:500;color:#9aa3b2;letter-spacing:0}
+.h3d-tip .v.both{color:#f6c35c}.h3d-tip .v.sun{color:#d39a4a}.h3d-tip .v.earth{color:#9cb4e8}.h3d-tip .v.none{color:#9aa3b2}
+.h3d-tip .m{display:grid;grid-template-columns:repeat(2,1fr);gap:4px 12px;margin-bottom:6px}
+.h3d-tip .m small{display:block;color:#9aa3b2;font-size:10.5px}
+.h3d-tip .m b{font-weight:600;color:#fff}
+.h3d-tip .m .bad b{color:#f0655a}
+.h3d-tip .s{color:#9cb4d8;font-size:11.5px}
+.h3d-tip .s b{color:#fff;font-weight:600}
+.h3d-tip .v.go{color:#9cc0ff}.h3d-tip .v.no{color:#fff}.h3d-tip .v.wait{color:#9aa3b2}
+.h3d-tip .near{color:#9aa3b2;font-size:11.5px;margin:0 0 6px}.h3d-tip .near b{color:#7fe0aa;font-weight:600}
+.h3d-tip .why{color:#f0a49c;font-size:11.5px;line-height:1.4;margin:0 0 6px}
+.h3d-tip .s.now{margin-top:4px;color:#c9b27a}.h3d-tip .s.now b{color:#f6c35c}
+
+/* one time bar for the shared 3D map, both tabs (js/timebar.js); the map's own bar (month buttons, frame counter) is not used */
+#map3d .lmap-bar{display:none!important}
+.tbar{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:45;display:flex;align-items:center;gap:8px;width:min(1080px,calc(100% - 24px));padding:7px 12px;background:rgba(15,19,27,.92);border:1px solid var(--line,#2b3242);color:#e8eaf0;font:12px/1 Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;box-sizing:border-box}
+.tbar[hidden]{display:none}
+.tbar button{background:transparent;color:#e8eaf0;border:1px solid #3a4254;border-radius:0;height:26px;min-width:26px;padding:0 7px;font:inherit;cursor:pointer}
+.tbar button[aria-pressed="true"]{background:#e8eaf0;color:#0f131b}
+.tbar .seg{display:flex}.tbar .seg button+button{border-left:0}
+.tbar .tb-l{color:#98a1b4;font-size:11px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.tbar .tb-d{min-width:96px;text-align:center;font-weight:600;white-space:nowrap}
+.tbar .tb-t{min-width:118px;text-align:right;font-weight:600;white-space:nowrap}
+.tbar .tb-play{width:34px}
+.tbar .tb-h{flex:1;min-width:60px;accent-color:#74a2f2}
+@media (max-width:700px){.tbar{flex-wrap:wrap;gap:6px;bottom:6px}.tbar .tb-l{display:none}.tbar .tb-h{flex-basis:100%;order:9}}
+.tbar .tb-pole{display:none;margin-right:4px}
+main[data-view="find"] .tbar .tb-pole{display:block}   /* Find a site tab: Detail's view buttons are hidden, Pole lives here */

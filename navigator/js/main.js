@@ -1,4 +1,5 @@
 // Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
+import * as findlink from './findlink.js';
 import { state, setState, subscribe, limitsOf } from './state.js';
 import { loadIndex, loadSite, getSite, preloadCals, metricsOf } from './data.js';
 import { applyCriteria, critKey } from './criteria.js';
@@ -38,6 +39,7 @@ function criteriaReady(st) {
   return false;
 }
 
+const FH0 = new URLSearchParams(location.hash.slice(1)).get('fh');   // /layers/ links: Find a site's own hash, for its panels
 let findAtSite = false;   // first open of Find a site from another view: start at the selected site
 function render(st) {
   if (!criteriaReady(st)) return;
@@ -58,7 +60,7 @@ function render(st) {
   header.render(st, data);
   calendar.render(st, data);
   if (st.view === 'compare') compare.render(st, data);
-  if (st.view === 'find' && !$('find').firstChild) $('find').innerHTML = `<iframe src="${header.findHref(st, data, findAtSite)}" title="Find a site"></iframe>`;
+  if (st.view === 'find' && !$('find').firstChild) { $('find').innerHTML = `<iframe src="${FH0 != null ? `layers/index.html?embed=1&panels=1&lang=${new URLSearchParams(location.search).get('lang') || 'en'}#${FH0}` : header.findHref(st, data, findAtSite).replace('embed=1', 'embed=1&panels=1')}" title="Find a site" allowtransparency="true"></iframe>`; findlink.attach($('find').firstChild, { pushTime: FH0 == null }); }   // panels only, over this page's 3D map
   if (st.view !== 'find') findAtSite = true;
   if (st.view === 'sites') { setState({ view: 'focus' }); return; }   // the Selection tab is gone: old links open Detail
   map.render(st, data);

@@ -17,7 +17,9 @@ import { initTrip, renderTrip, tripRanked, REGIONS, regionBBox } from './trip.js
 import { mapHome, setBadges, shadowLegend } from './mapview.js';
 import { syncWin, winToken, pending } from './window.js';
 import { initCart, renderCart, readCart, cartHash } from './cart.js';
-import * as g3 from './globe3d.js';
+import * as g3 from './find3d.js';
+import * as pn from './panels.js';
+import { initCritPanel, render as renderCritPanel } from './critpanel.js';
 
 export async function mount(root, opts = {}) {
   const { dataUrl = './data/', header = true } = opts;
@@ -51,6 +53,7 @@ export async function mount(root, opts = {}) {
   else if (h.get('esh') === '1') state.eshadow = true;   // Earth shadow (exclusive with sh)
   if (h.get('st') === '6') state.mission = 6;
   state.d3 = h.get('d3') !== '0';   // 3D is the default view; d3=0 opens the flat map
+  pn.init();   // ?panels=1: panels only, over the main page's 3D map
   if (state.adv && h.get('jb') === 'y') state.basis = 'year';
   if (REGIONS.some(r => r.id === h.get('r'))) state.region = h.get('r');
   state.cart = readCart(h.get('k'));
@@ -67,7 +70,7 @@ export async function mount(root, opts = {}) {
     if (!(await applyLevels(data, next, dataUrl))) { await applyLevels(data, state.crit, dataUrl); return false; }
     saveCrit(next); setState({ crit: next }, 'pixels'); return true;
   };
-  initCart(app, data, lang, lq); initCriteria(pCrit, data, setCrit); initZones(pZones, data, { pick }); initPinCard(pPin.querySelector('.lyr-pcard'), data); initMap(pMap, data, comp); g3.init(pMap, data); setPick(pick);
+  initCart(app, data, lang, lq); initCriteria(pCrit, data, setCrit); initCritPanel(main.querySelector('.lyr-left'), data, setCrit); initZones(pZones, data, { pick }); initPinCard(pPin.querySelector('.lyr-pcard'), data); initMap(pMap, data, comp); g3.init(pMap, data); setPick(pick);
   { const hd = root.querySelector('.lyr-app header'), tl = main.querySelector('.lyr-tripl');
     initTrip(hd || main, tl, data, { pick, fly: bb => flyToCells(bb, 8), home: () => mapHome(), ranked: rk => { if (state.autoPin && rk[0] && !(state.pin && state.pin.col === rk[0].col && state.pin.row === rk[0].row)) setState({ pin: { col: rk[0].col, row: rk[0].row } }, 'panel'); } });
     setBadges(() => { const r = tripRanked(), g = r.filter(z => z.go).length; return r.slice(0, g ? Math.min(g, 15) : 3); }); }
@@ -95,7 +98,7 @@ export async function mount(root, opts = {}) {
     app.dataset.adv = state.adv ? '1' : ''; advBtn.setAttribute('aria-pressed', state.adv);
     { const open = innerWidth > 700 && !state.autoPin && !!state.pin; if (app.classList.contains('pin-open') !== open) { app.classList.toggle('pin-open', open); setInsets(open ? 344 : 0); p.add('view'); } }   // the spot panel slides in when a spot is clicked
     { const ld = root.querySelector('.lyr-loading'); if (ld) { const pd = pending(state); ld.hidden = !pd; if (pd) ld.textContent = t('computing', state.mission || 14); } }
-    if (p.has('pixels')) { passPx = compose(state).passPx; if (state.adv) renderPanel(state); renderCriteria(state); renderZones(state); zonesSoon(); syncShadow(); syncExpo(state); renderTime(state); renderPinCard(state); renderPinSky(state); blit(); overlay(); readout(); g3.repaint(); }
+    if (p.has('pixels')) { passPx = compose(state).passPx; if (state.adv) renderPanel(state); renderCriteria(state); renderZones(state); zonesSoon(); syncShadow(); syncExpo(state); renderTime(state); renderPinCard(state); renderPinSky(state); blit(); overlay(); readout(); g3.repaint(); pn.repaint(); }
     else {
       if (p.has('view')) { blit(); overlay(); }
       if (p.has('time')) { syncShadow(); syncExpo(state); renderTime(state); shadowLegend(); renderPinCard(state); renderPinSky(state); blit(); overlay(); }
@@ -105,8 +108,9 @@ export async function mount(root, opts = {}) {
       if (p.has('hover')) { overlay(); readout(); renderZones(state); }
     }
     renderTrip(state);   // after compose(): the ranked spots follow the current mask
+    renderCritPanel(state);
     renderCart(state);
-    g3.render(state);
+    g3.render(state); pn.render(state);
     const q = new URLSearchParams(); if (state.base !== 'sun') q.set('b', state.base); if (state.adv) { q.set('a', 1); q.set('m', state.mode); } if (state.site) q.set('s', state.site);
     if (state.pin && !state.autoPin) { const c = cellToXY(state.pin.col, state.pin.row); q.set('pin', Math.round(c.x) + ',' + Math.round(c.y)); }
     if (state.adv && state.month != null) q.set('mon', state.month + 1);

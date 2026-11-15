@@ -42,10 +42,11 @@ export const bodiesData = () => B;   // hourly Sun/Earth vectors (S, E, n) for t
 export const ensure = () => loading || (loading = Promise.all([shadow.load(), bodies()]).then(([, b]) => { B = b; }));
 
 // sky object of mode A (see navigator/js/data.js loadSky) for a pixel
-export async function skyAt(col, row) {
+export async function skyAt(col, row, mast = 2) {
   await ensure();
-  const i = row * 800 + col; if (skies.has(i)) return skies.get(i);
-  const [x, y] = shadow.pixelXY(col, row), vals = shadow.horizonValues(x, y), lon = Math.atan2(x, y) / D2R;
+  const i = mast === 2 ? row * 800 + col : `${row * 800 + col}|${mast}`; if (skies.has(i)) return skies.get(i);
+  const buf = mast === 2 ? undefined : (await shadow.loadExtra()).sets[mast]; if (mast !== 2 && !buf) return null;   // 10 m / 20 m mast horizons
+  const [x, y] = shadow.pixelXY(col, row), vals = shadow.horizonValues(x, y, buf), lon = Math.atan2(x, y) / D2R;
   const h720 = new Float32Array(720);
   for (let a = 0; a < 720; a++) {   // = shadow.profile(): map azimuth = local + lon, linear between the 64 bins
     const m = ((a * 0.5 + lon) % 360 + 360) % 360 / 5.625, k = Math.floor(m), f = m - k;

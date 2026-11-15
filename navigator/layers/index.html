@@ -11,6 +11,12 @@
 </head>
 <body>
 <div id="layers-root"></div>
+<script>
+// one screen: opened on its own, Find a site is the main page's Find a site tab (this page's hash goes along to it)
+(function () { var q = new URLSearchParams(location.search); if (q.has('embed') || q.has('solo') || window.parent !== window) return;
+  var l = q.get('lang') || new URLSearchParams(location.hash.slice(1)).get('lang');
+  location.replace('../index.html' + (l ? '?lang=' + encodeURIComponent(l) : '') + '#v=find&fh=' + encodeURIComponent(location.hash.slice(1))); })();
+</script>
 <script type="module">
 import { mount } from './js/main.js';
 // inside the Compare page (Find a site view): no own page switch; links open in the whole page
