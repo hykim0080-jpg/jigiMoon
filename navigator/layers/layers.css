@@ -764,3 +764,7 @@ html.panels,html.panels body,.panels .lyr-app,.panels .lyr-main{background:trans
 @media (min-width:701px) and (max-height:800px){.panels .lyr-pinp .lyr-sky{height:140px}}
 /* the main page shows the site name (112 px + 16 px gap) at the left of its header row from 1180 px: start after it */
 @media (min-width:1180px){.panels .lyr-app header{margin-left:128px}}
+/* the spot card's verdict and its reason on one line, as on Detail: the reason small and faint; too long → … */
+.lyr-vd{align-items:center;min-height:0}
+.lyr-vd>span{flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lyr-vd .lyr-vwhy{display:inline;margin:0 0 0 8px;font-size:12px;font-weight:500;opacity:.8}
