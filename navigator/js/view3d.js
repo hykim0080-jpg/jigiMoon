@@ -40,6 +40,7 @@ function place() {
   const svg = document.getElementById('map'), zoom = document.getElementById('zoom'), seg = document.getElementById('dim');
   if (seg && zoom) seg.style.right = (8 + zoom.offsetWidth + 6) + 'px';
   if (!box || box.hidden) return;
+  if (document.getElementById('main').classList.contains('full')) { Object.assign(box.style, { left: '0px', top: '0px', width: '100%', height: '100%' }); return; }
   const r = svg.getBoundingClientRect(), b = box.parentNode.getBoundingClientRect();   // an <svg> has no offsetLeft
   // down to the bottom of the panel: in Detail the map column is taller than the square 2D map
   Object.assign(box.style, { left: r.left - b.left + 'px', top: r.top - b.top + 'px', width: r.width + 'px', height: Math.max(r.height, b.bottom - r.top - 1) + 'px' });
@@ -56,6 +57,7 @@ async function mount() {
       datasets: order.map(j => ({ label: SETS[j].label, url: SETS[j].url })),
       sitesUrl: 'data/3d/sites.json', landmarksUrl: 'data/orientation/landmarks.json', landersUrl: 'data/orientation/landers.json',
       lang, frame: f.i,
+      onSpace: recenter,   // Space: back to the selected site, Earth side up
     });
     return map.ready;
   }).then(() => { box.classList.remove('loading'); lastKey = ''; lastSite = ''; sync(state); })
@@ -82,6 +84,13 @@ function sync(st) {
     note.textContent = t('only3d', d.getUTCMonth() + 1, d.getUTCDate(), d.getUTCHours());
   }
 }
+
+// Space: centre the 3D camera on the selected site again
+export function recenter() {
+  const s = data && data.index && data.index.byId[state.site];
+  if (map && s) map.focus(s.x_m, s.y_m, 22);
+}
+export const isOn = () => !!box && !box.hidden;
 
 export function render(st) {
   if (!box) return;

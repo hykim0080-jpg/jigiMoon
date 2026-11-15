@@ -385,3 +385,25 @@ input[type=range]{accent-color:var(--accent)}
 #cal-panel.big #cal-big{top:-30px;right:-1px;padding:5px 9px;font-size:14px}
 /* digits keep the same width so changing numbers do not shake the layout (font shorthand would reset this, hence !important) */
 *{font-variant-numeric:tabular-nums!important}
+/* Detail "full map": the centre map fills the screen; the other panels are pop-ups opened from the dock */
+#dock{display:none}
+#layout-btn{position:absolute;top:8px;z-index:6;font-size:12px;padding:3px 9px;border:1px solid #fff;background:rgba(15,19,27,.8);color:#fff;cursor:pointer;border-radius:0}
+#layout-btn[hidden]{display:none}
+@media (min-width:701px){
+  main.full{display:block}
+  main.full>.map-panel{position:absolute;inset:0;border:0}
+  main.full #map{width:var(--S);margin:0 auto}
+  main.full #chain{display:none}
+  main.full #dock{display:flex;flex-direction:column;gap:4px;position:absolute;left:12px;top:104px;z-index:30}
+  main.full #dock button{font-size:12px;padding:6px 10px;min-width:84px;text-align:left;border:1px solid rgba(255,255,255,.55);background:rgba(15,19,27,.82);color:#fff;cursor:pointer;border-radius:0;backdrop-filter:blur(6px)}
+  main.full #dock button[aria-pressed="true"]{background:#fff;color:#0f131b;border-color:#fff}
+  main.full #dock #layout-btn{position:static;margin-top:10px;color:#c9cfdb}
+  main.full #sky-panel,main.full #metrics-panel,main.full #fixes,main.full #cal-panel{display:none;position:absolute;z-index:20;box-shadow:0 8px 28px rgba(0,0,0,.45)}
+  main.full .pop-open{display:flex!important}
+  main.full #cal-panel.pop-open{display:block!important}
+  main.full #sky-panel{left:112px;top:104px;width:min(380px,30vw);height:min(440px,calc(100% - 200px))}
+  main.full #metrics-panel{left:50%;transform:translateX(-50%);top:12px;max-width:calc(100% - 520px);padding:8px 14px}
+  main.full #fixes{right:72px;top:146px;width:min(380px,28vw);max-height:calc(100% - 240px);overflow:auto;background:var(--bg);padding:8px;border:1px solid var(--line)}
+  main.full #cal-panel{left:112px;right:12px;bottom:84px;height:var(--cal,216px)}
+  main.full #cal-panel.big{left:5vw;right:5vw;top:6vh;bottom:6vh;height:auto}
+}

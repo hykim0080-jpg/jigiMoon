@@ -658,7 +658,7 @@ export function mountLunarMap(container, options = {}) {
     const e = k * k * (3 - 2 * k);
     const { from: a, to: b } = tween;
     const L = (p) => a[p] + (b[p] - a[p]) * e;
-    ctl3.target.set(L('tx'), tween.keepY ? tween.ty : tween.ty * (1 - e), L('tz'));
+    ctl3.target.set(L('tx'), tween.toY != null ? tween.ty + (tween.toY - tween.ty) * e : tween.keepY ? tween.ty : tween.ty * (1 - e), L('tz'));
     sph(ctl3.target, L('r'), L('polar'), a.az + (((b.az - a.az + 3 * Math.PI) % (2 * Math.PI)) - Math.PI) * e, cam3.position);
     cam3.up.set(0, 1, 0);
     cam3.lookAt(ctl3.target);
@@ -1274,7 +1274,7 @@ export function mountLunarMap(container, options = {}) {
   on(exagIn, 'input', () => setExag(exagIn.value));
   on(root, 'keydown', (e) => {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
-    if (e.code === 'Space') { setPlaying(!playing); }
+    if (e.code === 'Space') { if (options.onSpace) options.onSpace(); else setPlaying(!playing); }
     else if (e.key === 'ArrowLeft') step(-1);
     else if (e.key === 'ArrowRight') step(1);
     else if (e.key === 'Home') step(-1e9);
@@ -1415,7 +1415,7 @@ export function mountLunarMap(container, options = {}) {
     const s = new THREE.Spherical().setFromVector3(cam3.position.clone().sub(ctl3.target));
     const r = clamp(halfKm / Math.tan(FOV * DEG / 2) * 1.4, ctl3.minDistance, ctl3.maxDistance);
     ctl3.enabled = false;
-    tween = { t0: performance.now(), dur: 700, from: { r: s.radius, polar: s.phi, az: s.theta, tx: ctl3.target.x, tz: ctl3.target.z }, to: { r, polar: home.polar, az: 0, tx, tz }, ty: ctl3.target.y, keepY: true,
+    tween = { t0: performance.now(), dur: 700, from: { r: s.radius, polar: s.phi, az: s.theta, tx: ctl3.target.x, tz: ctl3.target.z }, to: { r, polar: home.polar, az: 0, tx, tz }, ty: ctl3.target.y, toY: (() => { try { const y = heightAt(x_m, y_m) / 1000 * exagV; return Number.isFinite(y) ? y : null; } catch { return null; } })(),   // the site itself at the screen centre
       done: () => { ctl3.enabled = true; ctl3.update(); dirty = true; } };
     dirty = true;
   }

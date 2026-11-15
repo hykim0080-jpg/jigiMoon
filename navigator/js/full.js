@@ -1,0 +1,55 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
+// Detail "full map": the centre map (2D/3D) fills the screen; sky, numbers, fixes and the year calendar
+// open as pop-ups from a dock on the left. state.full = 0 brings back the grid of panels.
+import { state, setState } from './state.js';
+import { t } from './strings.js';
+
+const PANELS = [['sky', 'sky-panel'], ['metrics', 'metrics-panel'], ['fixes', 'fixes'], ['cal', 'cal-panel']];
+const open = new Set(['fixes']);
+let main, dock, btns = {}, layoutBtn;
+
+export const isFull = st => st.view === 'focus' && !!st.full && innerWidth > 700;
+
+export function init(m) {
+  main = m;
+  dock = document.createElement('nav');
+  dock.id = 'dock';
+  for (const [k] of PANELS) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = t('dock')[k];
+    b.onclick = () => { open.has(k) ? open.delete(k) : open.add(k); sync(); dispatchEvent(new Event('resize')); };
+    btns[k] = b; dock.appendChild(b);
+  }
+  main.appendChild(dock);
+  layoutBtn = document.createElement('button');
+  layoutBtn.id = 'layout-btn'; layoutBtn.type = 'button';
+  layoutBtn.onclick = () => setState({ full: state.full ? 0 : 1 });
+  addEventListener('keydown', e => {
+    if (e.key !== 'Escape' || !isFull(state) || document.getElementById('cal-panel').classList.contains('big')) return;
+    if (open.size) { open.clear(); sync(); }
+  });
+}
+
+function sync() {
+  const on = isFull(state);
+  for (const [k, id] of PANELS) {
+    const shown = on && open.has(k);
+    document.getElementById(id).classList.toggle('pop-open', shown);
+    btns[k].setAttribute('aria-pressed', String(shown));
+  }
+}
+
+export function render(st) {
+  if (!main) return;
+  const on = isFull(st);
+  main.classList.toggle('full', on);
+  dock.hidden = !on;
+  const home = on ? dock : document.getElementById('map-panel');
+  if (layoutBtn.parentNode !== home) home.appendChild(layoutBtn);
+  layoutBtn.hidden = st.view !== 'focus' || innerWidth <= 700;
+  layoutBtn.textContent = st.full ? t('layoutGrid') : t('layoutFull');
+  // grid layout: sit left of the 2D/3D switch at the top of the map
+  if (!on) requestAnimationFrame(() => { const d = document.getElementById('dim'); if (d) layoutBtn.style.right = (parseFloat(d.style.right || getComputedStyle(d).right) + d.offsetWidth + 6) + 'px'; });
+  else layoutBtn.style.right = '';
+  sync();
+}

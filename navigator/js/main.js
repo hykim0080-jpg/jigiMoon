@@ -17,6 +17,7 @@ import * as chain from './chain.js';
 import * as orient from './orient.js';
 import * as pin from './pin.js';
 import * as view3d from './view3d.js';
+import * as full from './full.js';
 
 const $ = id => document.getElementById(id);
 const data = { index: null, site: null };
@@ -45,7 +46,9 @@ function render(st) {
   $('main').dataset.zoomed = st.zoom > 1.01 ? '1' : '';
   // map side = height of the middle band
   const main = $('main');
-  if (st.view === 'focus') { const cal = parseFloat(getComputedStyle(main).gridTemplateRows.split(' ').pop()) || 216, gap = parseFloat(getComputedStyle(main).rowGap) || 12; main.style.setProperty('--S', (innerWidth <= 700 ? main.clientWidth : Math.max(300, Math.min(main.clientHeight, (main.clientWidth - 320 - 2 * (parseFloat(getComputedStyle(main).columnGap) || 12)) / 2))) + 'px'); }
+  full.render(st);
+  if (full.isFull(st)) main.style.setProperty('--S', Math.max(300, Math.min(main.clientHeight, main.clientWidth)) + 'px');
+  else if (st.view === 'focus') { const cal = parseFloat(getComputedStyle(main).gridTemplateRows.split(' ').pop()) || 216, gap = parseFloat(getComputedStyle(main).rowGap) || 12; main.style.setProperty('--S', (innerWidth <= 700 ? main.clientWidth : Math.max(300, Math.min(main.clientHeight, (main.clientWidth - 320 - 2 * (parseFloat(getComputedStyle(main).columnGap) || 12)) / 2))) + 'px'); }
   header.render(st, data);
   calendar.render(st, data);
   if (st.view === 'compare') compare.render(st, data);
@@ -120,6 +123,7 @@ async function boot() {
   timeline.init($('timeline'));
   fixes.init($('fixes'));
   compare.init($('compare'));
+  full.init($('main'));
   subscribe(render);
   render(state);
   addEventListener('resize', () => render(state));
@@ -140,7 +144,7 @@ function onKey(e) {
     e.preventDefault();
     const i = ids.indexOf(state.site) + (e.key === 'ArrowUp' ? -1 : 1);
     setState({ site: ids[(i + ids.length) % ids.length] });
-  } else if (e.key === ' ') { e.preventDefault(); setState({ playing: !state.playing }); }
+  } else if (e.key === ' ') { e.preventDefault(); if (view3d.isOn()) { if (!e.target.closest('#map3d')) view3d.recenter(); } else setState({ playing: !state.playing }); }
   else if (e.key === '1') setState({ view: 'focus' });
   else if (e.key === '2') setState({ view: 'compare' });
   else if (e.key === '3') setState({ view: 'sites' });
