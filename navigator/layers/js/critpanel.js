@@ -1,6 +1,6 @@
 // Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
-// Layers, at the top of the left panel: 'All' (the GO ground of every criterion, the default) and one row per factor
-// (Sun, Earth, longest dark, slope, ice). A row picks that factor's map (factor.js); its slider is the limit, its track
+// Layers, at the top of the left panel: one row per factor (Sun, Earth, longest dark, slope, ice); none picked = the GO
+// ground of every criterion (the default; picking the picked row again goes back). A row picks that factor's map (factor.js); its slider is the limit, its track
 // the factor's gradient; "Reset" shows when any differs from the default. Sun / Earth / dark move between
 // the computed levels (layers.json criterion_levels); slope and ice are thresholds; ice at 0 is off.
 import { state, setState } from './state.js';
@@ -10,7 +10,7 @@ import { defaults, isDefault } from './crit.js';
 import { FX, trackCss } from './factor.js';
 
 const TX = { en: { darkTip: 'Longest stretch without sunlight', lim: 'Limit', title: 'Layers', all: 'All', allTxt: 'GO', reset: 'Reset', off: 'Off', sun: 'Sun', earth: 'Earth', dark: 'Dark', slope: 'Slope', ice: 'Ice' }, ko: { darkTip: '햇빛이 한 번에 가장 오래 끊긴 시간', lim: '기준선', title: '레이어', all: '전체', allTxt: 'GO', reset: '초기화', off: '끔', sun: '햇빛', earth: '지구', dark: '어둠', slope: '경사', ice: '얼음' } }[lang === 'ko' ? 'ko' : 'en'];
-let el, data, setCrit, rows = {}, allRow = null;
+let el, data, setCrit, rows = {};
 export const LAYER_KEYS = [null, 'sun', 'earth', 'dark', 'slope', 'ice'];   // keys 0-5
 const pick = k => { if (state.factor !== k) setState({ factor: k }, 'pixels'); };
 
@@ -20,10 +20,7 @@ export function initCritPanel(host, d, setCritFn) {
   el.innerHTML = `<div class="lyr-cph"><h3 class="lyr-cpt">${TX.title}</h3><span><button class="lyr-cplim" aria-pressed="true" hidden>${TX.lim}</button><button class="lyr-cpr" hidden>${TX.reset}</button></span></div><div class="lyr-cpb"></div>`;
   host.prepend(el);
   const body = el.querySelector('.lyr-cpb');
-  allRow = document.createElement('div'); allRow.className = 'lyr-cpl all'; allRow.tabIndex = 0; allRow.setAttribute('role', 'button');
-  allRow.innerHTML = `<span class="lyr-cpk">${TX.all}</span><i class="lyr-cpg"></i><b class="n">${TX.allTxt}</b>`;
-  allRow.onclick = () => pick(null); allRow.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(null); } };
-  body.append(allRow);
+
   // with a factor on the map: show or hide its limit (dimming + line); off = the plain gradient
   el.querySelector('.lyr-cplim').onclick = () => setState({ fxLimit: state.fxLimit === false }, 'pixels');
   el.querySelector('.lyr-cpr').onclick = async () => {
@@ -72,7 +69,6 @@ const layerOf = k => data.layers.find(m => m.threshold != null && hue(m.id) === 
 
 export function render(st) {
   if (!el) return;
-  allRow.classList.toggle('fx', !st.factor); allRow.setAttribute('aria-pressed', String(!st.factor));
   let changed = !isDefault(data.meta, st.crit);
   for (const [k, r] of Object.entries(rows)) {
     const g = r.get(); if (+r.inp.value !== g.i && document.activeElement !== r.inp) r.inp.value = String(g.i);
