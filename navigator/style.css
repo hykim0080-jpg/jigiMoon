@@ -320,3 +320,27 @@ header>.verdict .fix{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;m
 #basemap button{color:#fff;font-size:12px;padding:3px 9px}
 #basemap button[aria-pressed="true"]{background:#fff;color:#0f131b}
 main[data-view="compare"] #basemap,main[data-d3="1"] #basemap{display:none}
+/* fixes: three compact rows, then the local line map (+-3.5 km) */
+.fixrows{flex:none;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line)}
+.fixrow{display:grid;grid-template-columns:64px 92px minmax(0,1fr);grid-template-rows:auto auto;align-items:center;column-gap:10px;padding:6px 12px;border-left:3px solid transparent}
+.fixrow+.fixrow{border-top:1px solid var(--line)}
+.fixrow.best{border-left-color:var(--fc)}
+.fixrow h2{color:var(--fc);margin:0}
+.fixrow h2::before{content:"";display:inline-block;width:9px;height:9px;margin-right:6px;background:var(--fc);vertical-align:0}
+.fixrow .val{display:flex;align-items:baseline;gap:4px;color:var(--muted)}
+.fixrow.best .val{color:var(--ink)}
+.fixrow .val b{font-family:var(--f-mono);font-size:26px;font-weight:500;line-height:1.1}
+.fixrow .val span{font-size:13px}
+.fixrow.na .val b{color:var(--muted)}
+.fixrow .effort .bar{height:6px}
+.fixrow .dir{grid-column:2/4;font-size:12px;color:var(--muted);min-height:0;line-height:15px}
+.fixrow .dir:empty{display:none}
+.fixrow[data-k="mast"]:not(.na){cursor:pointer}
+.card.local{flex:1;min-height:0;padding:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#fff}
+.card.local svg{height:100%;width:auto;max-width:100%;aspect-ratio:1/1;display:block}
+.card.local .tick{fill:#5a6377;font-size:11px}
+.locl{font-size:12px;font-weight:600;paint-order:stroke;stroke:#fff;stroke-width:3px}
+@media (max-width:700px){.card.local{flex:none;height:auto}.card.local svg{width:100%;height:auto}}
+#fixes>.card:not(.local){flex:0 0 auto;height:180px}
+.fixrow .val b{font-size:20px}
+@media (max-width:700px){#fixes>.card:not(.local){height:150px}}
