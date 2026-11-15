@@ -5,8 +5,8 @@
 import { moved } from './drag.js';
 import { t } from './strings.js';
 import { THRESHOLDS } from './config.js';
-import { status, nearestOk, blockage, fixes, bestFix } from './logic.js';
-import { state, setState } from './state.js';
+import { status, nearestOk, blockage, fixes, bestFix, mastTag } from './logic.js';
+import { state, setState, limitsOf } from './state.js';
 import { failStats, failReason } from './failreason.js';
 import { sector, bearing } from './orient.js';
 
@@ -19,14 +19,14 @@ const lang = () => (document.documentElement.lang || 'en').startsWith('ko') ? 'k
 export function verdictFor(st, data, lim) {
   const site = data.site, e = data.index.modes[st.mission]?.sites[st.site];
   if (!site || !e) return null;
-  const c = st.crit || THRESHOLDS, d = st.day, m = st.mast && site.mast;
-  const sun = m ? m.sun[st.mast][d] : site.cal.sun[d], earth = m ? m.earth[st.mast][d] : site.cal.earth[d], dark = m ? m.dark[st.mast][d] : site.cal.dark[d];
+  const c = st.crit || THRESHOLDS, d = st.day, s = status(e, d, st.mast, lim);
+  const h = s.mast || st.mast, m = h && site.mast && site.mast.sun[h] ? site.mast : null;   // the numbers at the mast top when GO needs one
+  const sun = m ? m.sun[h][d] : site.cal.sun[d], earth = m ? m.earth[h][d] : site.cal.earth[d], dark = m ? m.dark[h][d] : site.cal.dark[d];
   const b = site.sky ? blockage(site.sky, d * 24 + st.hour) : {}, hid = k => b[k] ? ` · ${t('hiddenRidge')}` : '';   // the ridge that hides it now
   const fails = [];
   if (sun < c.sun) fails.push({ k: 'sun', text: `${t('sun')} ${pct1(sun)} % < ${c.sun} %${hid('sun')}` });
   if (earth < c.earth) fails.push({ k: 'earth', text: `${t('earth')} ${pct1(earth)} % < ${c.earth} %${hid('earth')}` });
   if (dark > c.dark) fails.push({ k: 'dark', text: `${t('dark')} ${Math.ceil(dark)} h > ${c.dark} h` });
-  const s = status(e, d, st.mast, lim);
   let fix = '', why = '';
   if (s.kind === 'move') {
     const n = nearestOk(site, d);
@@ -36,7 +36,7 @@ export function verdictFor(st, data, lim) {
   else if (s.kind === 'none') {
     try { why = failReason(failStats(site, d, c, lim, st.mission), lang()).text; } catch (err) { console.error(err); }
   }
-  return { go: s.kind === 'ok', capped: !!s.capped, fails, fix, fixKind: s.kind, why };
+  return { go: s.kind === 'ok', capped: !!s.capped, mastH: s.mast || 0, fails: s.kind === 'ok' ? [] : fails, fix, fixKind: s.kind, why };
 }
 
 let box = null;
@@ -58,13 +58,13 @@ export function render(st, data, panel, lim) {
   box.hidden = !v;
   const main = document.getElementById('main');
   if (!v) { main.style.setProperty('--vbh', '0px'); return; }
-  const e = data.index.modes[st.mission]?.sites[st.site], row = e && !e.ok[st.day] ? fixRow(st, data, e, lim) : '';
+  const e = data.index.modes[st.mission]?.sites[st.site], row = e && !v.go ? fixRow(st, data, e, lim) : '';
   const key = JSON.stringify(v) + row;
   if (box.dataset.k === key) { vbh(main, box); return; }
   box.dataset.k = key;
   box.className = v.go ? 'go' : 'nogo';
   box.innerHTML = `<b>${v.go ? t('go') : t('nogo')}</b>`
-    + (v.go && v.capped ? `<span class="vfix" style="color:var(--mast)">${t('mast')} ${t('m', st.mast)}</span>` : '')
+    + (v.go && v.capped ? mastTag(v.mastH) : '')
     + (v.fails.length ? `<span class="vfail">${v.fails.map(f => f.text).join(' · ')}</span>` : '')   // the reasons on the verdict's line
     + (v.fix && !row ? `<span class="vfix" style="color:var(--${v.fixKind})">→ ${v.fix}</span>` : '')   // the row below carries the fix
     + (v.why ? `<span class="vwhy">${v.why}</span>` : '')
@@ -100,7 +100,7 @@ const vbh = (main, box) => main.style.setProperty('--vbh', moved('verdict') ? '0
 // comm = Earth too little in view, slope = degrees when steeper than the landing limit (8°). GO: nothing.
 export function stageFx(st, data) {
   const site = data.site, e = data.index.modes[st.mission]?.sites[st.site], s = data.index.byId[st.site];
-  if (!site || !e || !s || e.ok[st.day]) return {};
+  if (!site || !e || !s || status(e, st.day, st.mast, limitsOf(st)).kind === 'ok') return {};
   const c = st.crit || THRESHOLDS, d = st.day, m = st.mast && site.mast;
   const sun = m ? m.sun[st.mast][d] : site.cal.sun[d], earth = m ? m.earth[st.mast][d] : site.cal.earth[d], dark = m ? m.dark[st.mast][d] : site.cal.dark[d];
   return { cold: sun < c.sun || dark > c.dark, comm: earth < c.earth, slope: s.slope_deg > 8 ? s.slope_deg : 0 };

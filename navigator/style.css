@@ -701,3 +701,4 @@ main:not([data-view="find"]) #map3d .lmap-scale{margin-top:-40px}   /* the scale
 main.full #dock #adv-panel .cseg button{flex:1;min-width:0;width:auto;height:auto;min-height:24px;margin:0;padding:2px 4px;text-align:center;border:0;background:transparent;color:var(--ink);backdrop-filter:none;font-size:12px}
 main.full #dock #adv-panel .cseg button+button{border-left:1px solid var(--ink)}
 main.full #dock #adv-panel .cseg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.mtag em{font-style:normal;font-size:.85em;font-weight:600;color:#f0a531;letter-spacing:.04em;text-transform:uppercase}

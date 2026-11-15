@@ -180,7 +180,7 @@ export function init(node, d, openPin) {
 
 function tip(id) {
   const st = state, s = data.index.byId[id], e = data.index.modes[st.mission].sites[id], v = status(e, st.day, st.mast, limitsOf(st));
-  const l1 = [siteName(s), shortDate(st.day), v.kind === 'ok' ? t('go') : v.kind === 'none' ? t('nogo') : fixText(v)].join(' · ');
+  const l1 = [siteName(s), shortDate(st.day), v.kind === 'ok' ? t('go') + (v.capped ? ' ' + t('withMast', v.mast) : '') : v.kind === 'none' ? t('nogo') : fixText(v)].join(' · ');
   return `${l1}\n${where(s)} · ${fmtLatLon(s.lat, s.lon)}`;
 }
 
