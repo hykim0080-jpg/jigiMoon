@@ -657,3 +657,9 @@ html.panels,html.panels body,.panels .lyr-app,.panels .lyr-main{background:trans
 /* a ranked spot that misses a criterion (red value): its number grey, not GO green */
 .lyr-left .lyr-tr:has(.lyr-trc b.bad) .lyr-trn,.lyr-left .lyr-tr.top:has(.lyr-trc b.bad) .lyr-trn{color:#7d8597}
 .lyr-left .lyr-tr.top:has(.lyr-trc b.bad){border-left-color:#7d8597}
+/* Find best spots: until pressed (or a spot is picked), the left panel is the GO ground's criteria only */
+.lyr-left>.lyr-tripl.lyr-hide{flex:none}
+.lyr-findbest{order:99;flex:none;margin:4px 16px 16px;min-height:36px;border:0;border-radius:0;background:#46e58c;color:#0f131b;font:600 14px Inter,system-ui,sans-serif;cursor:pointer}
+.lyr-findbest:hover,.lyr-findbest:focus-visible{background:#7ff0b0;outline:none}
+.lyr-findbest[hidden]{display:none}
+@media (min-width:701px){.lyr-main>.lyr-left:has(>.lyr-tripl.lyr-hide){bottom:auto}}
