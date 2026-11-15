@@ -9,7 +9,7 @@ import { SIMPLE, ZONE } from './config.js';
 import { shadowCanvas, initTime, expoTop } from './time.js';
 import { pinInfo } from './pin.js';
 import { getZones, hotZoneId, paint, brushCells, saveOverride } from './zones.js';
-import { haloCanvas } from './compose.js';
+import { haloCanvas, baseInfo } from './compose.js';
 import { describe, lmName, drawableLanders, landerPath, landerLabel } from './orient.js';
 
 let pickFn = null, legend, bd, panel, canvas, ctx, svg, comp, data, badge, homeBtn, tip, W = 800, dpr = 1, anim = 0;
@@ -36,7 +36,7 @@ export function initMap(el, d, compCanvas) {
   bd.sr.onpointerdown = e => { e.stopPropagation(); e.preventDefault(); bd.sr.setPointerCapture(e.pointerId); setCut(e); bd.sr.onpointermove = setCut; };
   bd.sr.onpointerup = () => { bd.sr.onpointermove = null; };
   bd.sr.ondblclick = e => { e.stopPropagation(); setState({ cutoff: 70 }, 'zones'); };
-  legend = Object.assign(document.createElement('div'), { className: 'lyr-legend n' }); legend.innerHTML = '<i></i><span></span>';
+  legend = Object.assign(document.createElement('div'), { className: 'lyr-legend n' }); legend.innerHTML = '<i></i><span class="lt"></span><em class="lbr"><b>0</b><u></u><b class="hi"></b></em>';
   homeBtn = Object.assign(document.createElement('button'), { className: 'lyr-home', textContent: t('home'), hidden: true });
   homeBtn.onclick = e => { e.stopPropagation(); reset(); };
   homeBtn.onpointerdown = homeBtn.ondblclick = e => e.stopPropagation();
@@ -225,7 +225,8 @@ const thin = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 export function renderBadge(passPx, readoutScore) {
   const sc = state.mode === 'score', km2 = thin(passPx * PX * PX / 1e6);
   legend.hidden = state.adv || state.mode !== 'mask';
-  legend.lastChild.textContent = `${t('suitable')} ${km2} km²`;
+  legend.querySelector('.lt').textContent = `${t('suitable')} ${km2} km²`;
+  const bi = baseInfo(state); if (bi) { legend.querySelector('u').style.background = bi.css; legend.querySelector('.hi').textContent = bi.hi; }
   bd.s.hidden = !sc; bd.t.textContent = state.adv && state.mode === 'mask' && critIds(state).length + (state.month != null ? 1 : 0) ? km2 + ' km²' : '';
   if (sc) {
     const c = state.cutoff;
@@ -236,11 +237,12 @@ export function renderBadge(passPx, readoutScore) {
 const SVGNS = 'http://www.w3.org/2000/svg';
 const tw = (str, px) => [...str].reduce((a, c) => a + (c.charCodeAt(0) > 255 ? px : px * .55), 0);
 const overlaps = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
+const lmBoxes = [];   // landmark label boxes of the last frame; spacecraft labels give way to them
 function landmarkSvg(k, s) {
   const shown = data.landmarks.filter(L => L.always_show || L.tier === 1 || (L.tier === 2 && k >= 2) || (L.tier === 3 && k >= 4));
   shown.sort((a, b) => a.tier - b.tier);
   let g = '', t = '';
-  const boxes = [];
+  const boxes = lmBoxes; boxes.length = 0;
   for (const L of shown) {
     const [x, y] = toScr(...mToCf(L.x_m, L.y_m)), r = (L.radius_km || 0) * 1000 / PX * s;
     if (x < -r - 80 || y < -r - 20 || x > W + r + 80 || y > W + r + 20) continue;
@@ -259,12 +261,18 @@ function landmarkSvg(k, s) {
 }
 function landerSvg(st) {
   let g = '', lab = '';
+  const taken = [...lmBoxes];
   for (const l of drawableLanders(data.landers)) {
     const [x, y] = toScr(...mToCf(l.x_m, l.y_m));
     if (x < -10 || y < -10 || x > W + 10 || y > W + 10) continue;
     const cls = `ls ${l.kind === 'landed' || l.kind === 'planned' ? 'f' : 'x'}${l.verify || l.kind === 'planned' ? ' v' : ''}`;
     g += `<path transform="translate(${x} ${y})" d="${landerPath(l.kind)}" class="${cls}"/>`;
-    if (l.short || st.hoverLander === l.id) lab += `<text x="${x + 8}" y="${y + 4}" class="lbl lbl-sc">${st.hoverLander === l.id ? landerLabel(l) : l.short}</text>`;
+    const hov = st.hoverLander === l.id, txt = hov ? landerLabel(l) : l.short;
+    if (!txt) continue;
+    const bb = [x + 6, y - 7, x + 8 + tw(txt, 10) + 2, y + 6];
+    if (!hov && taken.some(b => overlaps(b, bb))) continue;   // a colliding short label waits for hover
+    taken.push(bb);
+    lab += `<text x="${x + 8}" y="${y + 4}" class="lbl lbl-sc">${txt}</text>`;
   }
   return g + lab;
 }

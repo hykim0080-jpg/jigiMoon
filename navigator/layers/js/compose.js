@@ -1,4 +1,4 @@
-import { N, SIMPLE, ZONE, MASK_COLORS, SCORE_RAMP, FAIL_AT_255, PX, HALF } from './config.js';
+import { N, SIMPLE, ZONE, RAMPS, MASK_COLORS, SCORE_RAMP, FAIL_AT_255, PX, HALF } from './config.js';
 import { buildRampLUT, layerColor, colorAt, hex } from './ramps.js';
 import { decode, valueOf } from './data.js';
 
@@ -6,6 +6,33 @@ const NPX = N * N;
 let D, comp, ctx, maskCv, maskCtx, maskImg, maskU32, halo, haloCtx, tmpCv, tmpCtx, D2, img, u32, light, ramp = {}, scoreLut, sitesCells = {}, last = { st: null, nCrit: 0, passPx: 0 };
 export let failCount, failBase, score100;
 
+// continuous base of the default view: one factor as intensity (ramp colour, alpha rising with the value)
+const BASE = {
+  sun:   { ids: ['sun', 'sun_days'], ramp: 'sun', hi: { sun: 50, sun_days: 130 }, gamma: 1.3 },
+  earth: { ids: ['earth', 'earth_days'], ramp: 'earth', hi: { earth: 80, earth_days: 290 }, gamma: 1.15 },
+  dark:  { ids: ['dark_days'], ramp: 'dark', hi: { dark_days: 60 }, gamma: 1.2 },
+  slope: { ids: ['slope'], ramp: 'slope', hi: { slope: 16 }, invert: true, gamma: 1.8 },
+};
+export const BASES = Object.keys(BASE);
+const baseT = (sp, u) => { const x = Math.max(0, Math.min(1, u)); return Math.pow(sp.invert ? 1 - x : x, sp.gamma); };
+const baseColor = (sp, t) => colorAt(RAMPS[sp.ramp], .22 + .75 * t);
+function baseOf(st) {
+  const key = BASE[st.base] ? st.base : 'sun', sp = BASE[key], id = sp.ids.find(i => D.bytes[i]);
+  return id ? { key, sp, id, meta: metaOf(id), hi: sp.hi[id] } : null;
+}
+export function baseInfo(st) {
+  const b = baseOf(st); if (!b) return null;
+  const stops = []; for (let k = 0; k <= 5; k++) { const t = baseT(b.sp, k / 5), a = .08 + .87 * t, C = baseColor(b.sp, t); stops.push(`rgb(${C.map((c, j) => Math.round(70 * (1 - a) + c * a))}) ${k * 20}%`); }
+  return { css: `linear-gradient(to right,${stops.join(',')})`, hi: `${b.hi}${b.meta.unit === '일' ? '' : b.meta.unit}` + (b.meta.unit === '일' ? ' d' : '') };
+}
+function baseLUT(b) {
+  const r = new Uint8Array(256), g = new Uint8Array(256), bl = new Uint8Array(256), a = new Float32Array(256);
+  for (let v = 0; v <= 250; v++) {
+    const t = baseT(b.sp, decode(b.meta, v) / b.hi), C = baseColor(b.sp, t);
+    r[v] = C[0]; g[v] = C[1]; bl[v] = C[2]; a[v] = .04 + .88 * t;
+  }
+  return { r, g, b: bl, a };
+}
 export function passLUT(meta, thr) {
   const l = new Uint8Array(256);
   for (let v = 0; v < 256; v++) {
@@ -80,8 +107,9 @@ export function compose(st) {
     const hc = ids.map(id => hex2(hexOf(layerColor(id, true)))); if (mon) hc.push(hexOf(layerColor('days', true)));
     const [pc, pa] = MASK_COLORS.pass, [mc, ma] = MASK_COLORS.many, [nc, na] = MASK_COLORS.nodata, oa = MASK_COLORS.one;
     const P = hexOf(pc), M = hexOf(mc), ND = hexOf(nc), SP = hexOf(SIMPLE.pass), spk = pack(SP[0], SP[1], SP[2]), fi = ids.indexOf(st.focusCrit);
-    let passPx = 0;
+    let passPx = 0, BL = null;
     maskU32.fill(0);
+    if (simple) { const bo = baseOf(st); if (bo) { BL = baseLUT(bo); BL.arr = D.bytes[bo.id]; } }
     if (!n) { for (let i = 0; i < NPX; i++) { const h = hill[i]; out[i] = pack(h, h, h); failCount[i] = 0; failBase[i] = 0; } }
     else for (let i = 0; i < NPX; i++) {
       let f = 0, nd = 0, lk = -1;
@@ -93,10 +121,11 @@ export function compose(st) {
       failCount[i] = nd ? 255 : f;
       const h = hill[i];
       if (simple) {
-        const g = h * SIMPLE.dim;
-        if (!nd && f === 0) { const A = SIMPLE.passA; out[i] = pack((g * (1 - A) + SP[0] * A) | 0, (g * (1 - A) + SP[1] * A) | 0, (g * (1 - A) + SP[2] * A) | 0); passPx++; maskU32[i] = spk; }
-        else if (!nd && f === 1 && lk === fi && fi >= 0) { const A = SIMPLE.focusA, C = hc[lk]; out[i] = pack((g * (1 - A) + C[0] * A) | 0, (g * (1 - A) + C[1] * A) | 0, (g * (1 - A) + C[2] * A) | 0); }
-        else out[i] = pack(g | 0, g | 0, g | 0);
+        let br = h, bg = h, bb = h;
+        if (BL) { const v = BL.arr[i]; if (v <= 250) { const A = BL.a[v], L = light[h]; br = h * (1 - A) + BL.r[v] * L * A; bg = h * (1 - A) + BL.g[v] * L * A; bb = h * (1 - A) + BL.b[v] * L * A; } }
+        if (!nd && f === 0) { passPx++; maskU32[i] = spk; }
+        else if (!nd && f === 1 && lk === fi && fi >= 0) { const A = SIMPLE.focusA, C = hc[lk]; br = br * (1 - A) + C[0] * A; bg = bg * (1 - A) + C[1] * A; bb = bb * (1 - A) + C[2] * A; }
+        out[i] = pack(br | 0, bg | 0, bb | 0);
         continue;
       }
       let C, a;
@@ -105,7 +134,15 @@ export function compose(st) {
       const L = light[h] * a, b = h * (1 - a);
       out[i] = pack((b + C[0] * L) | 0, (b + C[1] * L) | 0, (b + C[2] * L) | 0);
     }
-    if (simple) buildHalo(); 
+    if (simple) {   // suitable ground over the base: thin solid outline, low-alpha fill inside
+      const SPc = SP, fill = .3, edge = SIMPLE.passA;
+      for (let i = 0; i < NPX; i++) {
+        if (!maskU32[i]) continue;
+        const c = i % N, rr = (i - c) / N, isEdge = c === 0 || rr === 0 || c === N - 1 || rr === N - 1 || !maskU32[i - 1] || !maskU32[i + 1] || !maskU32[i - N] || !maskU32[i + N], A = isEdge ? edge : fill, o = out[i];
+        out[i] = pack(((o & 255) * (1 - A) + SPc[0] * A) | 0, (((o >> 8) & 255) * (1 - A) + SPc[1] * A) | 0, (((o >> 16) & 255) * (1 - A) + SPc[2] * A) | 0);
+      }
+      buildHalo();
+    }
     last.passPx = passPx;
   } else {
     const ids = scoreIds(st), n = ids.length, a = MASK_COLORS.score;
