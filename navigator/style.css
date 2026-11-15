@@ -702,3 +702,5 @@ main.full #dock #adv-panel .cseg button{flex:1;min-width:0;width:auto;height:aut
 main.full #dock #adv-panel .cseg button+button{border-left:1px solid var(--ink)}
 main.full #dock #adv-panel .cseg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 .mtag em{font-style:normal;font-size:.85em;font-weight:600;color:#f0a531;letter-spacing:.04em;text-transform:uppercase}
+#where-pop .wd.ld{width:auto;height:auto;border:0;border-radius:0;font-style:normal;font-size:10px;line-height:1;color:var(--ink)}
+#where-pop .wp-yr{color:var(--muted);font-size:11px}
