@@ -16,7 +16,7 @@ Living list: last updated 2026-11-15 (KST morning). Items marked **[verify]** st
 | D6 | JPL planetary ephemeris DE421 | Sun and Earth positions seen from the Moon | NASA JPL, Folkner, W.M. et al. (2008), IPN Progress Report 42-178; file shipped in the `skyfield-data` package | Public domain |
 | D7 | CGI Moon Kit colour map (`navigator/data/moon.jpg`) | Globe inset in the web tool | NASA Scientific Visualization Studio, https://svs.gsfc.nasa.gov/4720 — credit NASA's Scientific Visualization Studio, using LRO LROC/LOLA data | Public domain, credit requested |
 | D8 | Gazetteer of Planetary Nomenclature (crater, massif and ridge names and positions) | 27 landmarks on the maps and in the location sentences (`orientation/landmarks.json`) | IAU / USGS Astrogeology, https://planetarynames.wr.usgs.gov | Public domain |
-| D9 | 11 lander, impact and planned sites: IM-1, IM-2, Chandrayaan-3 and Chandrayaan-2 Vikram, Luna-25, LCROSS Centaur and shepherding spacecraft, Chandrayaan-1 impact probe, Lunar Prospector, VIPER (planned), Chang'e-7 (planned); Artemis III candidate regions of 2022 and 2024 | Spacecraft markers and cards (`orientation/landers.json`; each entry carries its own `source` URL) | LROC images (NASA/GSFC/Arizona State University), https://lroc.im-ldi.com; NASA releases (IM-1 image, VIPER site, Artemis III regions 2022 and 2024); LCROSS impact sites: arXiv:1103.1687; Chandrayaan-1 probe: LPSC 2021 abstract (ADS 2021LPI....52.1013S); Chang'e-7: The Planetary Society | Credit given per entry. **[verify: Lunar Prospector cites Wikipedia; prefer a NASA page]** |
+| D9 | 11 lander, impact and planned sites: IM-1, IM-2, Chandrayaan-3 and Chandrayaan-2 Vikram, Luna-25, LCROSS Centaur and shepherding spacecraft, Chandrayaan-1 impact probe, Lunar Prospector, VIPER (planned), Chang'e-7 (planned); Artemis III candidate regions of 2022 and 2024 | Spacecraft markers and cards (`orientation/landers.json`; each entry carries its own `source` URL) | LROC images (NASA/GSFC/Arizona State University), https://lroc.im-ldi.com; NASA releases (IM-1 image, VIPER site, Artemis III regions 2022 and 2024); LCROSS impact sites: arXiv:1103.1687; Chandrayaan-1 probe: LPSC 2021 abstract (ADS 2021LPI....52.1013S); Chang'e-7: The Planetary Society; Lunar Prospector impact: NASA NSSDC lunar artifact table, https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_artifact_impacts.html (positions checked in PR #11) | Credit given per entry |
 
 ## 2. Models, papers and mission references
 
@@ -28,7 +28,7 @@ Living list: last updated 2026-11-15 (KST morning). Items marked **[verify]** st
 | R4 | NASA Langley VSAT mechanisms abstract (16 m reference design) | Same | https://ntrs.nasa.gov/api/citations/20240004914/downloads/VSAT%20Mechanisms%20Abstract%2020240418.pdf |
 | R5 | NASA GCD VSAT annual review 2023 (masts up to 20 m explored) | Same | https://ntrs.nasa.gov/api/citations/20230012849/downloads/GCD%20Annual%20Review%20VSAT%20September%202023%20Final.pdf |
 | R6 | Honeybee Robotics LUNARSABER, proposed at over 100 m tall (DARPA LunA-10) | Concept mast limit (100 m) | Honeybee Robotics / Blue Origin release, https://www.blueorigin.com/news/honeybee-robotics-to-develop-lunarsaber-for-darpas-luna-10-program |
-| R7 | Astrobotic VSAT-XL (over 30 m tall, NASA SBIR Phase II, July 2024) | Concept mast range | Astrobotic release, https://www.astrobotic.com/astrobotic-developing-xl-solar-array-tech-for-lunar-power-infrastructure/ |
+| R7 | Astrobotic VSAT-XL, about 34 m (112 ft) tall, 50 kW | Concept mast range | Astrobotic releases, https://www.astrobotic.com/astrobotic-developing-xl-solar-array-tech-for-lunar-power-infrastructure/ and https://www.astrobotic.com/astrobotic-awarded-lunar-power-study-with-vsat-xl/ |
 | R8 | PGDA README / file headers (projection, pixel registration, height datum) | Data conventions | https://pgda.gsfc.nasa.gov/products/78 and /90 |
 
 ## 3. Software libraries
@@ -75,4 +75,4 @@ Site results (`lunar/out/`), mast study (`lunar/masts.json`), validation (`lunar
 ## Still to add before submission
 - [ ] Any new source added by other work threads after this date (check `lunar/README.md`, `navigator/README.md`, `lunar/map3d/`)
 - [ ] Any video/slide tools or music used in the demo (the 7-slide demo uses only our own screenshots)
-- [ ] Final check of the two [verify] items above (Lunar Prospector source, team photo watermark)
+- [ ] Final check of the [verify] item above (team photo watermark)
