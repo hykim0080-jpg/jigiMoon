@@ -70,7 +70,7 @@ function winRow(inf, st) {
   if (!w) { statsFor(inf.col, inf.row, st.mission).then(() => { key = ''; renderPinCard(state); }); return '<div class="lyr-win n">…</div>'; }
   if (useWin(st)) return '';
   const d = st.tDay, s = Math.floor(w.sun[d]), e = Math.floor(w.earth[d]), k = Math.ceil(w.dark[d]);
-  return `<div class="lyr-win n"><span>${tt('stayD', st.mission)}</span><span class="${s < c.sun ? 'bad' : ''}">☀ ${s} %</span><span class="${e < c.earth ? 'bad' : ''}">⊕ ${e} %</span><span class="${k > c.dark ? 'bad' : ''}">☾ ${k} h</span></div>`;
+  return `<div class="lyr-win n"><span>${tt('stayD', st.mission)}</span><span class="${s < c.sun ? 'bad' : ''}">${tt('lSun')} ${s} %</span><span class="${e < c.earth ? 'bad' : ''}">${tt('lEarth')} ${e} %</span><span class="${k > c.dark ? 'bad' : ''}">${tt('lDark')} ${k} h</span></div>`;
 }
 function drawCal(inf, st) {
   const cv = el.querySelector('.lyr-pcal'); if (!cv) return;

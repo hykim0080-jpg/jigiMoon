@@ -1,22 +1,22 @@
 /* Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team. */
 :root{
   --bg:#eef0f4; --surface:#ffffff; --ink:#151b2b; --muted:#5a6377; --line:#d3d7e0;
-  --sun:#b96f00; --earth:#2459b8; --ok:#1f8a5b; --move:#2459b8; --mast:#7446bd; --wait:#d9a24a; --none:#c3c8d2;
+  --sun:#b96f00; --earth:#2459b8; --ok:#1f8a5b; --move:#2459b8; --mast:#0f7f8c; --accent:#0b3d91; --wait:#d9a24a; --none:#c3c8d2;
   --box:#d4a017; --block:#c8372d; --terrain:#2b3242; --terrain-edge:#5d6880;
-  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
-  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --f-body:"Inter","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+  --f-mono:"Inter","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#0f131b; --surface:#181d28; --ink:#e8eaf0; --muted:#98a1b4; --line:#2b3242;
-    --sun:#f0a531; --earth:#74a2f2; --ok:#4cbf82; --move:#74a2f2; --mast:#ab89ec; --wait:#8d6a2c; --none:#394052;
+    --sun:#f0a531; --earth:#74a2f2; --ok:#4cbf82; --move:#74a2f2; --mast:#4fc0c9; --accent:#6f9cf0; --wait:#8d6a2c; --none:#394052;
     --box:#e8bd3a; --block:#f0655a; color-scheme:dark;
   }
 }
 :root[data-theme="dark"],[data-theme="dark"]{
   --bg:#0f131b; --surface:#181d28; --ink:#e8eaf0; --muted:#98a1b4; --line:#2b3242;
-  --sun:#f0a531; --earth:#74a2f2; --ok:#4cbf82; --move:#74a2f2; --mast:#ab89ec; --wait:#8d6a2c; --none:#394052;
+  --sun:#f0a531; --earth:#74a2f2; --ok:#4cbf82; --move:#74a2f2; --mast:#4fc0c9; --accent:#6f9cf0; --wait:#8d6a2c; --none:#394052;
   --box:#e8bd3a; --block:#f0655a; color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -357,7 +357,7 @@ main[data-view="compare"] #basemap,main[data-d3="1"] #basemap{display:none}
 /* MOVE card as an inset in the bottom-left corner of the local line map */
 .card.local{position:relative}
 .card.local>svg{width:100%;height:100%;max-width:none;aspect-ratio:auto}
-.card.inset{position:absolute;left:8px;bottom:8px;flex:none;height:auto;padding:8px 10px;gap:8px;background:rgba(255,255,255,.94);box-shadow:0 1px 6px rgba(0,0,0,.18);z-index:2}
+.card.inset{position:absolute;left:8px;bottom:8px;flex:none;height:auto;padding:8px 10px;gap:8px;background:rgba(255,255,255,.94);border:1px solid var(--line);z-index:2}
 .card.inset .left{width:122px;gap:3px}.card.inset .effort{width:116px}
 .card.inset .val b{font-size:28px}.card.inset .val span{font-size:13px}
 .card.inset .vis svg{height:112px;max-height:112px}
@@ -372,3 +372,7 @@ main[data-view="compare"] #basemap,main[data-d3="1"] #basemap{display:none}
 .card.local .lzsw{position:absolute;right:8px;top:8px;z-index:3;background:#fff}
 .card.local .lzsw[hidden]{display:none}
 .card.local .lzsw button{font-size:12px;padding:3px 9px}
+/* one accent colour (NASA blue) for links and sliders; meaning colours stay as they are */
+a{color:var(--accent)}
+input[type=range]{accent-color:var(--accent)}
+.app-name,.seg a,header a{color:inherit}

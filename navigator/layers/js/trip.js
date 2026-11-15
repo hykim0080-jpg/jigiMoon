@@ -23,7 +23,7 @@ export const REGIONS = [
   { id: 'all' },
 ];
 const TX = {
-  en: {
+  en: { lSun: 'Sun', lEarth: 'Earth', lDark: 'Dark',
     when: 'When', where: 'Where to?', stay: 'Stay', pickDay: 'Landing day', pickRegion: 'Choose a region',
     calNote: 'GO spots per landing day', spots: n => `${n} GO ${n === 1 ? 'spot' : 'spots'}`, noneDay: 'no GO spot',
     nextGo: n => `next GO in ${n} d`, best: 'Best spots', loading: 'Computing…', go: 'GO', nogo: 'NO-GO',
@@ -35,7 +35,7 @@ const TX = {
     ansBest: s => ` Best spot: <a data-rank="1">${s}</a>.`, ansNext: (n, s) => ` Soonest: <a data-rank="1">${s}</a>, in ${n} d.`,
     r: { shackleton: 'Shackleton area', mouton: 'Mons Mouton', malapert: 'Malapert · Haworth', nobile: 'Nobile', cabeus: 'Cabeus', all: 'Whole south pole' },
   },
-  ko: {
+  ko: { lSun: '햇빛', lEarth: '지구', lDark: '어둠',
     when: '언제', where: '어디로?', stay: '체류', pickDay: '착륙일', pickRegion: '지역 고르기',
     calNote: '착륙일별 가능한 지점 수', spots: n => `가능 지점 ${n}곳`, noneDay: '가능 지점 없음',
     nextGo: n => `${n}일 뒤 가능`, best: '추천 지점', loading: '계산 중…', go: '가능', nogo: '불가',
@@ -267,6 +267,6 @@ function drawList(st, p) {
   list.innerHTML = `<div class="lyr-trh"><h2>${tt('best')}</h2><span class="n">${regionName(currentRegion())} · ${tt('spots', ranked.filter(r => r.go).length)}</span></div>` + ranked.map((r, i) => {
     const v = r.go ? `<span style="color:var(--ok)">${tt('go')}</span>` : r.wait != null && r.wait <= LIM.wait ? `<span style="color:var(--wait)">${tt('wait', r.wait)}</span>` : `<span style="color:var(--muted)">${tt('nogo')}</span>`;
     const why = i === 0 ? `<ul class="lyr-why"><li class="${r.sun < c.sun ? 'bad' : ''}"><i style="background:var(--sun)"></i>${tt('whySun', Math.floor(r.sun), c.sun)}</li><li class="${r.earth < c.earth ? 'bad' : ''}"><i style="background:var(--earth)"></i>${tt('whyEarth', Math.floor(r.earth), c.earth)}</li><li class="${r.dark > c.dark ? 'bad' : ''}"><i style="background:var(--muted)"></i>${tt('whyDark', Math.ceil(r.dark), c.dark)}</li></ul>` : '';
-    return `<div class="lyr-tr${i === 0 ? ' top' : ''}" data-rank="${r.id}"><span class="lyr-trn n">${r.id}</span><div class="lyr-trt">${r.title}</div><div class="lyr-trv">${v}<button class="lyr-tradd${inCart(r.col, r.row) >= 0 ? ' in' : ''}" data-addr="${r.id}" title="${ct(inCart(r.col, r.row) >= 0 ? 'added' : 'add')}">${inCart(r.col, r.row) >= 0 ? '✓' : '+'}</button></div><div class="lyr-trs n">☀ ${Math.floor(r.sun)} % · ⊕ ${Math.floor(r.earth)} % · ☾ ${Math.ceil(r.dark)} h</div>${why}</div>`;
+    return `<div class="lyr-tr${i === 0 ? ' top' : ''}" data-rank="${r.id}"><span class="lyr-trn n">${r.id}</span><div class="lyr-trt">${r.title}</div><div class="lyr-trv">${v}<button class="lyr-tradd${inCart(r.col, r.row) >= 0 ? ' in' : ''}" data-addr="${r.id}" title="${ct(inCart(r.col, r.row) >= 0 ? 'added' : 'add')}">${inCart(r.col, r.row) >= 0 ? '✓' : '+'}</button></div><div class="lyr-trs n">${tt('lSun')} ${Math.floor(r.sun)} % · ${tt('lEarth')} ${Math.floor(r.earth)} % · ${tt('lDark')} ${Math.ceil(r.dark)} h</div>${why}</div>`;
   }).join('');
 }

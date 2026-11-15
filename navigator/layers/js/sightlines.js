@@ -101,7 +101,7 @@ function ridgeOf(col, row, sky, day, mission, body) {
 const textW = s => [...s].reduce((a, c) => a + (c.charCodeAt(0) > 0x2000 ? 11.5 : 6.3), 0);
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 // SVG for the overlay; toScr(colF, rowF) gives screen px; s = screen px per cell
-export function sightSvg(st, pin, sky, toScr, s, move, W = 800) {
+export function sightSvg(st, pin, sky, toScr, s, move, W = 800, H = W) {
   if (!pin) return '';
   if (!elev) loadElev(() => { cache.clear(); setState({}, 'site'); });
   if (!sky) { const k = pin.col + ',' + pin.row; if (waitSky !== k) { waitSky = k; skyAt(pin.col, pin.row).then(() => setState({}, 'site')); } return ''; }
@@ -124,7 +124,7 @@ export function sightSvg(st, pin, sky, toScr, s, move, W = 800) {
     const txt = tx(body === 'sun' ? 'hidSun' : 'hidEarth', Math.round(rg.share * 100)), w = textW(txt) + 14;
     const off = Math.max(14, 46 - Math.hypot(m[0] - px, m[1] - py));   // keep the bubble clear of the spot and its arrows
     let bx = m[0] + ux * off - (ux < -0.3 ? w : ux > 0.3 ? 0 : w / 2), by = m[1] + uy * off - (uy < -0.3 ? 18 : uy > 0.3 ? 0 : 9);
-    bx = Math.max(4, Math.min(W - w - 4, bx)); by = Math.max(40, Math.min(W - 40, by));
+    bx = Math.max(4, Math.min(W - w - 4, bx)); by = Math.max(40, Math.min(H - 40, by));
     while (used.some(u => Math.abs(u[1] - by) < 20 && Math.abs(u[0] - bx) < Math.max(u[2], w))) by += uy < 0 ? -20 : 20;
     used.push([bx, by, w]);
     const line = `<line x1="${m[0].toFixed(1)}" y1="${m[1].toFixed(1)}" x2="${(bx + w / 2).toFixed(1)}" y2="${(by + 9).toFixed(1)}" class="lead"/>`;
