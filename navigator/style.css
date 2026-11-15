@@ -626,3 +626,14 @@ main[data-view="find"] #zoom .z-dim{display:none}
 /* Find a site: the scale bar sits right of the ranked-spots panel, never under it */
 main[data-view="find"] #map3d .lmap-scale{margin-left:312px}
 @media (max-width:1179px){main[data-view="find"] #map3d .lmap-scale{margin-left:272px}}
+/* Side by side: the selected site's column stands out (bright edge, lighter ground); a click on a column selects it;
+   ▾ by a column's name changes that column only */
+.cmp .cell[data-pick]{cursor:pointer}
+.cmp.sbs .cell.sel{background:rgba(255,255,255,.05);box-shadow:inset 1px 0 0 #e8eaf0,inset -1px 0 0 #e8eaf0;padding-left:6px;padding-right:6px}
+.cmp.sbs .cell.head.sel{box-shadow:inset 1px 0 0 #e8eaf0,inset -1px 0 0 #e8eaf0,inset 0 2px 0 #e8eaf0;padding-top:6px}
+.cmp.sbs .cell:not(.sel):not(.lab){opacity:.72}
+.cmp.sbs .cell:not(.sel):hover{opacity:1}
+.cmp .cname{display:flex;align-items:center;gap:6px}
+.cmp .cdd{position:relative;display:inline-grid;place-items:center;width:28px;height:28px;border:1px solid var(--line);font-size:12px;color:var(--muted);flex:none}
+.cmp .cdd:hover{border-color:var(--ink);color:var(--ink)}
+.cmp .cdd select{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}

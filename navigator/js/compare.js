@@ -16,15 +16,25 @@ let SKY_H = 225;
 export function init(node) {
   root = node;
   root.addEventListener('click', e => {
+    if (e.target.closest('select')) return;
     const x = e.target.closest('[data-unpin]');
-    if (x) { setState({ pinned: state.pinned.filter(id => id !== x.dataset.unpin) }); return; }
+    if (x) { setState({ pinned: state.pinned.filter(id => id !== x.dataset.unpin), ...(x.dataset.unpin === state.site && data.compared ? { site: data.compared.find(id => id !== state.site) || state.site } : {}) }); return; }
+    // a click anywhere in a column selects that site (WHERE, the map and the fixes follow); the columns keep their order
     const h = e.target.closest('[data-pick]');
-    if (h) setState({ site: h.dataset.pick });
+    if (h && h.dataset.pick !== state.site) setState({ site: h.dataset.pick, pinned: [...(data.compared || [])] });
+  });
+  // ▾ next to a column's name: change that column's site only
+  root.addEventListener('change', e => {
+    const sel = e.target.closest('select[data-col]'); if (!sel || !data.compared) return;
+    const i = +sel.dataset.col, old = data.compared[i], nu = sel.value; if (!nu || nu === old) return;
+    const ids = data.compared.map(id => id === old ? nu : id).filter((id, k, a) => a.indexOf(id) === k);
+    setState({ pinned: ids, ...(old === state.site ? { site: nu } : {}) });
   });
 }
 
 // selected site + pinned; when nothing is pinned, the two best other sites that day
 function columns(st) {
+  if (st.pinned.includes(st.site)) return st.pinned.slice(0, 4);   // chosen in Side by side: the order stays
   const ids = [st.site, ...st.pinned.filter(id => id !== st.site)];
   if (!st.pinned.length) {
     const others = data.index.sites.map(s => s.id).filter(id => id !== st.site)
@@ -47,7 +57,9 @@ export function render(st, d) {
 
   const mv = (s, k) => (st.mast && s.mast ? s.mast[k][st.mast][st.day] : s.cal[k][st.day]);
   const lim = limitsOf(st), mode = data.index.modes[st.mission].sites;
-  const cells = (label, fn) => `<div class="lab">${label}</div>` + sites.map(s => `<div class="cell">${fn(s)}</div>`).join('');
+  const sel = s => s.id === st.site ? ' sel' : '';
+  const cells = (label, fn) => `<div class="lab">${label}</div>` + sites.map(s => `<div class="cell${sel(s)}" data-pick="${s.id}">${fn(s)}</div>`).join('');
+  const opts = cur => data.index.sites.map(o => `<option value="${o.id}"${o.id === cur ? ' selected' : ''}>${siteName(o)}</option>`).join('');
 
   const verdict = id => {
     const s = status(mode[id], st.day, st.mast, lim);
@@ -74,14 +86,14 @@ export function render(st, d) {
     };
     return `<div class="cline">${['move', 'mast', 'wait'].map(it).join('')}</div>`;
   };
-  const head = s => `<div class="cell head" data-pick="${s.id}" style="position:relative"><b>${siteName(data.index.byId[s.id])}</b><span class="where">${where(data.index.byId[s.id])}</span><span>${verdict(s.id)}</span>${st.pinned.includes(s.id) ? `<button class="x" data-unpin="${s.id}" aria-label="${t('unpin')}">×</button>` : ''}</div>`;
-  const sky = () => `<div class="cell"><div class="skyc" data-theme="dark"><svg class="csky" style="height:${SKY_H}px"></svg><svg class="cstrip" style="height:${STRIP_H}px"></svg></div></div>`;
+  const head = (s, i) => `<div class="cell head${sel(s)}" data-pick="${s.id}" style="position:relative"><b class="cname">${siteName(data.index.byId[s.id])}<span class="cdd">▾<select data-col="${i}" aria-label="${t('hbWhere')}">${opts(s.id)}</select></span></b><span class="where">${where(data.index.byId[s.id])}</span><span>${verdict(s.id)}</span>${st.pinned.includes(s.id) ? `<button class="x" data-unpin="${s.id}" aria-label="${t('unpin')}">×</button>` : ''}</div>`;
+  const sky = s => `<div class="cell${sel(s)}" data-pick="${s.id}"><div class="skyc" data-theme="dark"><svg class="csky" style="height:${SKY_H}px"></svg><svg class="cstrip" style="height:${STRIP_H}px"></svg></div></div>`;
   const year = s => `<div class="yearc"><canvas data-site="${s.id}"></canvas><span class="n">${yearPct(mode[s.id], st, lim)} %</span></div>`;
   const rows = [['', nums], ['', fixLine], [t('year'), year]];
   if (innerWidth <= 700) {   // phones: one site after another, each with its own rows
     SKY_H = 200;
     const row = ([l, fn], s) => `<div class="cell full">${fn(s)}</div>`;
-    root.innerHTML = `<div class="cmp-list">${sites.map(s => `<div class="cmp cmp-m">${head(s)}${sky()}${rows.map(r => row(r, s)).join('')}</div>`).join('')}</div>`;
+    root.innerHTML = `<div class="cmp-list">${sites.map(s => `<div class="cmp cmp-m">${head(s, sites.indexOf(s))}${sky(s)}${rows.map(r => row(r, s)).join('')}</div>`).join('')}</div>`;
   } else {
     // the sky chart takes whatever height the compact rows leave
     SKY_H = Math.max(200, Math.min(340, (root.clientHeight || 520) - 210));
