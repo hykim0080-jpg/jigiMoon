@@ -510,9 +510,13 @@ export function mountLunarMap(container, options = {}) {
   // directions from the pole (azimuth, elevation from the frame metadata); sizes are enlarged to be seen.
   const R_MOON = 1737.4;
   const moonGroup = new THREE.Group();
-  const gSun = { value: new THREE.Vector4() }, gEarth = { value: new THREE.Vector4() }, gC = { value: new THREE.Vector3() };   // globe shading (glow)
+  const gSun = { value: new THREE.Vector4() }, gEarth = { value: new THREE.Vector4() }, gC = { value: new THREE.Vector3() }, gBump = { value: null }, gBumpOn = { value: 0 }, gPole = { value: null }, gPoleOn = { value: 0 };   // globe shading (glow)
   const moonMat = new THREE.MeshBasicMaterial({ color: 0x3a3e46 });   // dark, so the lit south-pole patch stands out
   if (opt.moonUrl) new THREE.TextureLoader().load(opt.moonUrl, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; moonMat.map = tx; moonMat.color.set(0x2f3239); moonMat.needsUpdate = true; dirty = true; });
+  // relief on the globe: hillshade of the CGI Moon Kit elevation (LOLA, 4 px/deg) lit like the patch, same layout as the colour map
+  // and near the pole a finer stereographic one (+-700 km, 1.4 km/px, from the 16 px/deg elevation), row 0 = Earth side
+  if (opt.reliefPoleUrl) new THREE.TextureLoader().load(opt.reliefPoleUrl, (tx) => { tx.colorSpace = THREE.NoColorSpace; tx.flipY = false; tx.needsUpdate = true; gPole.value = tx; gPoleOn.value = 1; moonMat.needsUpdate = true; dirty = true; });
+  if (opt.reliefUrl) new THREE.TextureLoader().load(opt.reliefUrl, (tx) => { tx.colorSpace = THREE.NoColorSpace; gBump.value = tx; gBumpOn.value = 1; moonMat.needsUpdate = true; dirty = true; });
   // glow: the globe has an opening under the curved patch (6 deg = 182 km around the pole), so the patch's craters show
   const moonGeo = opt.style === 'glow' ? new THREE.SphereGeometry(R_MOON, 256, 160) : new THREE.SphereGeometry(R_MOON, 160, 80);
   if (opt.style === 'glow') moonMat.onBeforeCompile = (sh) => {   // a rounded-square hole under the terrain patch (same shape as its edge)
@@ -521,11 +525,22 @@ export function mountLunarMap(container, options = {}) {
     // under the patch's faded rim (166-200 km) the globe is drawn as if twice as far, so the fading terrain always lies over it
     // Sun / Earth beyond the patch: the same colours as the patch where the globe faces them (no terrain there, a smooth
     // terminator), fading out 450-900 km from the pole, so the light runs on past the patch's edge
-    Object.assign(sh.uniforms, { gSun, gEarth, gC, uSunW: uniforms.uSunW, uEarthW: uniforms.uEarthW, cNone: uniforms.cNone, cSun: uniforms.cSun, cEarth: uniforms.cEarth, cBoth: uniforms.cBoth });
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec4 gSun, gEarth;\nuniform vec3 gC, cNone, cSun, cEarth, cBoth;\nuniform float uSunW, uEarthW;')
+    Object.assign(sh.uniforms, { gSun, gEarth, gC, gBump, gBumpOn, gPole, gPoleOn, uSunW: uniforms.uSunW, uEarthW: uniforms.uEarthW, cNone: uniforms.cNone, cSun: uniforms.cSun, cEarth: uniforms.cEarth, cBoth: uniforms.cBoth });
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D gBump, gPole;\nuniform float gBumpOn, gPoleOn;\nuniform vec4 gSun, gEarth;\nuniform vec3 gC, cNone, cSun, cEarth, cBoth;\nuniform float uSunW, uEarthW;')
       .replace('#include <opaque_fragment>', `{
   vec3 gN = normalize(vW - gC);
-  float gP = acos(clamp(gN.y, -1.0, 1.0)) * 1737.4;
+  float gTh = acos(clamp(gN.y, -1.0, 1.0)), gP = gTh * 1737.4;
+  float gB = 1.0;
+#ifdef USE_MAP
+  if (gBumpOn > 0.5) gB = texture2D(gBump, vMapUv).r * 2.0;
+#endif
+  if (gPoleOn > 0.5) {   // stereographic map coordinates (km), as the patch: x = rho sin(lon), y = rho cos(lon)
+    float rho = 2.0 * 1737.4 * tan(gTh * 0.5);
+    vec2 dm = normalize(vec2(vW.x, -vW.z) + 1e-6) * rho;
+    float wp = 1.0 - smoothstep(600.0, 690.0, rho);
+    if (wp > 0.0) gB = mix(gB, texture2D(gPole, vec2((dm.x + 700.0) / 1400.0, (700.0 - dm.y) / 1400.0)).r * 2.0, wp);
+  }
+  outgoingLight *= gB;
   float gR = 1.0 - smoothstep(450.0, 900.0, gP);
   float gs = smoothstep(-0.01, 0.05, dot(gN, gSun.xyz)) * gSun.w * uSunW;
   float ge = smoothstep(-0.002, 0.006, dot(gN, gEarth.xyz)) * gEarth.w * uEarthW;

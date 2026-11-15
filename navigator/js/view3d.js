@@ -107,7 +107,7 @@ async function mount() {
       onMapClick: (x, y) => { if (state.view === 'find') findlink.send({ type: 'click', x, y }); else if (onPin) onPin(Math.round(x), Math.round(y)); },
       onPinClick: p => { if (state.view === 'find') { findlink.send({ type: 'pick', col: p.col, row: p.row }); map.focus(p.x, p.y, 14); } else if (onPin) onPin(Math.round(p.x), Math.round(p.y)); },
       style: 'glow', psrUrl: 'layers/data/psr.wasm', onHover: hover, onCamera: c => { if (!entering && performance.now() > quietUntil) saveCam(c, 'detail'); },   // LLSN-like look: stars, gold where Sun and Earth are in view, soft blue permanent shadow; a card follows the cursor
-      moonUrl: 'data/moon.jpg', sunUrl: 'data/sun_sdo_512.png', earthUrl: 'data/earth_bluemarble_1024.jpg', bodyMarkers: false,   // NASA SVS CGI Moon Kit, the globe under the terrain patch
+      moonUrl: 'data/moon.jpg', reliefUrl: 'data/moon_relief.jpg', reliefPoleUrl: 'data/moon_relief_pole.jpg', sunUrl: 'data/sun_sdo_512.png', earthUrl: 'data/earth_bluemarble_1024.jpg', bodyMarkers: false,   // NASA SVS CGI Moon Kit, the globe under the terrain patch
     });
     return map.ready;
   }).then(() => { if (map.setBottom) map.setBottom(64); box.classList.remove('loading'); lastKey = ''; lastSite = ''; lastCells = ''; mapReady = true; return arrive(); })
