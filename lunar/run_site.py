@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Run prescribe for one site from sites.json and write out/<id>.json and out/<id>_sky_year.json."""
 import datetime as dt, json, os, sys, time
 import numpy as np

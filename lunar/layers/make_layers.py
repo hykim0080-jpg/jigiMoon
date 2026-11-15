@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Decision-factor layers of the lunar south pole (800x800 @500 m, +-200 km, polar stereographic).
 Uses the per-pixel horizon tables from hz_table.py and JPL DE421 Sun/Earth vectors, 2027-01-01..2028-01-15
 every 2 h. Same definitions as lunar/prescribe.py (sun = visible disc fraction, dark < 0.1,

@@ -1,3 +1,4 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 // User-adjustable sub-thresholds (sun %, Earth %, dark h): levels come from layers.json `criterion_levels`;
 // each level is a layer file with the same encoding as the default one, loaded on first selection.
 import { N } from './config.js';

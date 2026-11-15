@@ -1,3 +1,4 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 // Right panel: the pin card — verdict first, then fixes, checks, sky, GO calendar, link.
 import { state, setState } from './state.js';
 import { pinInfo, isoOfDay } from './pin.js';

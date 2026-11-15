@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Make data/spot5/<site>.jpg: hillshade (2x vertical exaggeration) of the PGDA LOLA 5 m/px site tiles (https://pgda.gsfc.nasa.gov/products/78), +-4.5 km; outside a tile, the 20 m patch fills in.
 Download <tile>_final_adj_5mpp_surf.tif into TILES first."""
 import json,os,time,numpy as np,rasterio

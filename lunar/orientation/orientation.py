@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Build orientation/landmarks.json and the relative-position helper used by landers.json and sites.
 Landmarks: IAU/USGS Gazetteer of Planetary Nomenclature (planetarynames.wr.usgs.gov), planetographic
 +East coordinates, diameters in km. Relative position rule: see describe()."""

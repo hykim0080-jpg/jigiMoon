@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Terrain horizon masks from lunar south-polar stereographic DEMs (PGDA / LOLA).
 
 Conventions checked against the PGDA files (2026-11-14):

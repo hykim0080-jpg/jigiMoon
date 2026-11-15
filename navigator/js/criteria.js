@@ -1,3 +1,4 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 // Landing criteria the user can change (sun %, Earth %, longest dark h), shared with the layer viewer.
 // Hash keys cs / ce / cd (left out at the defaults), remembered in localStorage 'moonjigi.crit'.
 import { THRESHOLDS, MAST_HEIGHTS } from './config.js';

@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Time-sliced sun / Earth visibility maps of the lunar south pole (for the 3D slider map).
 
 For every pixel of a south-polar-stereographic grid and every time step: trace the terrain from the

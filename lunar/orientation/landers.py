@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Build orientation/landers.json: spacecraft that landed / impacted / were planned near the lunar south
 pole, plus Artemis III candidate regions (2024 list and the 2022 list). Coordinates as published
 (source per item); 'verify' = not confirmed against a primary source."""

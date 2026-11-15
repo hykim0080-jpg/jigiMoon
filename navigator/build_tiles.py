@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """data/t<res>/<col>_<row>.jpg: LOLA hillshade tiles of 250 px covering +-200 km (col 0 = west edge, row 0 = top/Earth side).
 Run: python3 build_tiles.py LDEM_80S_40MPP_ADJ.TIF 40 data/t40   or   python3 build_tiles.py LDEM_80S_20MPP_ADJ.TIF 20 data/t20
 Source: PGDA LOLA polar DEMs, https://pgda.gsfc.nasa.gov/data/LOLA_20mpp/ . Processed one tile row at a time."""

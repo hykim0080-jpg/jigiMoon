@@ -1,3 +1,4 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 import { N, PX, HALF, GRATICULE_LATS, SCORE_RAMP } from './config.js';
 import { state, setState } from './state.js';
 import { latRadius, cellToLatLon, cellToXY } from './geo.js';

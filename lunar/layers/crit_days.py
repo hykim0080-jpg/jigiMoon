@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Per-criterion pass-day layers (2 m, 14-day mission, 2027 landing days): number of landing days on which the
 mission alone meets sun >= 70% (sun_days), Earth >= 50% (earth_days), longest darkness <= 50 h (dark_days).
 These are the static GIS inputs; days14 (all three on the same day) is the exact combined result."""

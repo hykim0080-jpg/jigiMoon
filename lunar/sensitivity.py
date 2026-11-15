@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Robustness of the 'move' prescription.
 For each site, take the grid points that are prescribed as the nearest feasible alternative on NO-GO days
 (6-day mission, 2027), up to the 8 most-used points. For each such point and each day it is prescribed:

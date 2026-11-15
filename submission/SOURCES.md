@@ -30,6 +30,13 @@ Living list: last updated 2026-11-15 (KST morning). Items marked **[verify]** st
 | R6 | Honeybee Robotics LUNARSABER, proposed at over 100 m tall (DARPA LunA-10) | Concept mast limit (100 m) | Honeybee Robotics / Blue Origin release, https://www.blueorigin.com/news/honeybee-robotics-to-develop-lunarsaber-for-darpas-luna-10-program |
 | R7 | Astrobotic VSAT-XL, about 34 m (112 ft) tall, 50 kW | Concept mast range | Astrobotic releases, https://www.astrobotic.com/astrobotic-developing-xl-solar-array-tech-for-lunar-power-infrastructure/ and https://www.astrobotic.com/astrobotic-awarded-lunar-power-study-with-vsat-xl/ |
 | R8 | PGDA README / file headers (projection, pixel registration, height datum) | Data conventions | https://pgda.gsfc.nasa.gov/products/78 and /90 |
+| R9 | VIPER mission planning: 50 h minimum-power endurance, safe havens | Dark-spell criterion (≤ 50 h) | NASA, https://www.nasa.gov/wp-content/uploads/2022/05/overview_of_mission_planning_for_the_viper_rover.pdf ; https://ntrs.nasa.gov/api/citations/20230011558/downloads/VIPER%20Mission%20Overview%20Presentation-%20CATIE%20Expo.pdf |
+| R10 | South-pole direct-to-Earth availability (~51 %) and best-site sunlight | Earth-in-view criterion (50 %), sunlight context | Bryant (2009), JPL IPN Progress Report 42-176C, https://ipnpr.jpl.nasa.gov/progress_report/42-176/176C.html |
+| R11 | Best-site sunlight at 2 m and 10 m above ground | Sunlight criterion (70 %), mast context | Gläser et al. (2014), *Icarus* 243, 78–90 |
+| R12 | Artemis III candidate regions, 2022 | Site context (earlier region set) | NASA, https://www.nasa.gov/news-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/ |
+| R13 | CLPS missions last one lunar day (≤ 14 Earth days) | 14-day mission option | NASA, https://smd-cms.nasa.gov/wp-content/uploads/2023/11/techshow-jej.pdf |
+| R14 | Blue Ghost Mission 1: 14 days of surface operations | 14-day mission option | Firefly Aerospace, https://fireflyspace.com/news/firefly-aerospace-successfully-completes-14-days-of-surface-operations-on-the-moon |
+| R15 | IM-2 mission end (battery) one day after landing | Context: why sunlight and contact matter | SpacePolicyOnline, https://spacepolicyonline.com/news/im-2-mission-ends-one-day-after-lunar-landing/ |
 
 ## 3. Software libraries
 
