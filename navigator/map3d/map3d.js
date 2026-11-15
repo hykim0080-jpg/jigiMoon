@@ -497,7 +497,7 @@ export function mountLunarMap(container, options = {}) {
     const sg = new THREE.BufferGeometry();
     sg.setAttribute('position', new THREE.BufferAttribute(sp, 3)); sg.setAttribute('size', new THREE.BufferAttribute(ss, 1)); sg.setAttribute('color', new THREE.BufferAttribute(sc, 3));
     const stars = new THREE.Points(sg, new THREE.ShaderMaterial({
-      transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending, uniforms: { pr: { value: renderer.getPixelRatio() } },
+      transparent: true, depthWrite: false, depthTest: true, blending: THREE.AdditiveBlending, uniforms: { pr: { value: renderer.getPixelRatio() } },
       vertexShader: 'attribute float size; attribute vec3 color; varying vec3 vC; varying float vA; uniform float pr; void main(){ vC = color; vA = clamp(size / 3.2, .18, 1.); gl_PointSize = size * pr; vec4 p = modelViewMatrix * vec4(position, 0.); p.w = 1.; gl_Position = projectionMatrix * p; gl_Position.z = gl_Position.w * .9999; }',
       fragmentShader: 'varying vec3 vC; varying float vA; void main(){ float d = length(gl_PointCoord - .5); gl_FragColor = vec4(vC, smoothstep(.5, .0, d) * vA * .8); }',
     }));
@@ -602,8 +602,21 @@ export function mountLunarMap(container, options = {}) {
   ctl2.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN };
   ctl2.enabled = false;
   let camT = 0;
+  // dragging past the south pole patch: the pivot follows the Moon's curve (bare globe there, no data, no picks)
+  ctl3.screenSpacePanning = false;
+  const PAN_MAX = 1200;
+  function hugGlobe() {
+    const tg = ctl3.target, r = Math.hypot(tg.x, tg.z);
+    if (r > PAN_MAX) { const k = PAN_MAX / r; cam3.position.x -= tg.x * (1 - k); cam3.position.z -= tg.z * (1 - k); tg.x *= k; tg.z *= k; }
+    const rr = Math.min(r, PAN_MAX), e = (Math.abs(tg.x) ** 4 + Math.abs(tg.z) ** 4) ** 0.25;
+    if (e < 186) return;
+    const y = moonGroup.position.y + Math.sqrt(R_MOON * R_MOON - rr * rr), w = clamp((e - 186) / 14, 0, 1), dy = (y - tg.y) * w;
+    if (Math.abs(dy) < 1e-3) return;
+    tg.y += dy; cam3.position.y += dy;
+  }
   ctl3.addEventListener('change', () => {
     dirty = true;
+    if (!tween) hugGlobe();
     if (opt.onCamera && !tween) { clearTimeout(camT); camT = setTimeout(() => opt.onCamera(getCam()), 250); }
   });
   function getCam() {
