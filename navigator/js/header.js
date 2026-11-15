@@ -14,7 +14,7 @@ let root, refs;
 
 const seg = (items, key) => `<div class="seg" data-key="${key}">${items.map(([v, label]) => `<button data-v="${v}">${label}</button>`).join('')}</div>`;
 
-let opts = {}, dataRef = null;
+let opts = {}, dataRef = null, calMonth = 0;
 export function init(el, data, o = {}) {
   root = el; opts = o; dataRef = data;
   root.innerHTML = `
@@ -24,9 +24,9 @@ export function init(el, data, o = {}) {
       <button type="button" class="hb-tb hb-where" id="where-btn" aria-haspopup="listbox" aria-expanded="false"><span>${t('hbWhere')}</span><b class="hb-wn"></b></button>
       <div id="where-pop" role="listbox" tabindex="-1" aria-label="${t('hbWhere')}" hidden></div>
       <div id="when-pop" hidden>
-        <div class="stepper">
-          <button id="prev" aria-label="${t('prev')}">◀</button><span class="date n"></span><button id="next" aria-label="${t('next')}">▶</button>
-          <span class="slip n"></span>
+        <div class="stepper wp-cal">
+          <div class="wp-mh"><button type="button" id="mprev" aria-label="${t('prevMonth')}">◀</button><b class="wp-mn"></b><button type="button" id="mnext" aria-label="${t('nextMonth')}">▶</button><span class="slip n"></span></div>
+          <div class="wp-grid" role="grid"></div>
         </div>
         ${seg([[14, t('d', 14)], [6, t('d', 6)]], 'mission')}
         <button type="button" class="hb-any" id="anytime">${t('anytime')}</button>
@@ -42,7 +42,7 @@ export function init(el, data, o = {}) {
     ${seg([['focus', t('focus')], ['find', t('modeFind')]], 'view')}`;
   refs = {
     wpop: root.querySelector('#where-pop'), wbtn: root.querySelector('#where-btn'),
-    date: root.querySelector('.date'),
+    mn: root.querySelector('.wp-mn'), grid: root.querySelector('.wp-grid'), mseg: root.querySelector('#when-pop .seg[data-key="mission"]'),
     slip: root.querySelector('.slip'),
     verdict: root.querySelector('.verdict'),
     stepper: root.querySelector('.stepper'),
@@ -52,7 +52,9 @@ export function init(el, data, o = {}) {
   };
   // WHEN: the date, stay and GO windows in one pop-up under the box, like Find a site
   const wpop = root.querySelector('#when-pop'), wbtn = root.querySelector('#when-btn');
-  const wopen = on => { wpop.hidden = !on; wbtn.setAttribute('aria-expanded', String(on)); };
+  // WHEN is for picking: a month of days (green = GO at this place) and Anytime. Stepping a day at a time and the
+  // stay length live in the time bar under the 3D map; with the flat map (no bar) the stay stays here.
+  const wopen = on => { wpop.hidden = !on; wbtn.setAttribute('aria-expanded', String(on)); if (on) { calMonth = dateOf(state.day).getUTCMonth(); render(state, dataRef); } };
   wbtn.addEventListener('click', () => wopen(wpop.hidden));
   document.addEventListener('pointerdown', e => { if (!wpop.hidden && !wpop.contains(e.target) && !wbtn.contains(e.target)) wopen(false); });
   addEventListener('keydown', e => { if (e.key === 'Escape' && !wpop.hidden) { e.stopImmediatePropagation(); wopen(false); } }, true);
@@ -101,8 +103,9 @@ export function init(el, data, o = {}) {
   addEventListener('keydown', e => { if (e.key === 'Escape' && !refs.wpop.hidden) { e.stopImmediatePropagation(); ropen(false); refs.wbtn.focus(); } }, true);
   // Anytime: the best landing day of the year for this place
   root.querySelector('#anytime').addEventListener('click', () => { const d = bestDay(state, dataRef); if (d != null) { setState({ day: d }); wopen(false); } });
-  root.querySelector('#prev').addEventListener('click', () => setState({ day: state.day - 1 }));
-  root.querySelector('#next').addEventListener('click', () => setState({ day: state.day + 1 }));
+  root.querySelector('#mprev').addEventListener('click', () => { calMonth = Math.max(0, calMonth - 1); render(state, dataRef); });
+  root.querySelector('#mnext').addEventListener('click', () => { calMonth = Math.min(11, calMonth + 1); render(state, dataRef); });
+  refs.grid.addEventListener('click', e => { const b = e.target.closest('button[data-day]'); if (b) { setState({ day: Number(b.dataset.day) }); wopen(false); } });
   root.querySelectorAll('.seg').forEach(g => g.addEventListener('click', e => {
     const b = e.target.closest('button');
     if (!b) return;
@@ -122,7 +125,11 @@ export function render(st, data) {
   if (!refs.wpop.hidden) { const html = whereList(st, data), f = document.activeElement?.dataset?.v; if (refs.wpop.dataset.html !== html) { refs.wpop.innerHTML = html; refs.wpop.dataset.html = html; const b = f && refs.wpop.querySelector(`[data-v="${f}"]`); if (b) b.focus(); } }
   refs.adv.querySelectorAll('.crit').forEach(r => r.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(st.crit[r.dataset.c] === Number(b.dataset.v)))));
   refs.advBtn.classList.toggle('changed', !isDefault(st.crit));
-  refs.date.textContent = isoDate(st.day);
+  if (!root.querySelector('#when-pop').hidden) {
+    refs.mn.textContent = `${t('months')[calMonth]} 2027`;
+    refs.grid.innerHTML = monthGrid(st, data, calMonth);
+    const bar = document.querySelector('.tbar'); refs.mseg.hidden = !!(bar && !bar.hidden);
+  }
   refs.when.textContent = `${longDate(st.day)} · ${t('d', st.mission)}`;
   { const s = data.index.byId[st.site]; refs.wn.textContent = s ? siteName(s) : ''; }
   { // Limits and Side by side: in the dock beside the map on the full map, else at the right of the bar
@@ -174,6 +181,19 @@ export function render(st, data) {
   apiLink(st);
 }
 
+// one month of 2027 for the WHEN pop-up: Monday first; a GO day (for this place, date and stay) is green,
+// the chosen day is filled, the planned day underlined
+function monthGrid(st, data, m) {
+  const e = data.index.modes[st.mission]?.sites[st.site], lim = limitsOf(st);
+  const d0 = Math.round((Date.UTC(2027, m, 1) - Date.UTC(2027, 0, 1)) / 864e5), n = new Date(Date.UTC(2027, m + 1, 0)).getUTCDate();
+  const lead = (new Date(Date.UTC(2027, m, 1)).getUTCDay() + 6) % 7;
+  let h = t('weekdays').map(w => `<em>${w}</em>`).join('') + '<span></span>'.repeat(lead);
+  for (let i = 0; i < n; i++) {
+    const d = d0 + i, go = e && status(e, d, st.mast, lim).kind === 'ok';
+    h += `<button type="button" data-day="${d}" class="${go ? 'go' : ''}${d === st.baseline ? ' plan' : ''}" aria-pressed="${d === st.day}" aria-label="${shortDate(d)}${go ? ' · GO' : ''}">${i + 1}</button>`;
+  }
+  return h;
+}
 const ANY = '__any';
 // the WHERE list: Anywhere, saved pins (newest map picks), then the example sites; the dot is GO / NO-GO on the chosen date
 function whereList(st, data) {

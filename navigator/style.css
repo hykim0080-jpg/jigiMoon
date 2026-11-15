@@ -561,6 +561,19 @@ main[data-view="find"] .tbar .tb-pole{display:block}   /* Find a site tab: Detai
 #when-pop[hidden]{display:none}
 #when-pop .chips{max-width:100%;flex-wrap:wrap;overflow:visible}
 #when-pop .slip{display:inline!important}
+#when-pop .seg[hidden]{display:none}
+#when-pop .wp-cal{flex-direction:column;align-items:stretch;gap:8px}
+#when-pop .wp-mh{display:flex;align-items:center;gap:6px}
+#when-pop .wp-mh b{min-width:96px;text-align:center;font-size:14px;font-weight:600}
+#when-pop .wp-mh button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:0;width:28px;height:28px;cursor:pointer}
+#when-pop .wp-mh .slip{margin-left:auto;color:var(--muted)}
+#when-pop .wp-grid{display:grid;grid-template-columns:repeat(7,36px);gap:2px}
+#when-pop .wp-grid em{font-style:normal;font-size:11px;color:var(--muted);text-align:center}
+#when-pop .wp-grid button{height:32px;border:1px solid var(--line);border-radius:0;background:var(--surface);color:var(--ink);font:inherit;font-size:13px;cursor:pointer;font-variant-numeric:tabular-nums}
+#when-pop .wp-grid button.go{background:color-mix(in srgb,var(--ok) 45%,var(--surface));border-color:color-mix(in srgb,var(--ok) 60%,var(--surface))}
+#when-pop .wp-grid button.plan{text-decoration:underline;text-underline-offset:3px}
+#when-pop .wp-grid button:hover{border-color:var(--ink)}
+#when-pop .wp-grid button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 header>.hb-ans{flex:1 1 0;min-width:0;margin:0 0 0 6px;font-size:14px;line-height:1.35;max-height:2.7em;overflow:hidden}
 .hb-ans b{font-weight:600}.hb-ans .hb-go{color:var(--ok)}.hb-ans .hb-nogo{color:var(--nogo,#f0655a)}
 header>.grow,header>.app-name{display:none}
