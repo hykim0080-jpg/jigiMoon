@@ -59,7 +59,7 @@ export async function mount(root, opts = {}) {
   initCriteria(pCrit, data, setCrit); initZones(pZones, data, { pick }); initPinCard(pPin, data); initMap(pMap, data, comp); setPick(pick);
   { const hd = root.querySelector('.lyr-app header'), tl = main.querySelector('.lyr-tripl');
     initTrip(hd || main, tl, data, { pick, fly: bb => flyToCells(bb, 8), home: () => mapHome(), ranked: rk => { if (state.autoPin && rk[0] && !(state.pin && state.pin.col === rk[0].col && state.pin.row === rk[0].row)) setState({ pin: { col: rk[0].col, row: rk[0].row } }, 'panel'); } });
-    setBadges(() => tripRanked().slice(0, 5)); }
+    setBadges(() => { const r = tripRanked(), g = r.filter(z => z.go).length; return r.slice(0, g ? Math.min(g, 15) : 3); }); }
   const setAdv = v => setState(v ? { adv: true } : { adv: false, mode: 'mask', month: null, edit: null, minArea: 1 }, 'pixels');
   advBtn.onclick = () => setAdv(!state.adv);
 
@@ -81,7 +81,6 @@ export async function mount(root, opts = {}) {
   const flush = () => {
     raf = 0; const p = pend; pend = new Set();
     app.dataset.adv = state.adv ? '1' : ''; advBtn.setAttribute('aria-pressed', state.adv);
-    renderTrip(state);
     if (p.has('pixels')) { passPx = compose(state).passPx; if (state.adv) renderPanel(state); renderCriteria(state); renderZones(state); zonesSoon(); syncShadow(); syncExpo(state); renderTime(state); renderPinCard(state); renderPinSky(state); blit(); overlay(); readout(); }
     else {
       if (p.has('view')) { blit(); overlay(); }
@@ -91,6 +90,7 @@ export async function mount(root, opts = {}) {
       if (p.has('site')) { overlay(); readout(); }
       if (p.has('hover')) { overlay(); readout(); renderZones(state); }
     }
+    renderTrip(state);   // after compose(): the ranked spots follow the current mask
     const q = new URLSearchParams(); if (state.adv) { q.set('a', 1); q.set('m', state.mode); } if (state.site) q.set('s', state.site);
     if (state.pin && !state.autoPin) { const c = cellToXY(state.pin.col, state.pin.row); q.set('pin', Math.round(c.x) + ',' + Math.round(c.y)); }
     if (state.adv && state.month != null) q.set('mon', state.month + 1);

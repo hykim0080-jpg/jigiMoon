@@ -9,6 +9,7 @@ import { describe, anchorOf } from './orient.js';
 import { decode } from './data.js';
 import { lang, MONTH_NAMES } from './strings.js';
 import { failStats, failReason } from '../../js/failreason.js';
+import { failBase, critIds } from './compose.js';
 
 const T0 = Date.UTC(2027, 0, 1), DAYS = 365, LIM = { move: 3, mast: 20, wait: 60 };
 export const REGIONS = [
@@ -93,15 +94,16 @@ function poolCells(rid, mission) {
   const days = D.bytes['days' + mission] || D.bytes.days14, thr = state.threshold.slope ?? 8;
   let c0 = 0, c1 = N - 1, r0 = 0, r1 = N - 1;
   if (reg.r) { const a = xyToCell((reg.x - reg.r) * 1000, (reg.y + reg.r) * 1000), b = xyToCell((reg.x + reg.r) * 1000, (reg.y - reg.r) * 1000); c0 = Math.max(0, a.col); r0 = Math.max(0, a.row); c1 = Math.min(N - 1, b.col); r1 = Math.min(N - 1, b.row); }
-  const cand = [];
+  const cand = [], useMask = !!failBase && state.mode === 'mask' && critIds(state).length > 0;
   for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
     const i = r * N + c, v = days[i]; if (!(v > 0 && v <= 250)) continue;
-    if (sb && slopeM && (sb[i] > 250 || decode(slopeM, sb[i]) > thr)) continue;
+    if (useMask) { if (failBase[i] !== 0) continue; }
+    else if (sb && slopeM && (sb[i] > 250 || decode(slopeM, sb[i]) > thr)) continue;
     if (reg.r) { const { x, y } = cellToXY(c, r); if (Math.hypot(x / 1000 - reg.x, y / 1000 - reg.y) > reg.r) continue; }
     cand.push(i);
   }
   cand.sort((a, b) => days[b] - days[a]);
-  const K = reg.r ? 24 : 40, sp = reg.r ? 4 : 16, out = [];
+  const K = reg.r ? 60 : 120, sp = reg.r ? 4 : 12, out = [];
   for (const i of cand) {
     const c = i % N, r = (i - c) / N;
     if (out.some(o => (o.col - c) ** 2 + (o.row - r) ** 2 < sp * sp)) continue;
@@ -111,11 +113,13 @@ function poolCells(rid, mission) {
   return out;
 }
 export function poolOf(rid, mission) {
-  const k = `${rid}|${mission}|${state.threshold.slope}`; if (pools.has(k)) return pools.get(k);
+  const k = `${rid}|${mission}|${maskKey()}`; if (pools.has(k)) return pools.get(k);
+  if (pools.size > 40) pools.clear();
   const p = { cells: poolCells(rid, mission), ready: false };
-  p.promise = (async () => { await ensure(); for (const c of p.cells) c.w = await statsAsync(c.col, c.row, mission); p.ready = true; })();
+  p.promise = (async () => { await ensure(); let n = 0; for (const c of p.cells) { c.w = await statsAsync(c.col, c.row, mission); if (++n % 12 === 0) await new Promise(r => setTimeout(r, 0)); } p.ready = true; })();
   pools.set(k, p); return p;
 }
+const maskKey = () => JSON.stringify([state.crit, state.threshold, state.on.mask, state.mode]);
 export function goCount(p, d, crit) { let n = 0; for (const c of p.cells) if (c.w && isGo(c.w, d, crit)) n++; return n; }
 
 // ranked spots of a pool for a landing day: GO first (largest margin), then the soonest to become GO
@@ -127,7 +131,8 @@ export function rank(p, d, crit) {
     return { col: c.col, row: c.row, go, wait, margin, sun: w.sun[d], earth: w.earth[d], dark: w.dark[d] };
   });
   rows.sort((a, b) => (b.go - a.go) || (a.go ? b.margin - a.margin : (a.wait ?? 999) - (b.wait ?? 999) || b.margin - a.margin));
-  return rows.slice(0, 10).map((r, i) => { const { x, y } = cellToXY(r.col, r.row); return { ...r, id: i + 1, best: { col: r.col, row: r.row }, bbox: [r.col - 6, r.row - 6, r.col + 6, r.row + 6], title: describe(x, y, D.landmarks) || '' }; });
+  const nGo = rows.filter(r => r.go).length;
+  return rows.slice(0, Math.min(30, Math.max(10, nGo))).map((r, i) => { const { x, y } = cellToXY(r.col, r.row); return { ...r, id: i + 1, best: { col: r.col, row: r.row }, bbox: [r.col - 6, r.row - 6, r.col + 6, r.row + 6], title: describe(x, y, D.landmarks) || '' }; });
 }
 
 // ---- UI ----
@@ -214,16 +219,16 @@ export function renderTrip(st) {
   bar.querySelector('.lyr-tbd').textContent = `${dayText(st.tDay)} · ${tt('stayD', st.mission)}`;
   bar.querySelector('.lyr-tbr').textContent = st.region ? regionName(st.region) : regionName('all');
   bar.querySelector('[data-pop="region"]').classList.toggle('unset', !st.region);
-  const rid = currentRegion(), p = poolOf(rid, st.mission), k = `${rid}|${st.mission}|${st.tDay}|${JSON.stringify(st.crit)}|${p.ready}|${st.threshold.slope}`;
+  const rid = currentRegion(), p = poolOf(rid, st.mission), k = `${rid}|${st.mission}|${st.tDay}|${maskKey()}|${p.ready}`;
   if (!p.ready) p.promise.then(() => setState({}, 'panel'));
   if (k !== rkey) { rkey = k; ranked = p.ready ? rank(p, st.tDay, st.crit) : []; drawList(st, p); if (p.ready) opts.ranked && opts.ranked(ranked); }
   else for (const r of list.querySelectorAll('[data-rank]')) r.classList.toggle('hot', +r.dataset.rank === st.hoverTrip || (st.pin && ranked[+r.dataset.rank - 1] && ranked[+r.dataset.rank - 1].col === st.pin.col && ranked[+r.dataset.rank - 1].row === st.pin.row));
-  if (!pop.hidden) { const pk = `${pop.dataset.kind}|${st.tDay}|${st.mission}|${JSON.stringify(st.crit)}`; if (pop.dataset.k !== pk) { pop.dataset.k = pk; drawPop(); } }
+  if (!pop.hidden) { const pk = `${pop.dataset.kind}|${st.tDay}|${st.mission}|${maskKey()}`; if (pop.dataset.k !== pk) { pop.dataset.k = pk; drawPop(); } }
 }
 function drawList(st, p) {
   const c = st.crit;
   if (!p.ready) { list.innerHTML = `<div class="lyr-trh"><h2>${tt('best')}</h2></div><p class="lyr-tri">${tt('loading')}</p>`; return; }
-  list.innerHTML = `<div class="lyr-trh"><h2>${tt('best')}</h2><span class="n">${regionName(currentRegion())}</span></div>` + ranked.map((r, i) => {
+  list.innerHTML = `<div class="lyr-trh"><h2>${tt('best')}</h2><span class="n">${regionName(currentRegion())} · ${tt('spots', ranked.filter(r => r.go).length)}</span></div>` + ranked.map((r, i) => {
     const v = r.go ? `<span style="color:var(--ok)">${tt('go')}</span>` : r.wait != null && r.wait <= LIM.wait ? `<span style="color:var(--wait)">${tt('wait', r.wait)}</span>` : `<span style="color:var(--muted)">${tt('nogo')}</span>`;
     const why = i === 0 ? `<ul class="lyr-why"><li class="${r.sun < c.sun ? 'bad' : ''}"><i style="background:var(--sun)"></i>${tt('whySun', Math.floor(r.sun), c.sun)}</li><li class="${r.earth < c.earth ? 'bad' : ''}"><i style="background:var(--earth)"></i>${tt('whyEarth', Math.floor(r.earth), c.earth)}</li><li class="${r.dark > c.dark ? 'bad' : ''}"><i style="background:var(--muted)"></i>${tt('whyDark', Math.ceil(r.dark), c.dark)}</li></ul>` : '';
     return `<div class="lyr-tr${i === 0 ? ' top' : ''}" data-rank="${r.id}"><span class="lyr-trn n">${r.id}</span><div class="lyr-trt">${r.title}</div><div class="lyr-trv">${v}</div><div class="lyr-trs n">☀ ${Math.floor(r.sun)} % · ⊕ ${Math.floor(r.earth)} % · ☾ ${Math.ceil(r.dark)} h</div>${why}</div>`;
