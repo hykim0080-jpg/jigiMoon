@@ -3,8 +3,8 @@
 import { lang } from './strings.js';
 
 const ko = lang === 'ko';
-const NAME = ko ? { sun: '햇빛', earth: '지구 보임', dark: '가장 긴 어둠', slope: '경사', ice: '얼음이 남을 수 있는 곳' }
-  : { sun: 'Sunlight', earth: 'Earth in view', dark: 'Longest dark', slope: 'Slope', ice: 'Where ice can last' };
+const NAME = ko ? { sun: '햇빛', earth: '지구 보임', dark: '가장 긴 어둠', slope: '경사', ice: '얼음(추정)' }
+  : { sun: 'Sunlight', earth: 'Earth in view', dark: 'Longest dark', slope: 'Slope', ice: 'Ice (likely)' };
 let el = null, main = null, last = '';
 export function initLayerTitle(host) { main = host; el = document.createElement('div'); el.className = 'lyr-ltitle'; el.setAttribute('aria-live', 'polite'); host.append(el); }
 export function renderLayerTitle(st) {
