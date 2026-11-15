@@ -40,12 +40,12 @@ const PALETTE = {
 };
 
 // style 'glow' (LLSN-like look): grey relief, gold where Sun and Earth are both in view, dim amber for Sun only
-const PALETTE_GLOW = {
-  both:  { none: [0.27, 0.27, 0.28], sun: [0.50, 0.33, 0.16], earth: [0.30, 0.32, 0.37], both: [0.88, 0.60, 0.25], sunW: 1, earthW: 1 },
-  sun:   { none: [0.27, 0.27, 0.28], sun: [0.88, 0.60, 0.25], earth: [0.27, 0.27, 0.28], both: [0.88, 0.60, 0.25], sunW: 1, earthW: 0 },
-  earth: { none: [0.27, 0.27, 0.28], sun: [0.27, 0.27, 0.28], earth: [0.55, 0.66, 0.92], both: [0.62, 0.74, 1.00], sunW: 0, earthW: 1 },
+const PALETTE_GLOW = {   // shadow is dark, so the moving terminator reads at a glance
+  both:  { none: [0.13, 0.135, 0.15], sun: [0.62, 0.42, 0.20], earth: [0.15, 0.17, 0.23], both: [0.92, 0.64, 0.27], sunW: 1, earthW: 1 },
+  sun:   { none: [0.13, 0.135, 0.15], sun: [0.90, 0.62, 0.26], earth: [0.13, 0.135, 0.15], both: [0.90, 0.62, 0.26], sunW: 1, earthW: 0 },
+  earth: { none: [0.10, 0.10, 0.11], sun: [0.10, 0.10, 0.11], earth: [0.55, 0.66, 0.92], both: [0.62, 0.74, 1.00], sunW: 0, earthW: 1 },
 };
-const CLASS_COLOR_GLOW = { none: '#2a2d33', sun: '#b8742a', earth: '#7b8fb3', both: '#f6c35c' };
+const CLASS_COLOR_GLOW = { none: '#16181c', sun: '#b8742a', earth: '#7b8fb3', both: '#f6c35c' };
 
 const CSS = `
 .lmap{position:relative;width:100%;height:100%;min-height:240px;overflow:hidden;background:#0f131b;color:#e8eaf0;
