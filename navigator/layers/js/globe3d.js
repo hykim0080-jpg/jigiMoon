@@ -32,7 +32,7 @@ for (let i = 0; i < 256; i++) {
 let THREE = null, OrbitControls = null;
 let D = null, root = null, cv = null, renderer = null, scene = null, cam = null, controls = null, built = false, loading = null;
 let elev = null, ref = 0, tex = null, tctx = null, timg = null, pinsEl = null, tip = null, raf = 0, on = false, dirty = true;
-let gcv = null, gctx = null, gtex = null, legEl = null;
+let moving = 0, gcv = null, gctx = null, gtex = null, legEl = null;
 let pinList = [], stalks = null, stalkMat = null, lastKey = '', lastView = '', flyT = null, fly = null, earthEl = null;
 
 const xzOfCell = (col, row) => ({ X: -199.75 + col * 0.5, Z: -199.75 + row * 0.5 });
@@ -83,7 +83,7 @@ async function load() {
 
 function build() {
   renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));   // retina at 2x is ~1.8x the pixels for little gain
   renderer.setClearColor(0x000000, 1);
   scene = new THREE.Scene();
   cam = new THREE.PerspectiveCamera(42, 1, 0.5, 9000);
@@ -158,7 +158,7 @@ function build() {
 
   controls = new OrbitControls(cam, cv);
   Object.assign(controls, { enableDamping: true, dampingFactor: .07, minDistance: 6, maxDistance: 1400, maxPolarAngle: 1.36, zoomToCursor: true, screenSpacePanning: false, rotateSpeed: .6 });
-  controls.addEventListener('change', () => { dirty = true; });
+  controls.addEventListener('change', () => { dirty = true; moving = performance.now(); });
   home(true);
   wire();
   built = true; lastKey = '';
@@ -169,7 +169,7 @@ function build() {
 function home(instant) {
   const tg = new THREE.Vector3(0, hAt(0, -15), -15), p = new THREE.Vector3(0, 95, 215).add(tg);
   if (instant) { cam.position.copy(p); controls.target.copy(tg); cam.lookAt(tg); controls.update(); }
-  else fly = { t0: performance.now(), dur: 1300, p0: cam.position.clone(), p1: p, g0: controls.target.clone(), g1: tg };
+  else startFly(tg, p.clone().sub(tg));
 }
 // fly to a cell, keeping the viewing direction; dist in km from the target
 function flyToCell(col, row, dist) {
@@ -177,12 +177,20 @@ function flyToCell(col, row, dist) {
   const off = cam.position.clone().sub(controls.target);
   if (off.y < off.length() * .35) off.y = off.length() * .35;   // never skim the ground on arrival
   off.setLength(dist);
-  fly = { t0: performance.now(), dur: 1300, p0: cam.position.clone(), p1: tg.clone().add(off), g0: controls.target.clone(), g1: tg };
+  startFly(tg, off);
+}
+// glide: the target moves in a straight line, the camera swings around it (radius eased geometrically), so the
+// ground never rushes through the view
+function startFly(tg, off) {
+  const s0 = new THREE.Spherical().setFromVector3(cam.position.clone().sub(controls.target)), s1 = new THREE.Spherical().setFromVector3(off);
+  let dt = s1.theta - s0.theta; dt = Math.atan2(Math.sin(dt), Math.cos(dt));
+  const far = cam.position.distanceTo(tg);
+  fly = { t0: performance.now(), dur: clamp(900 + far * 3, 1000, 1900), g0: controls.target.clone(), g1: tg.clone(), s0, s1: { radius: s1.radius, phi: s1.phi, theta: s0.theta + dt } };
 }
 const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
 // floating panels over the map (desktop full-screen layout): left criteria panel, right spot panel
-let insets = [0, 0];
+let insets = [0, 0], offTo = 0, offNow = null;
 function insetsNow() {
   const rr = root.getBoundingClientRect(), w = rr.width, out = [0, 0];
   for (const [sel, k] of [['.lyr-left', 0], ['.lyr-pinp', 1]]) {
@@ -197,8 +205,9 @@ function size() {
   const w = root.clientWidth, h = root.clientHeight; if (!w || !h || !renderer) return;
   renderer.setSize(w, h, false); cam.aspect = w / h;
   const lp = document.querySelector('.lyr-left'), rr = root.getBoundingClientRect(), lb = lp && lp.getBoundingClientRect();
-  insets = insetsNow(); const off = (insets[0] - insets[1]) / 2;
-  if (off) cam.setViewOffset(w, h, -off, 0, w, h); else cam.clearViewOffset();
+  insets = insetsNow(); offTo = (insets[0] - insets[1]) / 2;
+  if (offNow == null) offNow = offTo;
+  cam.setViewOffset(w, h, -offNow, 0, w, h);
   cam.updateProjectionMatrix(); dirty = true;
 }
 
@@ -275,7 +284,8 @@ function placePins() {
     const x = (v.x * .5 + .5) * w, y = (-v.y * .5 + .5) * h;
     p.el.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`;
     // labels that would overlap one already placed are hidden (pins are listed most important first)
-    const sp = p.el.querySelector('span'); if (!sp) continue;
+    const sp = p.sp || (p.sp = p.el.querySelector('span')); if (!sp) continue;
+    if (performance.now() - moving < 120) continue;
     const lw = p.lw || (p.lw = sp.offsetWidth || 60), b = p.el.classList.contains('lm') ? [x - lw / 2, y - 7, x + lw / 2, y + 7] : [x - 6, y - 8, x + 12 + lw, y + 8];
     const hit = boxes.some(q => b[0] < q[2] && b[2] > q[0] && b[1] < q[3] && b[3] > q[1]);
     sp.style.visibility = hit ? 'hidden' : '';
@@ -338,7 +348,7 @@ function showTip(c, anchor, ev) {
 function hideTip() { tip.hidden = true; tipFor = ''; }
 
 function wire() {
-  let down = null, tr = 0;
+  let down = null, tr = 0, lastPick = 0, pickT = 0;
   cv.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY }; fly = null; hideTip(); });
   cv.addEventListener('pointerup', e => {
     if (!down) return; const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y); down = null;
@@ -346,6 +356,9 @@ function wire() {
   });
   cv.addEventListener('pointermove', e => {
     if (e.buttons) { hideTip(); return; }
+    if (performance.now() - moving < 200) { hideTip(); return; }
+    const now = performance.now(); if (now - lastPick < 60) { clearTimeout(pickT); pickT = setTimeout(() => cv.dispatchEvent(new PointerEvent('pointermove', e)), 65); return; }
+    lastPick = now;
     cancelAnimationFrame(tr); tr = requestAnimationFrame(() => {
       const c = pick(e.clientX, e.clientY);
       if (!c) { hideTip(); return; }
@@ -361,8 +374,13 @@ function loop(now) {
   raf = 0; if (!on) return;
   if (fly) {
     const u = clamp((now - fly.t0) / fly.dur, 0, 1), k = ease(u);
-    cam.position.lerpVectors(fly.p0, fly.p1, k); controls.target.lerpVectors(fly.g0, fly.g1, k); cam.lookAt(controls.target);
+    controls.target.lerpVectors(fly.g0, fly.g1, k);
+    const r = fly.s0.radius * Math.pow(fly.s1.radius / fly.s0.radius, k), ph = fly.s0.phi + (fly.s1.phi - fly.s0.phi) * k, th = fly.s0.theta + (fly.s1.theta - fly.s0.theta) * k;
+    cam.position.setFromSpherical(new THREE.Spherical(r, ph, th)).add(controls.target); cam.lookAt(controls.target);
     if (u >= 1) fly = null; dirty = true;
+  }
+  if (offNow != null && Math.abs(offTo - offNow) > .5) {   // the open part of the map changed (a panel slid in): ease the centre over
+    offNow += (offTo - offNow) * .14; const w = root.clientWidth, h = root.clientHeight; cam.setViewOffset(w, h, -offNow, 0, w, h); cam.updateProjectionMatrix(); dirty = true;
   }
   if (controls.update()) dirty = true;
   if (dirty) { dirty = false; renderer.render(scene, cam); placePins(); }
