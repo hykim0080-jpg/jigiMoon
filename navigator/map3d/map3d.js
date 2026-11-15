@@ -75,6 +75,12 @@ const CSS = `
 .lmap-pin i{position:absolute;left:-6px;top:-6px;width:12px;height:12px;transform:rotate(45deg);background:#74a2f2;box-shadow:0 0 0 1.5px #0f131b,0 0 10px rgba(116,162,242,.9)}
 .lmap-pin::before{content:"";position:absolute;left:-.5px;top:6px;width:1px;height:24px;background:rgba(116,162,242,.95)}
 .lmap-pin span{position:absolute;left:11px;top:-7px;font:700 11.5px/1 Inter,system-ui,sans-serif;color:#9cc0ff;text-shadow:0 0 3px #000,0 0 6px #000}
+.lmap-pin.is-rank i{background:#4cbf82;box-shadow:0 0 0 1.5px #0f131b,0 0 12px rgba(76,191,130,.95)}
+.lmap-pin.is-rank::before{background:rgba(76,191,130,.95)}
+.lmap-pin.is-rank span{color:#7fe0aa;font-size:13px}
+.lmap-link{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:2;overflow:visible}
+.lmap-link line{stroke:#7fe0aa;stroke-width:1.5;stroke-dasharray:4 3}
+.lmap-link circle{fill:#4cbf82;stroke:#0f131b;stroke-width:1.5}
 .lmap-pin.is-pin i{background:#fff;box-shadow:0 0 0 1.5px #0f131b}
 .lmap-pin.is-pin::before{background:rgba(255,255,255,.9)}
 .lmap-site.is-sel{box-shadow:0 0 0 1px rgba(15,19,27,.85),0 0 0 4px rgba(232,234,240,.28)}
@@ -1245,7 +1251,20 @@ export function mountLunarMap(container, options = {}) {
     return out.set(dx * k, 0, -dy * k);
   };
 
+  // a thin line from a NO-GO spot to its nearest GO ground (host: setLink)
+  let link = null, linkSvg = null;
+  function placeLink() {
+    if (!link) { if (linkSvg) linkSvg.style.display = 'none'; return; }
+    if (!linkSvg) { linkSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); linkSvg.setAttribute('class', 'lmap-link'); linkSvg.innerHTML = '<line/><circle r="4"/>'; ov.appendChild(linkSvg); }
+    const a = project(worldOf(link.x1, link.y1, v3)) ? [v3.x, v3.y] : null, b = project(worldOf(link.x2, link.y2, v3)) ? [v3.x, v3.y] : null;
+    if (!a || !b) { linkSvg.style.display = 'none'; return; }
+    linkSvg.style.display = '';
+    const [ln, ci] = linkSvg.children;
+    ln.setAttribute('x1', a[0]); ln.setAttribute('y1', a[1]); ln.setAttribute('x2', b[0]); ln.setAttribute('y2', b[1]);
+    ci.setAttribute('cx', b[0]); ci.setAttribute('cy', b[1]);
+  }
   function placePins() {
+    placeLink();
     for (const p of pins) {
       if (!p.el) {
         p.el = el('div', `lmap-pin is-${p.kind || 'go'}`, `<i></i>${p.label ? `<span>${esc(p.label)}</span>` : ''}`);
@@ -1788,6 +1807,7 @@ export function mountLunarMap(container, options = {}) {
     focus: focusOn,
     setCamera,
     setMarks(list) { marks = list || []; dirty = true; },
+    setLink(l) { link = l || null; dirty = true; },
     setPins(list) { for (const p of pins) p.el?.remove(); pins = (list || []).map((p) => ({ ...p })); dirty = true; },
     // GO mask from the host: a canvas over +-200 km (row 0 = Earth side), red = GO; null turns it off
     setMask(cv) {

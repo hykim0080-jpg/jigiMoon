@@ -11,7 +11,9 @@ import { SPOT5 } from './map.js';
 import * as intro from './intro.js';
 import { openMastPop } from './mastpop.js';
 import { t } from './strings.js';
-import { initHover, hover } from './hover3d.js';
+import { initHover, hover, setNear } from './hover3d.js';
+import { ranked } from './rank3d.js';
+import { nearestField } from './nearestgo.js';
 import * as gomask from './gomask3d.js';
 import { loadCam, saveCam, share, onShare } from './cam3d.js';
 import { isDefault } from './criteria.js';
@@ -65,7 +67,7 @@ async function mount() {
   order = [f.k, ...SETS.map((_, j) => j).filter(j => j !== f.k)];      // the month in use loads first; the others on first switch
   const lang = (new URLSearchParams(location.search).get('lang') || 'en').startsWith('ko') ? 'ko' : 'en';
   box.classList.add('loading');
-  initHover(box);
+  initHover(box, { setLink: l => map && map.setLink && map.setLink(l) });
   loading = import('../map3d/map3d.js').then(({ mountLunarMap }) => {
     map = mountLunarMap(box, {
       datasets: order.map(j => ({ label: SETS[j].label, url: SETS[j].url })),
@@ -76,6 +78,7 @@ async function mount() {
       // clicks pick like the 2D map: a marker selects that site, the ground drops a pin there
       onSiteClick: id => { if (data.index.byId[id]) setState({ site: id }); },
       onMapClick: (x, y) => { if (onPin) onPin(Math.round(x), Math.round(y)); },
+      onPinClick: p => { if (onPin) onPin(Math.round(p.x), Math.round(p.y)); },
       style: 'glow', psrUrl: 'layers/data/psr.wasm', onHover: hover, onCamera: c => { if (!entering && performance.now() > quietUntil) saveCam(c, 'detail'); },   // LLSN-like look: stars, gold where Sun and Earth are in view, soft blue permanent shadow; a card follows the cursor
       moonUrl: 'data/moon.jpg', sunUrl: 'data/sun_sdo_512.png', earthUrl: 'data/earth_bluemarble_1024.jpg', bodyMarkers: false,   // NASA SVS CGI Moon Kit, the globe under the terrain patch
     });
@@ -129,11 +132,25 @@ function syncMask(st) {
   const on = st.mission === 14 && isDefault(st.crit), k = on ? 'd' + st.day : 'off';
   if (k === maskKey) return; maskKey = k;
   if (!on) { map.setMask(null); return; }
-  gomask.load().then(() => { if (maskKey === k) map.setMask(gomask.maskFor(st.day)); });
+  gomask.load().then(() => { if (maskKey === k) { map.setMask(gomask.maskFor(st.day)); rankKey = ''; syncRank(state); } });
+}
+// the best spots for the day and stay: green numbered markers; NO-GO cursor cards point to the nearest GO ground
+let rankKey = '';
+function syncRank(st) {
+  const k = `${st.day}|${st.mission}|${st.crit.sun}|${st.crit.earth}|${st.crit.dark}|${maskKey}`;
+  if (k === rankKey) return; rankKey = k;
+  ranked(st.day, st.mission, st.crit).then(list => {
+    if (rankKey !== k) return;
+    const top = list.slice(0, 5);
+    map.setPins(top.map(r => ({ x: r.x, y: r.y, col: r.col, row: r.row, label: '#' + r.id, kind: 'rank' })));
+    const ga = maskKey !== 'off' ? gomask.goArr() : null;   // the GO mask of the day when it exists, else the ranked GO spots
+    const set = ga ? null : new Set(list.map(r => r.row * 800 + r.col));
+    setNear(ga ? nearestField(i => ga[i] === 1) : list.length ? nearestField(i => set.has(i)) : null, list.map(r => r.id <= 5 ? r : { ...r, id: 0 }));   // numbers only for the spots marked on the map
+  }).catch(e => console.error('[rank]', e));
 }
 function sync(st) {
   if (!map || !mapReady || !data.index) return;
-  if (map.setMask) syncMask(st);
+  if (map.setMask) { syncMask(st); syncRank(st); }
   const f = frameFor(st.day, st.hour), key = `${f.k}:${f.i}`;
   if (key !== lastKey) {
     lastKey = key;

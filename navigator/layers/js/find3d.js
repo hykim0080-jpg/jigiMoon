@@ -11,11 +11,12 @@ import { pending } from './window.js';
 import { lang } from './strings.js';
 import { cellToXY, xyToCell } from './geo.js';
 import { SETS, frameFor } from '../../js/frames3d.js';
+import { nearestField, nearestOf, nearestHtml } from '../../js/nearestgo.js';
 import { loadCam, saveCam, share, onShare } from '../../js/cam3d.js';
 
 const TX = {
-  en: { go: 'GO', nogo: 'NO-GO', sun: 'Sun', earth: 'Earth', dark: 'Longest dark', slope: 'Slope', ice: 'To ice (PSR)', stay: d => `${d}-day stay from this day`, year: 'yearly', psr: 'Permanent shadow · ice may be here', d2: '2D', d3: '3D', nodata: 'no data', terrain: 'Terrain', ridge: 'ridge / high ground', floor: 'low ground / crater floor', level: 'level ground', legGo: n => `Blue outline = GO for the whole ${n}-day stay`, legSun: 'Gold = in sunlight at the shown hour', legPsr: 'Dark blue = permanent shadow, ice may be here', only: (m, d, h) => `3D lighting: ${m}/${d} ${h}:00 UTC (nearest computed month)` },
-  ko: { go: 'GO', nogo: 'NO-GO', sun: '햇빛', earth: '지구', dark: '최장 어둠', slope: '경사', ice: '얼음(영구 그림자)까지', stay: d => `이날부터 ${d}일 체류`, year: '연평균', psr: '영구 그림자 · 얼음이 있을 수 있음', d2: '2D', d3: '3D', nodata: '자료 없음', terrain: '지형', ridge: '능선·높은 곳', floor: '낮은 곳·분화구 바닥', level: '평지', legGo: n => `파란 테두리 = ${n}일 체류 내내 GO`, legSun: '금색 = 그 시각 햇빛이 드는 곳', legPsr: '짙은 파랑 = 영구 그림자, 얼음이 있을 수 있음', only: (m, d, h) => `3D 조명: ${m}/${d} ${h}:00 UTC (가장 가까운 계산 달)` },
+  en: { go: 'GO', nogo: 'NO-GO', sun: 'Sun', earth: 'Earth', dark: 'Longest dark', slope: 'Slope', ice: 'To ice (PSR)', stay: d => `${d}-day stay from this day`, year: 'yearly', psr: 'Permanent shadow · ice may be here', d2: '2D', d3: '3D', nodata: 'no data', terrain: 'Terrain', ridge: 'ridge / high ground', floor: 'low ground / crater floor', level: 'level ground', legGo: n => `Blue outline = GO for the whole ${n}-day stay`, legSun: 'Gold = in sunlight at the shown hour', legPsr: 'Dark blue = permanent shadow, ice may be here', legRank: 'Green #1–5 = best spots for this day', only: (m, d, h) => `3D lighting: ${m}/${d} ${h}:00 UTC (nearest computed month)` },
+  ko: { go: 'GO', nogo: 'NO-GO', sun: '햇빛', earth: '지구', dark: '최장 어둠', slope: '경사', ice: '얼음(영구 그림자)까지', stay: d => `이날부터 ${d}일 체류`, year: '연평균', psr: '영구 그림자 · 얼음이 있을 수 있음', d2: '2D', d3: '3D', nodata: '자료 없음', terrain: '지형', ridge: '능선·높은 곳', floor: '낮은 곳·분화구 바닥', level: '평지', legGo: n => `파란 테두리 = ${n}일 체류 내내 GO`, legSun: '금색 = 그 시각 햇빛이 드는 곳', legPsr: '짙은 파랑 = 영구 그림자, 얼음이 있을 수 있음', legRank: '초록 #1–5 = 이날의 최적 장소', only: (m, d, h) => `3D 조명: ${m}/${d} ${h}:00 UTC (가장 가까운 계산 달)` },
 };
 const tx = (k, ...a) => { const v = (TX[lang] || TX.en)[k]; return typeof v === 'function' ? v(...a) : v; };
 const HASH0 = location.hash, CAM0 = loadCam('find');   // as opened, before this page saves its own view
@@ -40,12 +41,13 @@ function shareOut(st) {
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
 let D = null, root = null, box = null, tip = null, leg = null, note = null, map = null, loading = null, ready = false, on = false;
+let near = null;
 let order = null, lastFrame = '', lastPins = '', lastView = '', flyT = 0, maskCv = null, maskDirty = true, elev = null;
 
 export function init(panel, data) {
   D = data;
   root = Object.assign(document.createElement('div'), { className: 'f3d', hidden: true });
-  root.innerHTML = `<div class="f3d-map"></div><div class="f3d-leg"><span class="go"></span><span class="sun">${tx('legSun')}</span><span class="psr">${tx('legPsr')}</span></div><div class="f3d-note" hidden></div><div class="g3d-tip" hidden></div>`;
+  root.innerHTML = `<div class="f3d-map"></div><div class="f3d-leg"><span class="rank">${tx('legRank')}</span><span class="go"></span><span class="sun">${tx('legSun')}</span><span class="psr">${tx('legPsr')}</span></div><div class="f3d-note" hidden></div><div class="g3d-tip" hidden></div>`;
   box = root.querySelector('.f3d-map'); tip = root.querySelector('.g3d-tip'); leg = root.querySelector('.f3d-leg'); note = root.querySelector('.f3d-note');
   panel.append(root);
   // the 2D map listens on the whole panel: keep 3D gestures to the 3D view
@@ -120,7 +122,7 @@ function loadElev() {
     elev = z;
   }).catch(() => {});
 }
-function tipHtml(col, row, why) {
+function tipHtml(col, row, why, nearH = '') {
   const sm = sample(col, row); if (!sm) return '';
   const v = sm.values, w = sm.win, fails = new Set((sm.failIds || []).map(id => id.replace(/_days.*|14$/, ''))), i = row * N + col;
   const go = goOf(col, row), cr = state.crit || {};
@@ -128,8 +130,8 @@ function tipHtml(col, row, why) {
   const line = (k, label, val, lim) => `<div${fails.has(k) ? ' class="bad"' : ''}><small>${label}${lim ? ' ' + lim : ''}</small><b>${val}</b></div>`;
   const psr = D.bytes.psr && D.bytes.psr[i] >= 125 && D.bytes.psr[i] <= 250, iv = D.bytes.ice ? D.bytes.ice[i] : 255;
   return `<div class="v ${go > 0 ? 'go' : 'no'}">${go > 0 ? tx('go') : go < 0 ? tx('nodata') : tx('nogo')}<small>${w ? tx('stay', state.mission) : tx('year')}</small></div>
-    <div class="m">${line('sun', tx('sun'), sunV == null ? '–' : Math.round(sunV) + ' %', cr.sun ? '≥' + cr.sun : '')}${line('earth', tx('earth'), earthV == null ? '–' : Math.round(earthV) + ' %', cr.earth ? '≥' + cr.earth : '')}${darkV != null ? line('dark', tx('dark'), Math.round(darkV) + ' h', cr.dark ? '≤' + cr.dark : '') : ''}${line('slope', tx('slope'), v.slope == null ? '–' : v.slope.toFixed(1) + '°', '≤8')}</div>
-    ${go === 0 && why ? `<div class="why">${why}</div>` : ''}
+    <div class="m">${line('sun', tx('sun'), sunV == null ? '–' : (Math.floor(sunV * 10) / 10).toFixed(1) + ' %', cr.sun ? '≥' + cr.sun : '')}${line('earth', tx('earth'), earthV == null ? '–' : (Math.floor(earthV * 10) / 10).toFixed(1) + ' %', cr.earth ? '≥' + cr.earth : '')}${darkV != null ? line('dark', tx('dark'), Math.round(darkV) + ' h', cr.dark ? '≤' + cr.dark : '') : ''}${line('slope', tx('slope'), v.slope == null ? '–' : v.slope.toFixed(1) + '°', '≤8')}</div>
+    ${go === 0 && why ? `<div class="why">${why}</div>` : ''}${go === 0 ? nearH : ''}
     ${terrainOf(col, row)}
     <div class="s">${psr ? tx('psr') : `${tx('ice')} <b>${iv <= 250 ? (iv / 10).toFixed(1) + ' km' : '>25 km'}</b>`}</div>`;
 }
@@ -138,10 +140,12 @@ function hover(p) {
   last = p; if (raf) return;
   raf = requestAnimationFrame(() => {
     raf = 0; const q = last;
-    if (!q) { tip.hidden = true; return; }
-    const c = xyToCell(q.x, q.y); if (c.col < 0 || c.row < 0 || c.col >= N || c.row >= N) { tip.hidden = true; return; }
+    if (!q) { tip.hidden = true; map && map.setLink(null); return; }
+    const c = xyToCell(q.x, q.y); if (c.col < 0 || c.row < 0 || c.col >= N || c.row >= N) { tip.hidden = true; map && map.setLink(null); return; }
+    const nn = goOf(c.col, c.row) === 0 ? nearestOf(near, c.col, c.row, (tripRanked() || []).filter(r => r.go).map((r, k) => ({ ...r, id: k + 1 }))) : null;
+    map && map.setLink(nn ? { x1: nn.from.x, y1: nn.from.y, x2: nn.to.x, y2: nn.to.y } : null);
     const show = why => {
-      const h = tipHtml(c.col, c.row, why); tip.innerHTML = h; tip.hidden = !h;
+      const h = tipHtml(c.col, c.row, why, nearestHtml(nn, lang)); tip.innerHTML = h; tip.hidden = !h;
       const r = root.getBoundingClientRect();
       const ins = insetsNow(), right = r.width - ins[1] - 8, tw = tip.offsetWidth;
       let lx = q.cx - r.left + 18; if (lx + tw > right) lx = q.cx - r.left - 18 - tw;
@@ -195,12 +199,12 @@ function sync(st) {
     note.hidden = f.exact;
     if (!f.exact) { const d = new Date(f.shown); note.textContent = tx('only', d.getUTCMonth() + 1, d.getUTCDate(), d.getUTCHours()); }
   }
-  if (maskDirty) { maskDirty = false; map.setMask(pending(st) ? null : paintMask()); }   // no GO outline from the yearly fallback while the stay is computed
+  if (maskDirty) { maskDirty = false; const pd = pending(st); map.setMask(pd ? null : paintMask()); near = pd || !failCount ? null : nearestField(i => failCount[i] === 0); }   // no GO outline from the yearly fallback while the stay is computed
   const tops = (tripRanked() || []).filter(r => r.go).slice(0, 5), pin = st.pin && !st.autoPin ? st.pin : null;
   const pk = tops.map(r => r.col + ',' + r.row).join(';') + '|' + (pin ? pin.col + ',' + pin.row : '');
   if (pk !== lastPins) {
     lastPins = pk;
-    const list = tops.map((r, k) => { const { x, y } = cellToXY(r.col, r.row); return { x, y, col: r.col, row: r.row, label: '#' + (k + 1), kind: 'go' }; });
+    const list = tops.map((r, k) => { const { x, y } = cellToXY(r.col, r.row); return { x, y, col: r.col, row: r.row, label: '#' + (k + 1), kind: 'rank' }; });
     if (pin && !tops.some(r => r.col === pin.col && r.row === pin.row)) { const { x, y } = cellToXY(pin.col, pin.row); list.push({ x, y, col: pin.col, row: pin.row, kind: 'pin' }); }
     map.setPins(list);
   }

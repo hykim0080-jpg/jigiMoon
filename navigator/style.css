@@ -474,5 +474,6 @@ main.full #sky-panel{top:calc(104px + var(--vbh, 0px))}
 .h3d-tip .s{color:#9cb4d8;font-size:11.5px}
 .h3d-tip .s b{color:#fff;font-weight:600}
 .h3d-tip .v.go{color:#9cc0ff}.h3d-tip .v.no{color:#fff}.h3d-tip .v.wait{color:#9aa3b2}
+.h3d-tip .near{color:#9aa3b2;font-size:11.5px;margin:0 0 6px}.h3d-tip .near b{color:#7fe0aa;font-weight:600}
 .h3d-tip .why{color:#f0a49c;font-size:11.5px;line-height:1.4;margin:0 0 6px}
 .h3d-tip .s.now{margin-top:4px;color:#c9b27a}.h3d-tip .s.now b{color:#f6c35c}
