@@ -11,8 +11,15 @@ import { critName, critValue } from './criteria.js';
 import { statsCached, statsFor, whyNoFix, tt } from './trip.js';
 import { WIN_IDS, useWin } from './window.js';
 import { inCart, toggleCart, ct, MAX } from './cart.js';
+import { zoomSvg } from './zoom.js';
 
-let el, data, key = '', drag = false;
+let el, data, key = '', drag = false, fixOf = {};
+// a fix row applies itself: MOVE moves the spot, WAIT moves the landing day, MAST opens the spot in Compare (the pole height is chosen there)
+function applyFix(k) {
+  if (k === 'move' && fixOf.move) setState({ pin: { col: fixOf.move.col, row: fixOf.move.row }, autoPin: false }, 'panel');
+  else if (k === 'wait' && fixOf.wait != null) setState({ tDay: Math.min(364, state.tDay + fixOf.wait), tTouched: true }, 'time');
+  else if (k === 'mast' && fixOf.mast) location.href = fixOf.mast;
+}
 const KIND = { go: 'ok', wait: 'wait', move: 'move', mast: 'mast', none: 'block' };
 const doy = m => (Date.UTC(2027, m, 1) - Date.UTC(2027, 0, 1)) / 864e5;
 const setDay = d => { d = Math.max(0, Math.min(364, Math.round(d))); if (d !== state.tDay) setState({ tDay: d, tTouched: true }, 'time'); };
@@ -22,7 +29,8 @@ export function initPinCard(root, d) {
   el.addEventListener('pointerdown', e => { if (e.target.closest('.lyr-pcal')) { drag = true; el.setPointerCapture(e.pointerId); dayFrom(e); } });
   el.addEventListener('pointermove', e => { if (drag) dayFrom(e); });
   el.addEventListener('pointerup', () => { drag = false; });
-  el.addEventListener('click', e => { const b = e.target.closest('[data-step]'); if (b) setDay(state.tDay + +b.dataset.step); if (e.target.closest('[data-cart]') && state.pin) toggleCart(state.pin.col, state.pin.row); });
+  el.addEventListener('keydown', e => { const fx = e.target.closest('[data-fix]'); if (fx && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); applyFix(fx.dataset.fix); } });
+  el.addEventListener('click', e => { const fx = e.target.closest('[data-fix]'); if (fx) { applyFix(fx.dataset.fix); return; } const b = e.target.closest('[data-step]'); if (b) setDay(state.tDay + +b.dataset.step); if (e.target.closest('[data-cart]') && state.pin) toggleCart(state.pin.col, state.pin.row); });
 }
 function verdictHtml(v, inf, st) {
   if (v.pending) return `<i class="lyr-dot" style="background:var(--muted)"></i><span style="color:var(--muted)">…</span>`;
@@ -37,7 +45,8 @@ export function renderPinCard(st) {
   const k = inf ? `${JSON.stringify(st.cart)},${inf.col},${inf.row},${st.tDay},${st.mission},${!!statsCached(inf.col, inf.row, st.mission)},${st.adv},${inf.pending},${inf.go ? inf.go.count : ''},${JSON.stringify(st.crit)},${JSON.stringify(st.threshold)},${JSON.stringify(st.on.mask)}` : '';
   if (k === key) return; key = k;
   if (!inf) { el.innerHTML = ''; return; }
-  const v = inf.v, f = (kind, label, val, title = '') => `<div class="lyr-fx${v.kind === kind ? ' pick' : ''}${val == null ? ' na' : ''}" style="--c:var(--${kind})" title="${title}"><span>${label}</span><span class="n">${val ?? '—'}</span></div>`;
+  const v = inf.v, f = (kind, label, val, title = '', can = false) => `<div class="lyr-fx${v.kind === kind ? ' pick' : ''}${val == null ? ' na' : ''}${can ? ' can' : ''}" style="--c:var(--${kind})" title="${can ? t('fix_apply') + (title ? ' · ' + title : '') : title}"${can ? ` data-fix="${kind}" role="button" tabindex="0"` : ''}><span>${label}</span><span class="n">${val ?? '—'}${can ? ' →' : ''}</span></div>`;
+  fixOf = { move: v.move && !v.move.here && v.move.col != null ? v.move : null, wait: !v.goNow && v.wait != null && v.wait <= BUDGET.wait ? v.wait : null, mast: !v.goNow && v.mast ? inf.link : null };
   const mv = v.move ? (v.move.here ? t('here') : t('move_txt', v.move.dir, v.move.km.toFixed(1))) : null;
   const wb = useWin(st), ws = statsCached(inf.col, inf.row, st.mission), dd = st.tDay;
   const checks = data.layers.filter(m => m.threshold != null).map(m => {
@@ -55,8 +64,9 @@ export function renderPinCard(st) {
   el.innerHTML = `<div class="lyr-pt">${inf.title}</div>
 <div class="lyr-dt"><button data-step="-1">◀</button><span class="n">${isoOfDay(st.tDay)}</span><button data-step="1">▶</button></div>
 <div class="lyr-vd">${verdictHtml(v, inf, st)}</div>${winRow(inf, st)}
-<div class="lyr-fxs">${f('move', t('move'), mv)}${f('mast', t('mast'), v.goNow ? t('not_needed') : v.mast ? t('mast_gain', v.mast.gain) : null, v.mast && !v.goNow ? t('mast_title', v.mast.from, v.mast.to) : '')}${f('wait', t('wait'), v.goNow ? t('days', 0) : v.wait != null && v.wait <= BUDGET.wait ? t('days', v.wait) : null, v.wait != null && v.wait > BUDGET.wait ? t('days', v.wait) : '')}</div>
+<div class="lyr-fxs">${f('move', t('move'), mv, '', !!fixOf.move)}${f('mast', t('mast'), v.goNow ? t('not_needed') : v.mast ? t('mast_gain', v.mast.gain) : null, v.mast && !v.goNow ? t('mast_title', v.mast.from, v.mast.to) : '', !!fixOf.mast)}${f('wait', t('wait'), v.goNow ? t('days', 0) : v.wait != null && v.wait <= BUDGET.wait ? t('days', v.wait) : null, v.wait != null && v.wait > BUDGET.wait ? t('days', v.wait) : '', fixOf.wait != null)}</div>
 <div class="lyr-cks">${checks}</div>${adv}
+${zoomSvg(inf, v, data, st.threshold.slope)}
 <svg class="lyr-sky"></svg>
 ${inf.go ? `<div class="lyr-cal"><canvas class="lyr-pcal"></canvas><span class="n lyr-go-n">${t('go')} ${t('days', inf.go.count)}</span></div>` : ''}
 ${cartBtn(inf, st)}<a class="lyr-link" href="${inf.link}">${t('open_cmp')}</a>`;

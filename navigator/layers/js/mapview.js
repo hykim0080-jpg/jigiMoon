@@ -8,7 +8,7 @@ import { hue } from './config.js';
 import { t, layerName, unitOf, lang } from './strings.js';
 import { fmt } from './data.js';
 import { rampCss } from './ramps.js';
-import { SIMPLE, ZONE } from './config.js';
+import { SIMPLE, ZONE, SHOW_HATCH } from './config.js';
 import { shadowCanvas, initTime, expoTop, skyGet } from './time.js';
 import { pinInfo } from './pin.js';
 import { useWin } from './window.js';
@@ -103,7 +103,7 @@ export function blit() {
     ctx.save(); ctx.imageSmoothingEnabled = true; ctx.globalCompositeOperation = 'multiply';
     blitImg(ctx, shade, cw, ch); ctx.restore();
   }
-  if (state.mode === 'mask') drawHatch(k, cx, cy, w);
+  if (state.mode === 'mask' && SHOW_HATCH) drawHatch(k, cx, cy, w);
   if (!state.adv && state.mode === 'mask') {
     const ga = SIMPLE.haloA * Math.max(0, Math.min(1, (6 - k) / 4));
     if (ga > 0) { ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = ga; blitImg(ctx, haloCanvas(), cw, ch); ctx.restore(); }
@@ -198,6 +198,8 @@ function badges(s) {
   for (const z of tripBadges() ? badgeSrc() : getZones().slice(0, ZONE.simpleTop)) {
     const [x, y] = toScr(z.col + .5, z.row + .5);
     if (x < -20 || y < -40 || x > W + 20 || y > H + 40) continue;
+    const isPin = state.pin && state.pin.col === z.col && state.pin.row === z.row;
+    if (!isPin && out.some(b => Math.hypot(b.x - x, b.y - y) < 22)) continue;   // crowded: keep the better-ranked number readable, zoom in to see the rest
     const flip = out.some(b => Math.hypot(b.x - x, b.cy - (y - 21)) < 24) || (state.pin && state.pin.col === z.col && state.pin.row === z.row);
     out.push({ z, id: z.id, x, y, cy: flip ? y + 21 : y - 21, flip });
   }
@@ -316,7 +318,7 @@ export function renderBadge(passPx, readoutScore) {
   legend.hidden = state.adv || state.mode !== 'mask';
   legend.querySelector('.lt').textContent = useWin(state) ? t('legStay', state.mission || 14, km2) : t('legYear', km2);   // the legend in words
   legend.querySelector('.bt').textContent = (t('legBase') || {})[state.base] || '';
-  const ang = { sun: 135, earth: 45, dark: 0, slope: 90 }, hl = hatchList.filter(h => state.on.mask[h.id]);
+  const ang = { sun: 135, earth: 45, dark: 0, slope: 90 }, hl = SHOW_HATCH ? hatchList.filter(h => state.on.mask[h.id]) : [];
   legend.querySelector('.lhl').innerHTML = hl.length ? `<span>${t('legHatch')}</span>` + hl.map(h => { const c = layerColor(h.id, true); return `<i style="background:repeating-linear-gradient(${ang[hue(h.id)] ?? 135}deg,${c} 0 1.6px,transparent 1.6px 4.5px);border-color:${c}"></i>${(t('legName') || {})[hue(h.id)] || ''}`; }).join('') : '';
   const bi = baseInfo(state); if (bi) { legend.querySelector('u').style.background = bi.css; legend.querySelector('.hi').textContent = bi.hi; }
   bd.s.hidden = !sc; bd.t.textContent = state.adv && state.mode === 'mask' && critIds(state).length + (state.month != null ? 1 : 0) ? km2 + ' km²' : '';

@@ -112,9 +112,10 @@ export const doyOfMonth = m => (Date.UTC(2027, m, 1) - T0) / 864e5;
 export function initTime(panel, d) {
   slopeBytes = d && d.bytes.slope;
   const el = document.createElement('div'); el.className = 'lyr-time';
-  el.innerHTML = `<button class="lyr-sunb" aria-pressed="false" title="${t('shadow')}">☀</button><button class="lyr-sunb lyr-earthb" aria-pressed="false" title="${t('eshadow')}" aria-label="${t('eshadow')}">⊕</button><button class="lyr-expob" aria-pressed="false">${t('expo', 14)}</button><span class="n lyr-td"></span><input class="lyr-dsl" type="range" min="0" max="364" step="1" aria-label="${t('landDay')}"><button class="lyr-play" aria-pressed="false" aria-label="${t('play')}">▶</button><input class="lyr-hsl" type="range" min="0" max="335" step="1" aria-label="${t('stayHour')}"><span class="n lyr-th2"></span>`;
+  el.innerHTML = `<button class="lyr-sunb" aria-pressed="false" title="${t('shadow')}">☀</button><button class="lyr-sunb lyr-earthb" aria-pressed="false" title="${t('eshadow')}" aria-label="${t('eshadow')}">⊕</button><button class="lyr-expob" aria-pressed="false">${t('expo', 14)}</button><span class="lyr-sl">${t('landDay')}</span><span class="n lyr-td"></span><button class="lyr-plan n" hidden></button><input class="lyr-dsl" type="range" min="0" max="364" step="1" aria-label="${t('landDay')}"><button class="lyr-play" aria-pressed="false" aria-label="${t('play')}">▶</button><span class="lyr-sl">${t('stayHour')}</span><input class="lyr-hsl" type="range" min="0" max="335" step="1" aria-label="${t('stayHour')}"><span class="n lyr-th2"></span>`;
   panel.append(el);
-  bar = { el, play: el.querySelector('.lyr-play'), sun: el.querySelector('.lyr-sunb'), earth: el.querySelector('.lyr-earthb'), expo: el.querySelector('.lyr-expob'), td: el.querySelector('.lyr-td'), d: el.querySelector('.lyr-dsl'), h: el.querySelector('.lyr-hsl'), th: el.querySelector('.lyr-th2') };
+  bar = { el, play: el.querySelector('.lyr-play'), sun: el.querySelector('.lyr-sunb'), earth: el.querySelector('.lyr-earthb'), expo: el.querySelector('.lyr-expob'), td: el.querySelector('.lyr-td'), d: el.querySelector('.lyr-dsl'), h: el.querySelector('.lyr-hsl'), th: el.querySelector('.lyr-th2'), plan: el.querySelector('.lyr-plan') };
+  bar.plan.onclick = () => { if (state.plan != null) setState({ tDay: state.plan, tTouched: true }, 'time'); };
   for (const ev of ['pointerdown', 'dblclick', 'wheel', 'pointermove', 'pointerup']) el.addEventListener(ev, e => e.stopPropagation(), { passive: true });
   bar.sun.onclick = () => { setState({ shadow: !state.shadow, expo: false, eshadow: false }, 'time'); };
   bar.expo.onclick = () => { setState({ expo: !state.expo, shadow: false, eshadow: false }, 'time'); };
@@ -135,6 +136,7 @@ export function renderTime(st) {
   const open = !!(st.shadow || st.eshadow); bar.el.classList.toggle('open', open); bar.el.parentNode.classList.toggle('topen', open); bar.earth.setAttribute('aria-pressed', !!st.eshadow);
   bar.expo.setAttribute('aria-pressed', !!st.expo); bar.sun.setAttribute('aria-pressed', st.shadow); bar.d.value = st.tDay; bar.h.value = st.tHour;
   const n = (st.mission || 14) * 24; if (st.tHour >= n) { state.tHour = st.tHour % n; } bar.h.max = n - 1; bar.h.value = state.tHour;
-  bar.td.textContent = dateText(st.tDay); bar.expo.textContent = t('expo', st.mission || 14);
+  bar.td.textContent = dateText(st.tDay);
+  { const dp = st.plan == null ? 0 : st.tDay - st.plan; bar.plan.hidden = !dp; bar.plan.classList.toggle('late', dp > 0); bar.plan.textContent = `${t('plan')} ${dp > 0 ? '+' : '−'}${Math.abs(dp)} d`; bar.plan.title = t('planBack'); } bar.expo.textContent = t('expo', st.mission || 14);
   bar.th.textContent = `${dateText(st.tDay + Math.floor(state.tHour / 24))} ${String(state.tHour % 24).padStart(2, '0')}:00`;   // where the scrubber is inside the stay
 }

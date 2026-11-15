@@ -26,7 +26,8 @@ export const MASK_COLORS = {
 // per hue, preferred ids in order; the mask defaults to the first present id with a threshold of each hue
 export const DEFAULT_ON = { layers: ['sun_days', 'sun'], maskHues: ['sun', 'earth', 'dark', 'slope'], pref: ['_days', '', '14'] };
 export const ZONE = { top: 20, simpleTop: 5, merge: 1, fitMaxK: 4, minAreaRange: [0.25, 25], debounce: 100, cutoff: 70 };
-export const SIMPLE = { pass: '#4cbf82', passA: .95, dim: .72, focusA: .55, haloA: .9 };
+export const SHOW_HATCH = false;   // 11-15: the map shows only where all chosen criteria pass (no per-criterion hatching)
+export const SIMPLE = { outDim: .45, pass: '#4cbf82', passA: .95, dim: .72, focusA: .55, haloA: .9 };
 export const BUDGET = { move: 3, wait: 60, moveCells: 20, mast: 20, mastMinGain: 10 };
 export const DEFAULT_DAY = 45;
 export const MONTHS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];

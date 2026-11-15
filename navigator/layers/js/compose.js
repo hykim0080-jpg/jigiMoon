@@ -140,6 +140,7 @@ export function compose(st) {
         let br = h, bg = h, bb = h;
         if (BL) { const v = BL.arr[i]; if (v <= 250) { const A = BL.a[v], L = light[h]; br = h * (1 - A) + BL.r[v] * L * A; bg = h * (1 - A) + BL.g[v] * L * A; bb = h * (1 - A) + BL.b[v] * L * A; } }
         if (!nd && f === 0) { passPx++; maskU32[i] = spk; }
+        else if (SIMPLE.outDim) { const q = 1 - SIMPLE.outDim; br *= q; bg *= q; bb *= q; }   // only the ground where every chosen criterion passes stays bright
         out[i] = pack(br | 0, bg | 0, bb | 0);
         continue;
       }

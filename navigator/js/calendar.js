@@ -31,6 +31,13 @@ export function init(panel, d) {
   canvas.addEventListener('pointerleave', () => { hoverLine.style.display = 'none'; hideTip(); setHover(null); });
   addEventListener('pointerup', () => { dragging = false; });
   new ResizeObserver(() => render(state, data)).observe(canvas);
+  // the year calendar can open large, as a pop-up over the page (button, Esc or a click outside closes it)
+  const big = panel.querySelector('#cal-big'), back = document.getElementById('cal-back');
+  const setBig = on => { panel.classList.toggle('big', on); if (back) back.hidden = !on; big.textContent = on ? '×' : '⤢'; big.title = big.ariaLabel = on ? t('calClose') : t('calOpen'); };
+  setBig(false);
+  big.onclick = e => { e.stopPropagation(); setBig(!panel.classList.contains('big')); };
+  if (back) back.onclick = () => setBig(false);
+  addEventListener('keydown', e => { if (e.key === 'Escape' && panel.classList.contains('big')) setBig(false); });
 }
 
 function hit(e) {
@@ -91,7 +98,7 @@ export function render(st, d) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const { cw } = geom();
   const mode = data.index.modes[st.mission].sites, lim = limitsOf(st);
-  ROW = Math.min(16, Math.floor((H - AXIS - 2) / data.index.sites.length)); CELL_H = ROW - 2;
+  ROW = Math.min(canvas.parentNode.classList.contains('big') ? 44 : 16, Math.floor((H - AXIS - 2) / data.index.sites.length)); CELL_H = ROW - 2;
   sel.style.height = hoverLine.style.height = data.index.sites.length * ROW + 'px';
   const col = { ok: css('--ok'), move: css('--move'), mast: css('--mast'), wait: css('--wait'), none: css('--none') };
   const ink = css('--ink'), muted = css('--muted'), line = css('--line');
