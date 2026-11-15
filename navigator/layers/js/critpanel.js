@@ -8,16 +8,18 @@ import { lang } from './strings.js';
 import { defaults, isDefault } from './crit.js';
 import { FX, trackCss } from './factor.js';
 
-const TX = { en: { title: 'Criteria', reset: 'Reset', off: 'Off', sun: 'Sun', earth: 'Earth', dark: 'Dark', slope: 'Slope', ice: 'Ice' }, ko: { title: '기준', reset: '초기화', off: '끔', sun: '햇빛', earth: '지구', dark: '어둠', slope: '경사', ice: '얼음' } }[lang === 'ko' ? 'ko' : 'en'];
+const TX = { en: { lim: 'Limit', title: 'Criteria', reset: 'Reset', off: 'Off', sun: 'Sun', earth: 'Earth', dark: 'Dark', slope: 'Slope', ice: 'Ice' }, ko: { lim: '기준선', title: '기준', reset: '초기화', off: '끔', sun: '햇빛', earth: '지구', dark: '어둠', slope: '경사', ice: '얼음' } }[lang === 'ko' ? 'ko' : 'en'];
 let el, data, setCrit, rows = {}, open = true;
 
 export function initCritPanel(host, d, setCritFn) {
   data = d; setCrit = setCritFn;
   el = document.createElement('section'); el.className = 'lyr-cp';
-  el.innerHTML = `<div class="lyr-cph"><button class="lyr-cpt" aria-expanded="true"><i>▾</i>${TX.title}</button><button class="lyr-cpr" hidden>${TX.reset}</button></div><div class="lyr-cpb"></div>`;
+  el.innerHTML = `<div class="lyr-cph"><button class="lyr-cpt" aria-expanded="true"><i>▾</i>${TX.title}</button><span><button class="lyr-cplim" aria-pressed="true" hidden>${TX.lim}</button><button class="lyr-cpr" hidden>${TX.reset}</button></span></div><div class="lyr-cpb"></div>`;
   host.append(el);
   const body = el.querySelector('.lyr-cpb');
   el.querySelector('.lyr-cpt').onclick = () => { open = !open; render(state); };
+  // with a factor on the map: show or hide its limit (dimming + line); off = the plain gradient
+  el.querySelector('.lyr-cplim').onclick = () => setState({ fxLimit: state.fxLimit === false }, 'pixels');
   el.querySelector('.lyr-cpr').onclick = async () => {
     const th = { ...state.threshold }; for (const m of data.layers) if (m.threshold != null && th[m.id] !== m.threshold) th[m.id] = m.threshold;
     const iceId = layerOf('ice');
@@ -75,4 +77,5 @@ export function render(st) {
     if (k === 'ice' && st.on.mask[layerOf('ice')]) changed = true;
   }
   el.querySelector('.lyr-cpr').hidden = !changed;
+  { const lb = el.querySelector('.lyr-cplim'); lb.hidden = !st.factor; lb.setAttribute('aria-pressed', String(st.fxLimit !== false)); }
 }

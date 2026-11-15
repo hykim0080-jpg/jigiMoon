@@ -27,6 +27,7 @@ const tOf = (k, v) => { const f = FX[k]; return Math.max(0, Math.min(1, (v - f.l
 
 // the limit of factor k now (null = no limit, e.g. ice switched off)
 export function limitOf(st, k) {
+  if (st.fxLimit === false) return null;   // limit hidden: the plain gradient (the GO judgment is unchanged)
   if (k === 'sun' || k === 'earth' || k === 'dark') return st.crit[k];
   const id = k === 'ice' ? 'ice' : 'slope';
   if (k === 'ice' && !st.on.mask.ice) return null;

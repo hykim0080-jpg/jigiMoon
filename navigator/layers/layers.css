@@ -670,3 +670,6 @@ html.panels,html.panels body,.panels .lyr-app,.panels .lyr-main{background:trans
 .lyr-cpl.fx input::-webkit-slider-runnable-track{height:8px;background:var(--trk)}
 .lyr-cpl.fx input::-moz-range-track{height:8px;background:var(--trk)}
 .lyr-cpl.fx input::-webkit-slider-thumb{margin-top:-4px;box-shadow:0 0 0 1px #0f131b}
+.lyr-cph>span{display:flex;gap:14px;align-items:center}
+.lyr-cph .lyr-cplim{font-size:12px!important;color:#a3abbb!important;padding:2px 6px!important;border:1px solid #5a6378!important}
+.lyr-cph .lyr-cplim[aria-pressed="true"]{color:#0f131b!important;background:#e8eaf0!important;border-color:#e8eaf0!important}
