@@ -192,8 +192,9 @@ varying vec2 vMap;
 void main() {
   vMap = vec2(position.x, -position.z);
   // style 'glow': relief around the edge level uRef, eased flat near the rim, on the Moon's curvature
-  float r = length(position.xz);
-  float y = mix(aH * uExag, (aH - uRef) * uExag * (1.0 - smoothstep(176.0, 198.0, r)) - r * r / 3474.8 + 0.3 * smoothstep(170.0, 180.0, r), uCurv);
+  // the patch edge is a rounded square (p = 4), so spots near the ±200 km corners keep their ground
+  float r = length(position.xz), e = pow(pow(abs(position.x), 4.0) + pow(abs(position.z), 4.0), 0.25);
+  float y = mix(aH * uExag, (aH - uRef) * uExag * (1.0 - smoothstep(190.0, 200.0, e)) - r * r / 3474.8 + 0.3 * smoothstep(184.0, 192.0, e), uCurv);
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position.x, y, position.z, 1.0);
 }`;
 
@@ -266,7 +267,7 @@ void main() {
   }
   col = mix(col, vec3(0.97, 0.95, 0.90), rim);
 
-  gl_FragColor = vec4(col, mix(1.0, 1.0 - smoothstep(178.0, 198.0, length(vMap)), uCurv));
+  gl_FragColor = vec4(col, mix(1.0, 1.0 - smoothstep(192.0, 200.0, pow(pow(abs(vMap.x), 4.0) + pow(abs(vMap.y), 4.0), 0.25)), uCurv));
 }`;
 
 const SKIRT_VERT = /* glsl */`
@@ -452,7 +453,7 @@ export function mountLunarMap(container, options = {}) {
     msg.textContent = T.noWebgl;
     return { destroy() { root.remove(); }, setFrame() {}, ready: Promise.reject(e) };
   }
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   const glow = opt.style === 'glow';
   renderer.setClearColor(glow ? 0x000000 : 0x0f131b, 1);
   const scene = new THREE.Scene();
@@ -486,7 +487,11 @@ export function mountLunarMap(container, options = {}) {
   const moonMat = new THREE.MeshBasicMaterial({ color: 0x3a3e46 });   // dark, so the lit south-pole patch stands out
   if (opt.moonUrl) new THREE.TextureLoader().load(opt.moonUrl, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; moonMat.map = tx; moonMat.color.set(0x474b54); moonMat.needsUpdate = true; dirty = true; });
   // glow: the globe has an opening under the curved patch (6 deg = 182 km around the pole), so the patch's craters show
-  const moonGeo = opt.style === 'glow' ? new THREE.SphereGeometry(R_MOON, 256, 128, 0, Math.PI * 2, 0, Math.PI - 6 * DEG) : new THREE.SphereGeometry(R_MOON, 160, 80);
+  const moonGeo = opt.style === 'glow' ? new THREE.SphereGeometry(R_MOON, 256, 160) : new THREE.SphereGeometry(R_MOON, 160, 80);
+  if (opt.style === 'glow') moonMat.onBeforeCompile = (sh) => {   // a rounded-square hole under the terrain patch (same shape as its edge)
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vW;').replace('#include <project_vertex>', '#include <project_vertex>\nvW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vW;').replace('void main() {', 'void main() {\nif (vW.y > -2000.0 && pow(pow(abs(vW.x), 4.0) + pow(abs(vW.z), 4.0), 0.25) < 196.0) discard;');
+  };
   const moonMesh = new THREE.Mesh(moonGeo, moonMat);
   moonMesh.rotation.x = Math.PI;          // south pole to +y
   moonGroup.rotation.y = Math.PI / 2;     // lon 0 to -z, lon 90E to +x
@@ -699,8 +704,8 @@ export function mountLunarMap(container, options = {}) {
   const yAt = (xm, ym) => {
     const h = heightAt(xm, ym) / 1000;
     if (!glow) return h * exagV;
-    const r = Math.hypot(xm, ym) / 1000, ss = (a, b, x) => { const u = clamp((x - a) / (b - a), 0, 1); return u * u * (3 - 2 * u); };
-    return (h - uniforms.uRef.value) * exagV * (1 - ss(176, 198, r)) - r * r / 3474.8 + 0.3 * ss(170, 180, r);
+    const r = Math.hypot(xm, ym) / 1000, e = ((Math.abs(xm / 1000) ** 4 + Math.abs(ym / 1000) ** 4) ** 0.25), ss = (a, b, x) => { const u = clamp((x - a) / (b - a), 0, 1); return u * u * (3 - 2 * u); };
+    return (h - uniforms.uRef.value) * exagV * (1 - ss(190, 200, e)) - r * r / 3474.8 + 0.3 * ss(184, 192, e);
   };
   const worldOf = (xm, ym, out) => out.set(xm / 1000, yAt(xm, ym), -ym / 1000);
 
@@ -913,7 +918,9 @@ export function mountLunarMap(container, options = {}) {
     const { from: a, to: b } = tween;
     const L = (p) => p === 'r' ? a.r * (b.r / a.r) ** e : a[p] + (b[p] - a[p]) * e;
     ctl3.target.set(L('tx'), tween.toY != null ? tween.ty + (tween.toY - tween.ty) * e : tween.keepY ? tween.ty : tween.ty * (1 - e), L('tz'));
-    sph(ctl3.target, L('r'), L('polar'), a.az + (((b.az - a.az + 3 * Math.PI) % (2 * Math.PI)) - Math.PI) * e, cam3.position);
+    // long moves rise and come down (a hop) instead of skimming the ground in a straight line
+    const far = Math.hypot(b.tx - a.tx, b.tz - a.tz), hop = Math.min(1.2, far / Math.max(a.r, b.r, 1) * 0.6);
+    sph(ctl3.target, L('r') * (1 + hop * Math.sin(Math.PI * e)), L('polar') * (1 - 0.35 * (hop / 1.2) * Math.sin(Math.PI * e)), a.az + (((b.az - a.az + 3 * Math.PI) % (2 * Math.PI)) - Math.PI) * e, cam3.position);
     cam3.up.set(0, 1, 0);
     cam3.lookAt(ctl3.target);
     if (k >= 1) { const d = tween.done; tween = null; d(); }
@@ -1652,7 +1659,7 @@ export function mountLunarMap(container, options = {}) {
     if (!dirty) return;
     dirty = false;
     if (frameShown !== t) { syncFrame(); frameShown = t; }
-    if (pickDirty || pointer) {
+    if (pickDirty || (pointer && !tween)) {   // no ground picking while a flight runs
       hoverPt = pointer ? pick(pointer.x, pointer.y) : null;
       pickDirty = false;
       if (opt.onHover) {

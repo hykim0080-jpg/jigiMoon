@@ -11,7 +11,7 @@ import { decode } from './data.js';
 import { lang, MONTH_NAMES } from './strings.js';
 import { failStats, failReason } from '../../js/failreason.js';
 import { failBase, failYear, critIds } from './compose.js';
-import { winToken } from './window.js';
+import { winToken, pending } from './window.js';
 import { inCart, toggleCart, ct } from './cart.js';
 
 const T0 = Date.UTC(2027, 0, 1), DAYS = 365, LIM = { move: 3, mast: 20, wait: 60 };
@@ -256,7 +256,7 @@ function drawAnswer(st, rid, p) {
   if (!ans) return;
   const k = `${rid}|${st.mission}|${st.tDay}|${maskKey()}|${p.ready}|${ranked.length && ranked[0].title}`;
   if (k === akey) return; akey = k;
-  if (!p.ready) { ans.textContent = tt('loading'); return; }
+  if (!p.ready || pending(st)) { ans.textContent = tt('loading'); return; }   // the stay window is still being computed: no area from the yearly fallback
   const km = regionArea(rid), where = st.region && st.region !== 'all' ? regionName(rid) : '', day = dayText(st.tDay), r0 = ranked[0];
   const km2 = km == null ? '' : km >= 100 ? String(Math.round(km / 10) * 10) : km >= 10 ? String(Math.round(km)) : km.toFixed(1);
   let h = km ? tt('ans', day, st.mission, km2, where) : tt('ansNone', day, st.mission, where);

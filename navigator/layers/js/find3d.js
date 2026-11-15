@@ -7,6 +7,7 @@ import { N } from './config.js';
 import { state, setState } from './state.js';
 import { failCount, sample } from './compose.js';
 import { tripRanked, statsFor, whyNoFix } from './trip.js';
+import { pending } from './window.js';
 import { lang } from './strings.js';
 import { cellToXY, xyToCell } from './geo.js';
 import { SETS, frameFor } from '../../js/frames3d.js';
@@ -165,7 +166,9 @@ function followView(st) {
   if (first && st.view.k <= 1.01) return;
   const v = st.view;
   flyT = setTimeout(() => {
-    const { x, y } = cellToXY(Math.round(v.cx - .5), Math.round(v.cy - .5));
+    // the 2D view keeps a picked spot clear of the side panels; in 3D the spot itself goes to the centre of the open part
+    const pn = state.pin, near = pn && Math.abs(pn.col + .5 - v.cx) < 400 / v.k && Math.abs(pn.row + .5 - v.cy) < 400 / v.k;
+    const { x, y } = near ? cellToXY(pn.col, pn.row) : cellToXY(Math.round(v.cx - .5), Math.round(v.cy - .5));
     if (v.k <= 1.01) map.focus(0, 0, 200, { dur: 1400 }); else map.focus(x, y, clamp(200 / v.k, 4, 200), { dur: 1400 });
   }, 140);
 }
@@ -192,7 +195,7 @@ function sync(st) {
     note.hidden = f.exact;
     if (!f.exact) { const d = new Date(f.shown); note.textContent = tx('only', d.getUTCMonth() + 1, d.getUTCDate(), d.getUTCHours()); }
   }
-  if (maskDirty) { maskDirty = false; map.setMask(paintMask()); }
+  if (maskDirty) { maskDirty = false; map.setMask(pending(st) ? null : paintMask()); }   // no GO outline from the yearly fallback while the stay is computed
   const tops = (tripRanked() || []).filter(r => r.go).slice(0, 5), pin = st.pin && !st.autoPin ? st.pin : null;
   const pk = tops.map(r => r.col + ',' + r.row).join(';') + '|' + (pin ? pin.col + ',' + pin.row : '');
   if (pk !== lastPins) {
