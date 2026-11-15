@@ -269,6 +269,7 @@ main[data-d3="1"] .map-panel h2{z-index:5}
 /* calendar colour key, and the colour chip before each fix title */
 #cal-key{position:absolute;left:12px;top:2px;font-size:10px;color:var(--muted);display:flex;gap:8px;pointer-events:none;line-height:14px}
 #cal-key i{display:inline-block;width:8px;height:8px;margin-right:3px;vertical-align:-1px;border-radius:0}
+#cal-key i.hatch{background-image:repeating-linear-gradient(135deg,transparent 0 2px,color-mix(in srgb,var(--surface) 60%,transparent) 2px 4px)}
 .card h2::before{content:"";display:inline-block;width:9px;height:9px;margin-right:6px;background:var(--fc);border-radius:0;vertical-align:0}
 /* why there is no fix within the limits */
 #why{flex:none;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--none);border-radius:0;padding:9px 12px;font-size:13px;line-height:1.45}
