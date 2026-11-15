@@ -56,6 +56,10 @@ const CSS = `
 .lmap-mast .rig svg{display:block;overflow:visible}.lmap-mast .rig{pointer-events:auto}
 .lmap-mast b{display:block;width:8px;height:8px;border-radius:50%;background:var(--mast,#4fc0c9);box-shadow:0 0 0 2px #0f131b;margin-top:2px}
 .lmap-mast.is-nogo span{border-color:#f0655a;color:#ffd9d5}
+.lmap-mast .fig-startle{transform-box:fill-box;transform-origin:50% 100%;animation:lmap-startle .8s ease-out 1}
+.lmap-mast.seen .fig-startle{animation:none}
+@keyframes lmap-startle{0%{transform:none}20%{transform:translateY(-.35px) rotate(-8deg)}45%{transform:none}62%{transform:rotate(-3deg)}100%{transform:none}}
+@media (prefers-reduced-motion:reduce){.lmap-mast .fig-startle{animation:none}}
 .lmap-mast span{pointer-events:auto;font:600 11px/1 Inter,system-ui,sans-serif;color:#fff;background:rgba(15,19,27,.85);border:1px solid var(--mast,#4fc0c9);padding:2px 5px;margin-bottom:3px;white-space:nowrap}
 .lmap *,.lmap *::before,.lmap *::after{box-sizing:border-box;font-variant-numeric:tabular-nums!important}
 .lmap canvas.lmap-gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
@@ -1409,6 +1413,8 @@ export function mountLunarMap(container, options = {}) {
       if (mastEl._h !== key) {
         mastEl.firstChild.textContent = mastPt.label; mastEl._h = key;
         const r = mastEl.querySelector('.rig'); r.innerHTML = rig ? MAST_RIG(Math.min(mastPt.h, 100), k, { ...mastPt.fx, ground: gd }).svg : '';
+        // the startled astronaut (15 m and up) jumps once per mast, not again on every zoom step
+        const st = rig && mastPt.h >= 15 ? `${mastPt.h}:${mastPt.x}:${mastPt.y}` : null; mastEl.classList.toggle('seen', !!st && mastEl._st === st); if (st) mastEl._st = st;
         mastEl.querySelector('b').style.display = rig || !mastPt.h ? 'none' : '';
         mastEl.firstChild.style.display = mastPt.h || (rig && mastPt.label) ? '' : 'none';
         mastEl.classList.toggle('is-nogo', !mastPt.h && !!mastPt.label);
