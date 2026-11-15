@@ -663,3 +663,30 @@ html.panels,html.panels body,.panels .lyr-app,.panels .lyr-main{background:trans
 .lyr-findbest:hover,.lyr-findbest:focus-visible{background:#7ff0b0;outline:none}
 .lyr-findbest[hidden]{display:none}
 @media (min-width:701px){.lyr-main>.lyr-left:has(>.lyr-tripl.lyr-hide){bottom:auto}}
+/* spot card (Find a site): short verdict, the fixes as one line of buttons (as on Detail), the sky right under them,
+   and the ground 3 km around the spot with its GO cells in place of the slope photo */
+.lyr-vd .lyr-vwhy{display:block;font-size:13px;font-weight:500;color:#ff8a80;margin-top:2px}
+.lyr-vfx{display:flex;flex-wrap:wrap;gap:4px;flex:none}
+.lyr-vb{font:inherit;font-size:13px;font-weight:600;min-height:28px;padding:3px 8px;border:1px solid rgba(255,255,255,.35);background:rgba(15,19,27,.6);color:#fff;border-radius:0;cursor:pointer;white-space:nowrap}
+.lyr-vb i{font-style:normal;font-size:11px;letter-spacing:.06em;color:var(--c);margin-right:2px;text-transform:uppercase}
+.lyr-vb:hover{border-color:#fff}
+.lyr-pinp .lyr-sky{flex:none;height:150px;min-height:0}
+.lyr-mv{flex:none;display:flex;flex-direction:column;gap:4px}
+.lyr-mvh{font-size:13px;color:#e8eaf0}.lyr-mvh i{font-style:normal;font-size:11px;letter-spacing:.06em;color:var(--move);text-transform:uppercase;margin-right:2px}
+.lyr-mvg{display:block;width:100%;max-width:240px;align-self:center;background:#151a24}
+.lyr-mvt{font:7px Inter,system-ui,sans-serif;fill:#a3abbb}
+/* ?panels=1: the view buttons sit top right as on Detail; the answer line keeps clear of them */
+@media (min-width:701px){.panels .lyr-app header{padding-right:300px}}
+/* ?panels=1 spot card: just under the view buttons, left of the Earth compass, the whole card without scrolling */
+@media (min-width:701px){
+  .panels .lyr-main>.lyr-pinp{position:fixed;top:46px;right:66px;bottom:64px;overflow:auto}
+  .panels .lyr-app header{padding-right:400px}
+  .panels .lyr-pinp{gap:5px;padding:10px 12px}
+  .panels .lyr-pinp .lyr-sky{height:100px}
+  .panels .lyr-pinp .lyr-mvg{max-width:150px}
+  .panels .lyr-pinp .lyr-vd{min-height:0}
+  .panels .lyr-pinp .lyr-mv{flex-direction:row;align-items:flex-start;gap:10px}
+  .panels .lyr-pinp .lyr-mvh{flex:1;padding-top:2px}
+  .panels .lyr-pinp .lyr-addc,.panels .lyr-pinp .lyr-link{min-height:30px;padding:4px 8px}
+}
+@media (min-width:701px) and (max-height:800px){.panels .lyr-pinp .lyr-sky{height:80px}.panels .lyr-pinp{gap:4px}}

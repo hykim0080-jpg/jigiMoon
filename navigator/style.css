@@ -607,7 +607,7 @@ main.full #dock #adv-btn.changed{border-color:var(--accent)}
 #vbadge .vfx button.tall b{color:#f0a531}
 
 /* Find a site: Detail's view buttons (Pole, Region, Site, Spot, Lander view) on the shared map too, for its spot */
-main[data-view="find"] #map-panel>#zoom:not(#map3d):not(#note3d){display:flex!important;z-index:45;top:118px;right:70px}
+main[data-view="find"] #map-panel>#zoom:not(#map3d):not(#note3d){display:flex!important;z-index:45;top:8px;right:8px}
 main[data-view="find"] .tbar .tb-pole{display:none}
 main[data-view="find"] #zoom .z-dim{display:none}
 #when-pop .hb-any{font:inherit;font-size:13px;padding:5px 10px;border:1px solid var(--ink);background:transparent;color:var(--ink);border-radius:0;cursor:pointer}
