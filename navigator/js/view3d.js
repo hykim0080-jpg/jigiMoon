@@ -11,9 +11,10 @@ import { SPOT5 } from './map.js';
 import * as intro from './intro.js';
 import { openMastPop } from './mastpop.js';
 import { t } from './strings.js';
-import { initHover, hover, setNear } from './hover3d.js';
+import { initHover, hover } from './hover3d.js';
 import { ranked } from './rank3d.js';
-import { nearestField } from './nearestgo.js';
+import { nearestField, nearestOf, linkOf } from './nearestgo.js';
+import * as findlink from './findlink.js';
 import * as gomask from './gomask3d.js';
 import { loadCam, saveCam, share, onShare } from './cam3d.js';
 import { isDefault } from './criteria.js';
@@ -67,7 +68,7 @@ function place() {
   const svg = document.getElementById('map'), zoom = document.getElementById('zoom'), seg = document.getElementById('dim');
   if (seg && zoom) seg.style.right = (8 + zoom.offsetWidth + 6) + 'px';
   if (!box || box.hidden) return;
-  if (document.getElementById('main').classList.contains('full')) { Object.assign(box.style, { left: '0px', top: '0px', width: '100%', height: '100%' }); return; }
+  if (document.getElementById('main').classList.contains('full') || state.view === 'find') { Object.assign(box.style, { left: '0px', top: '0px', width: '100%', height: '100%' }); return; }
   const r = svg.getBoundingClientRect(), b = box.parentNode.getBoundingClientRect();   // an <svg> has no offsetLeft
   // down to the bottom of the panel: in Detail the map column is taller than the square 2D map
   Object.assign(box.style, { left: r.left - b.left + 'px', top: r.top - b.top + 'px', width: r.width + 'px', height: Math.max(r.height, b.bottom - r.top - 1) + 'px' });
@@ -79,7 +80,7 @@ async function mount() {
   order = [f.k, ...SETS.map((_, j) => j).filter(j => j !== f.k)];      // the month in use loads first; the others on first switch
   const lang = (new URLSearchParams(location.search).get('lang') || 'en').startsWith('ko') ? 'ko' : 'en';
   box.classList.add('loading');
-  initHover(box, { setLink: l => map && map.setLink && map.setLink(l) });
+  initHover(box);
   loading = import('../map3d/map3d.js').then(({ mountLunarMap }) => {
     map = mountLunarMap(box, {
       datasets: order.map(j => ({ label: SETS[j].label, url: SETS[j].url })),
@@ -88,9 +89,9 @@ async function mount() {
       onSpace: () => recenter(),
       onMastClick: () => openMastPop(data),   // Space: back to the selected site, Earth side up
       // clicks pick like the 2D map: a marker selects that site, the ground drops a pin there
-      onSiteClick: id => { if (data.index.byId[id]) setState({ site: id }); },
-      onMapClick: (x, y) => { if (onPin) onPin(Math.round(x), Math.round(y)); },
-      onPinClick: p => { if (onPin) onPin(Math.round(p.x), Math.round(p.y)); },
+      onSiteClick: id => { const s = data.index.byId[id]; if (!s) return; if (state.view === 'find') findlink.send({ type: 'click', x: s.x_m, y: s.y_m }); else setState({ site: id }); },
+      onMapClick: (x, y) => { if (state.view === 'find') findlink.send({ type: 'click', x, y }); else if (onPin) onPin(Math.round(x), Math.round(y)); },
+      onPinClick: p => { if (state.view === 'find') { findlink.send({ type: 'pick', col: p.col, row: p.row }); map.focus(p.x, p.y, 14); } else if (onPin) onPin(Math.round(p.x), Math.round(p.y)); },
       style: 'glow', psrUrl: 'layers/data/psr.wasm', onHover: hover, onCamera: c => { if (!entering && performance.now() > quietUntil) saveCam(c, 'detail'); },   // LLSN-like look: stars, gold where Sun and Earth are in view, soft blue permanent shadow; a card follows the cursor
       moonUrl: 'data/moon.jpg', sunUrl: 'data/sun_sdo_512.png', earthUrl: 'data/earth_bluemarble_1024.jpg', bodyMarkers: false,   // NASA SVS CGI Moon Kit, the globe under the terrain patch
     });
@@ -146,6 +147,32 @@ function syncMask(st) {
   if (!on) { map.setMask(null); return; }
   gomask.load().then(() => { if (maskKey === k) { map.setMask(gomask.maskFor(st.day)); rankKey = ''; syncRank(state); } });
 }
+// Find a site tab: its GO ground, ranked spots and picked spot on this map (js/findlink.js)
+let findShown = false;
+function syncFind() {
+  findShown = true;
+  const d = findlink.data();
+  map.setMask(findlink.mask());
+  const pins = d.rank.slice(0, 5).map(r => { const x = (r.col + .5) * 500 - 200000, y = 200000 - (r.row + .5) * 500; return { x, y, col: r.col, row: r.row, label: '#' + r.id, kind: 'rank' }; });
+  if (d.pin && !d.rank.slice(0, 5).some(r => r.col === d.pin.col && r.row === d.pin.row)) pins.push({ x: (d.pin.col + .5) * 500 - 200000, y: 200000 - (d.pin.row + .5) * 500, col: d.pin.col, row: d.pin.row, kind: 'pin' });
+  map.setPins(pins);
+  setNear(findlink.near(), d.rank);
+  syncLink(state);
+}
+// the picked spot (Find a site's pin, or Detail's selected place), when NO-GO: a dashed line to the nearest GO ground
+let nearCur = null, rankCur = [], linkKey = '', nearGen = 0;
+function setNear(f, list) { nearCur = f; rankCur = list || []; nearGen++; }
+function syncLink(st) {
+  let c = null;
+  if (st.view === 'find') { const p = findlink.data().pin; if (p) c = p; }
+  // Detail: its own 'Move N km to GO' mark already does this for the selected place
+  const k = c && nearCur ? `${st.view}|${c.col},${c.row}|${nearGen}` : '';
+  if (k === linkKey) return; linkKey = k;
+  map.setLink(k ? linkOf(nearestOf(nearCur, c.col, c.row, rankCur), (new URLSearchParams(location.search).get('lang') || 'en').startsWith('ko') ? 'ko' : 'en') : null);
+}
+findlink.onFly((x, y, half) => { if (map && mapReady) map.focus(x, y, half, { dur: 1400 }); });
+findlink.onChange(() => { if (map && mapReady && state.view === 'find') syncFind(); });
+export const getMap = () => map;
 // the best spots for the day and stay: green numbered markers; NO-GO cursor cards point to the nearest GO ground
 let rankKey = '';
 function syncRank(st) {
@@ -158,11 +185,12 @@ function syncRank(st) {
     const ga = maskKey !== 'off' ? gomask.goArr() : null;   // the GO mask of the day when it exists, else the ranked GO spots
     const set = ga ? null : new Set(list.map(r => r.row * 800 + r.col));
     setNear(ga ? nearestField(i => ga[i] === 1) : list.length ? nearestField(i => set.has(i)) : null, list.map(r => r.id <= 5 ? r : { ...r, id: 0 }));   // numbers only for the spots marked on the map
+    syncLink(state);
   }).catch(e => console.error('[rank]', e));
 }
 function sync(st) {
   if (!map || !mapReady || !data.index) return;
-  if (map.setMask) { syncMask(st); syncRank(st); }
+  if (map.setMask) { if (st.view === 'find') syncFind(); else { if (findShown) { findShown = false; maskKey = ''; rankKey = ''; } syncMask(st); syncRank(st); syncLink(st); } }
   const f = frameFor(st.day, st.hour), key = `${f.k}:${f.i}`;
   if (key !== lastKey) {
     lastKey = key;
@@ -187,7 +215,8 @@ function sync(st) {
     }
   }
   // the 3 km MOVE grid on the ground, as on the MOVE card: GO cells blue, the rest dark; ring and cross as marks
-  const ck = s && data.site ? `${st.site}:${s.x_m},${s.y_m}:${st.day}` : '';
+  const det = st.view !== 'find';   // Find a site tab: no Detail grid, ring, mast or MOVE marks on the shared map
+  const ck = det && s && data.site ? `${st.site}:${s.x_m},${s.y_m}:${st.day}` : '';
   if (map.setCells && ck !== lastCells) {
     lastCells = ck;
     map.setCells(ck ? data.site.grid.map(c => {
@@ -203,8 +232,8 @@ function sync(st) {
     }
     marks.push({ x1: s.x_m - 150, y1: s.y_m, x2: s.x_m + 150, y2: s.y_m, color: '#fff', w: 1.5 }, { x1: s.x_m, y1: s.y_m - 150, x2: s.x_m, y2: s.y_m + 150, color: '#fff', w: 1.5 });
   }
-  if (map.setMarks) map.setMarks(marks);
-  const h = s && e ? mastShown(e, st.day, st.mast, limitsOf(st)) : 0;
+  if (map.setMarks) map.setMarks(det ? marks : []);
+  const h = det && s && e ? mastShown(e, st.day, st.mast, limitsOf(st)) : 0;
   if (map.setMast) map.setMast(h, s?.x_m, s?.y_m, h ? t('mastPole', h) : '');
   note.hidden = f.exact;
   if (!f.exact) {
@@ -248,7 +277,7 @@ export const isOn = () => !!box && !box.hidden;
 export function render(st) {
   if (!box) return;
   if (data && data.index) shareOut(st);
-  const on = !!st.d3 && st.view === 'focus';
+  const on = st.view === 'find' || (!!st.d3 && st.view === 'focus');   // Find a site lays its panels over this same map
   btns.forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.d) === (on ? 1 : 0))));
   if (landerBtn) {
     landerBtn.hidden = !on;

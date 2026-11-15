@@ -47,3 +47,11 @@ export function nearestHtml(n, lang) {
   const km = n.km < 10 ? n.km.toFixed(1) : Math.round(n.km);
   return `<div class="near">${lang === 'ko' ? '가장 가까운 GO' : 'Nearest GO'} <b>${name}${km} km ${n.arrow}</b></div>`;
 }
+
+// one line for the map: "Nearest GO #2 on Mons Malapert, 1.8 km ↗"
+export function nearestLabel(n, lang) {
+  if (!n) return '';
+  const s = n.spot, name = s && (s.id || s.title) ? `${s.id ? '#' + s.id : ''}${s.id && s.title ? ' ' : ''}${s.title || ''}, ` : '';
+  return `${lang === 'ko' ? '가장 가까운 GO' : 'Nearest GO'} ${name}${n.km < 10 ? n.km.toFixed(1) : Math.round(n.km)} km ${n.arrow}`;
+}
+export const linkOf = (n, lang) => n ? { x1: n.from.x, y1: n.from.y, x2: n.to.x, y2: n.to.y, label: nearestLabel(n, lang) } : null;

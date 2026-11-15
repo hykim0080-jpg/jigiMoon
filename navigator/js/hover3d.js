@@ -7,7 +7,6 @@ import { state, limitsOf } from './state.js';
 import * as shadow from './shadow.js';
 import { pinBodies, pinSeries } from './pin.js';
 import { failStats, failReason } from './failreason.js';
-import { nearestOf, nearestHtml } from './nearestgo.js';
 
 const N = 800;
 const lang = (new URLSearchParams(location.search).get('lang') || 'en').startsWith('ko') ? 'ko' : 'en';
@@ -16,9 +15,7 @@ const TX = {
   ko: { go: 'GO', nogo: 'NO-GO', stay: n => `이날부터 ${n}일 체류`, sunS: '햇빛', earthS: '지구', darkS: '최장 어둠', now: '', nowBoth: '햇빛과 지구 모두 보임', nowSun: '햇빛 보임, 지구 가려짐', nowEarth: '지구 보임, 그늘', nowNone: '그늘, 지구 가려짐', calc: '계산 중…', both: '햇빛 + 지구', sun: '햇빛만', earth: '지구만', none: '어둠, 지구 안 보임', at: '', sunY: '햇빛 연평균', earthY: '지구 연평균', slope: '경사', height: '높이', terrain: '지형', ridge: '능선·높은 곳', floor: '낮은 곳·분화구 바닥', level: '평지', ice: '얼음(영구 그림자)까지', psr: '영구 그림자 · 얼음이 있을 수 있음' },
 }[lang];
 
-let L = null, loading = null, tip = null, host = null, raf = 0, last = null, near = null, rankList = [], setLink = () => {};
-// the view gives the nearest-GO field of the current mask and the ranked spots (js/view3d.js)
-export function setNear(field, list) { near = field; rankList = list || []; }
+let L = null, loading = null, tip = null, host = null, raf = 0, last = null;
 export async function load() {
   if (loading) return loading;
   return loading = (async () => {
@@ -74,8 +71,8 @@ export async function stayOf(col, row, mission) {
 }
 const val = (arr, i, max) => arr && arr[i] <= 250 ? arr[i] * max / 250 : null;
 
-export function initHover(el, o = {}) {
-  host = el; if (o.setLink) setLink = o.setLink;
+export function initHover(el) {
+  host = el;
   tip = document.createElement('div'); tip.className = 'h3d-tip'; tip.hidden = true;
   el.append(tip);
   load();
@@ -83,7 +80,7 @@ export function initHover(el, o = {}) {
 
 function html(p, st) {
   const col = Math.floor((p.x + 200000) / 500), row = Math.floor((200000 - p.y) / 500);
-  if (col < 0 || row < 0 || col >= N || row >= N) { setLink(null); return ''; }
+  if (col < 0 || row < 0 || col >= N || row >= N) return '';
   const i = row * N + col, c = state.crit || {}, day = state.day, mission = state.mission || 14;
   let out = '';
   if (!st) out += `<div class="v wait">…<small>${TX.calc}</small></div>`;
@@ -100,9 +97,7 @@ function html(p, st) {
         try { why = failReason(failStats({ cal: { sun: st.sun, earth: st.earth, dark: st.dark }, mast: null, grid: [], sky: st.sky }, day, c, limitsOf(state), mission), lang).text; } catch (e) { why = ''; }
       } else why = lang === 'ko' ? `경사 ${slope == null ? '–' : slope.toFixed(1)}°: 착륙 한계 8°보다 가팔라요` : `Slope ${slope == null ? '–' : slope.toFixed(1)}°: steeper than the 8° landing limit`;
       if (why) out += `<div class="why">${why}</div>`;
-      const nn = nearestOf(near, col, row, rankList);
-      out += nearestHtml(nn, lang); setLink(nn ? { x1: nn.from.x, y1: nn.from.y, x2: nn.to.x, y2: nn.to.y } : null);
-    } else setLink(null);
+    }
   }
   if (L && L.elev) {
     let s = 0, n = 0;
@@ -125,7 +120,7 @@ export function hover(p) {
   if (raf) return;
   raf = requestAnimationFrame(() => {
     raf = 0; const q = last;
-    if (!q || !tip) { if (tip) tip.hidden = true; setLink(null); return; }
+    if (!q || !tip) { if (tip) tip.hidden = true; return; }
     const col = Math.floor((q.x + 200000) / 500), row = Math.floor((200000 - q.y) / 500), m = state.mission || 14;
     const show = st => {
       tip.innerHTML = html(q, st); tip.hidden = !tip.innerHTML;

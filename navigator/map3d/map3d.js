@@ -79,6 +79,7 @@ const CSS = `
 .lmap-link{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:2;overflow:visible}
 .lmap-link line{stroke:#7fe0aa;stroke-width:1.5;stroke-dasharray:4 3}
 .lmap-link circle{fill:#4cbf82;stroke:#0f131b;stroke-width:1.5}
+.lmap-link text{fill:#7fe0aa;font:600 12px Inter,system-ui,sans-serif;paint-order:stroke;stroke:#0f131b;stroke-width:3px}
 .lmap-pin.is-pin i{background:#fff;box-shadow:0 0 0 1.5px #0f131b}
 .lmap-pin.is-pin::before{background:rgba(255,255,255,.9)}
 .lmap-site.is-sel{box-shadow:0 0 0 1px rgba(15,19,27,.85),0 0 0 4px rgba(232,234,240,.28)}
@@ -1253,13 +1254,14 @@ export function mountLunarMap(container, options = {}) {
   let link = null, linkSvg = null;
   function placeLink() {
     if (!link) { if (linkSvg) linkSvg.style.display = 'none'; return; }
-    if (!linkSvg) { linkSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); linkSvg.setAttribute('class', 'lmap-link'); linkSvg.innerHTML = '<line/><circle r="4"/>'; ov.appendChild(linkSvg); }
+    if (!linkSvg) { linkSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); linkSvg.setAttribute('class', 'lmap-link'); linkSvg.innerHTML = '<line/><circle r="4"/><text/>'; ov.appendChild(linkSvg); }
     const a = project(worldOf(link.x1, link.y1, v3)) ? [v3.x, v3.y] : null, b = project(worldOf(link.x2, link.y2, v3)) ? [v3.x, v3.y] : null;
     if (!a || !b) { linkSvg.style.display = 'none'; return; }
     linkSvg.style.display = '';
-    const [ln, ci] = linkSvg.children;
+    const [ln, ci, tx] = linkSvg.children;
     ln.setAttribute('x1', a[0]); ln.setAttribute('y1', a[1]); ln.setAttribute('x2', b[0]); ln.setAttribute('y2', b[1]);
     ci.setAttribute('cx', b[0]); ci.setAttribute('cy', b[1]);
+    tx.textContent = link.label || ''; tx.setAttribute('x', b[0] + 8); tx.setAttribute('y', b[1] - 8);
   }
   function placePins() {
     placeLink();

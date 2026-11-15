@@ -11,7 +11,7 @@ import { pending } from './window.js';
 import { lang } from './strings.js';
 import { cellToXY, xyToCell } from './geo.js';
 import { SETS, frameFor } from '../../js/frames3d.js';
-import { nearestField, nearestOf, nearestHtml } from '../../js/nearestgo.js';
+import { nearestField, nearestOf, linkOf } from '../../js/nearestgo.js';
 import { loadCam, saveCam, share, onShare } from '../../js/cam3d.js';
 
 const TX = {
@@ -41,7 +41,7 @@ function shareOut(st) {
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
 let D = null, root = null, box = null, tip = null, leg = null, note = null, map = null, loading = null, ready = false, on = false;
-let near = null;
+let near = null, lastLink = '', maskKeyNow = 0;
 let order = null, lastFrame = '', lastPins = '', lastView = '', flyT = 0, maskCv = null, maskDirty = true, elev = null;
 
 export function init(panel, data) {
@@ -122,7 +122,7 @@ function loadElev() {
     elev = z;
   }).catch(() => {});
 }
-function tipHtml(col, row, why, nearH = '') {
+function tipHtml(col, row, why) {
   const sm = sample(col, row); if (!sm) return '';
   const v = sm.values, w = sm.win, fails = new Set((sm.failIds || []).map(id => id.replace(/_days.*|14$/, ''))), i = row * N + col;
   const go = goOf(col, row), cr = state.crit || {};
@@ -131,7 +131,7 @@ function tipHtml(col, row, why, nearH = '') {
   const psr = D.bytes.psr && D.bytes.psr[i] >= 125 && D.bytes.psr[i] <= 250, iv = D.bytes.ice ? D.bytes.ice[i] : 255;
   return `<div class="v ${go > 0 ? 'go' : 'no'}">${go > 0 ? tx('go') : go < 0 ? tx('nodata') : tx('nogo')}<small>${w ? tx('stay', state.mission) : tx('year')}</small></div>
     <div class="m">${line('sun', tx('sun'), sunV == null ? '–' : (Math.floor(sunV * 10) / 10).toFixed(1) + ' %', cr.sun ? '≥' + cr.sun : '')}${line('earth', tx('earth'), earthV == null ? '–' : (Math.floor(earthV * 10) / 10).toFixed(1) + ' %', cr.earth ? '≥' + cr.earth : '')}${darkV != null ? line('dark', tx('dark'), Math.round(darkV) + ' h', cr.dark ? '≤' + cr.dark : '') : ''}${line('slope', tx('slope'), v.slope == null ? '–' : v.slope.toFixed(1) + '°', '≤8')}</div>
-    ${go === 0 && why ? `<div class="why">${why}</div>` : ''}${go === 0 ? nearH : ''}
+    ${go === 0 && why ? `<div class="why">${why}</div>` : ''}
     ${terrainOf(col, row)}
     <div class="s">${psr ? tx('psr') : `${tx('ice')} <b>${iv <= 250 ? (iv / 10).toFixed(1) + ' km' : '>25 km'}</b>`}</div>`;
 }
@@ -140,12 +140,10 @@ function hover(p) {
   last = p; if (raf) return;
   raf = requestAnimationFrame(() => {
     raf = 0; const q = last;
-    if (!q) { tip.hidden = true; map && map.setLink(null); return; }
-    const c = xyToCell(q.x, q.y); if (c.col < 0 || c.row < 0 || c.col >= N || c.row >= N) { tip.hidden = true; map && map.setLink(null); return; }
-    const nn = goOf(c.col, c.row) === 0 ? nearestOf(near, c.col, c.row, (tripRanked() || []).filter(r => r.go).map((r, k) => ({ ...r, id: k + 1 }))) : null;
-    map && map.setLink(nn ? { x1: nn.from.x, y1: nn.from.y, x2: nn.to.x, y2: nn.to.y } : null);
+    if (!q) { tip.hidden = true; return; }
+    const c = xyToCell(q.x, q.y); if (c.col < 0 || c.row < 0 || c.col >= N || c.row >= N) { tip.hidden = true; return; }
     const show = why => {
-      const h = tipHtml(c.col, c.row, why, nearestHtml(nn, lang)); tip.innerHTML = h; tip.hidden = !h;
+      const h = tipHtml(c.col, c.row, why); tip.innerHTML = h; tip.hidden = !h;
       const r = root.getBoundingClientRect();
       const ins = insetsNow(), right = r.width - ins[1] - 8, tw = tip.offsetWidth;
       let lx = q.cx - r.left + 18; if (lx + tw > right) lx = q.cx - r.left - 18 - tw;
@@ -199,7 +197,7 @@ function sync(st) {
     note.hidden = f.exact;
     if (!f.exact) { const d = new Date(f.shown); note.textContent = tx('only', d.getUTCMonth() + 1, d.getUTCDate(), d.getUTCHours()); }
   }
-  if (maskDirty) { maskDirty = false; const pd = pending(st); map.setMask(pd ? null : paintMask()); near = pd || !failCount ? null : nearestField(i => failCount[i] === 0); }   // no GO outline from the yearly fallback while the stay is computed
+  if (maskDirty) { maskDirty = false; const pd = pending(st); map.setMask(pd ? null : paintMask()); near = pd || !failCount ? null : nearestField(i => failCount[i] === 0); maskKeyNow++; }   // no GO outline from the yearly fallback while the stay is computed
   const tops = (tripRanked() || []).filter(r => r.go).slice(0, 5), pin = st.pin && !st.autoPin ? st.pin : null;
   const pk = tops.map(r => r.col + ',' + r.row).join(';') + '|' + (pin ? pin.col + ',' + pin.row : '');
   if (pk !== lastPins) {
@@ -208,6 +206,9 @@ function sync(st) {
     if (pin && !tops.some(r => r.col === pin.col && r.row === pin.row)) { const { x, y } = cellToXY(pin.col, pin.row); list.push({ x, y, col: pin.col, row: pin.row, kind: 'pin' }); }
     map.setPins(list);
   }
+  // the picked spot, when NO-GO: a dashed line to the nearest GO ground, named and measured
+  const lk = pin && near ? `${pin.col},${pin.row}|${lastPins}|${maskKeyNow}` : '';
+  if (lk !== lastLink) { lastLink = lk; map.setLink(lk ? linkOf(nearestOf(near, pin.col, pin.row, tops.map((r, k) => ({ col: r.col, row: r.row, id: k + 1, title: r.title || '' }))), lang) : null); }
   leg.querySelector('.go').textContent = tx('legGo', st.mission || 14);
   const L2 = document.querySelector('.lyr-legend'); if (L2 && L2.offsetLeft) { leg.style.left = L2.offsetLeft + 'px'; note.style.left = L2.offsetLeft + 'px'; }
   followView(st);
