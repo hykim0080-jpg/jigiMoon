@@ -67,7 +67,7 @@ Living list: last updated 2026-11-15 (KST morning). Items marked **[verify]** st
 | Pole-map hillshade (`navigator/data/hillshade.jpg`, `web/hillshade.b64`) | Computed by us from LOLA `LDEM_80S_80MPP_ADJ` (D2) |
 | 500 m elevation grid (`navigator/layers/data/elev500.png`, `lunar/layers/build_elev500.py`) | Computed by us: LOLA `LDEM_80S_40MPP_ADJ` (D2) averaged to 500 m; finds the ridge that hides the Sun or Earth from a clicked spot |
 | Contour line map (`navigator/data/linemap_4000.webp`, `lunar/linemap/`) | Computed by us: 250 m / 1 km contours from LOLA `LDEM_80S_80MPP_ADJ` (D2), permanently shadowed outlines from PGDA `AVGVISIB_75S_120M_201608` (D3); see `lunar/linemap/README.md` |
-| Hourly sun/Earth-visibility frames (`lunar/frames/`, `lunar/frames_dec/`, 2027-06 and 2027-12) | Computed by us from D2 + D6 + R1 |
+| Hourly sun/Earth-visibility frames (`lunar/frames/`, `lunar/frames_dec/`, `lunar/frames_2027-02/`; 2027-02, 2027-06 and 2027-12) | Computed by us from D2 + D6 + R1 |
 | Ice-likely shade distance (Find a site layer `ice`, Compare ❄ value; `navigator/layers/js/data.js` `iceDistance`, `navigator/js/ice.js`) | Computed by us in the browser: distance to the nearest 500 m cell that is never sunlit at any 2-hour step of 2027 in our own illumination run (the `psr` layer, from LOLA D2 and DE421 D6). A permanent shadow may hold water ice; it is not proven. Used as a preference only |
 | All charts, maps and UI in the web tool | Rendered by our code from our results |
 | Team photo (`team-moon-photo-maximal.png`) | AI-generated/edited image — must carry a visible "AI-generated" watermark if used (see AI_USE.md) **[verify watermark]** |

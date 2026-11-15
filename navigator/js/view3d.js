@@ -1,7 +1,7 @@
 // Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 // 3D view of the Compare map: the lunar/map3d module (Three.js) mounted over the 2D map.
 // Loaded on first use only (module ~2 MB, one month of frames ~18 MB). Lighting frames exist for
-// June and December 2027 (4 h steps); other dates show the same day-of-month and hour of the nearer
+// February, June and December 2027 (4 h steps); other dates show the same day-of-month and hour of the nearer
 // computed month, and say so.
 import { state, setState, limitsOf } from './state.js';
 import { mastShown, nearestOk, blockage, azToMapDir } from './logic.js';
@@ -12,7 +12,7 @@ import * as intro from './intro.js';
 import { openMastPop } from './mastpop.js';
 import { t } from './strings.js';
 
-const SETS = [{ label: '2027-06', url: 'data/3d/frames/', y: 2027, m: 5 }, { label: '2027-12', url: 'data/3d/frames_dec/', y: 2027, m: 11 }];
+const SETS = [{ label: '2027-02', url: 'data/3d/frames_feb/', y: 2027, m: 1 }, { label: '2027-06', url: 'data/3d/frames/', y: 2027, m: 5 }, { label: '2027-12', url: 'data/3d/frames_dec/', y: 2027, m: 11 }];
 const STEP_H = 4;
 let lastCells = '', mapReady = false, lastZoom = null, onPin = null, hint, box, note, btns, map = null, loading = null, order = null, lastKey = '', lastSite = '', data = null;
 
@@ -35,7 +35,9 @@ export function init(panel, d, pinAt) {
 export function frameFor(day, hour) {
   const ms = FIRST_DAY + (day * 24 + hour) * 3600e3, d = new Date(ms);
   const mon = d.getUTCMonth(), dist = m => Math.min(Math.abs(mon - m), 12 - Math.abs(mon - m));
-  const k = dist(SETS[0].m) <= dist(SETS[1].m) ? 0 : 1, S = SETS[k];
+  let k = 0;
+  SETS.forEach((S, j) => { if (dist(S.m) < dist(SETS[k].m)) k = j; });
+  const S = SETS[k];
   const exact = d.getUTCFullYear() === S.y && mon === S.m;
   const t0 = Date.UTC(S.y, S.m, 1), dim = new Date(Date.UTC(S.y, S.m + 1, 0)).getUTCDate();
   const tt = exact ? ms : Date.UTC(S.y, S.m, Math.min(d.getUTCDate(), dim), d.getUTCHours());
@@ -56,7 +58,7 @@ function place() {
 async function mount() {
   if (loading) return loading;
   const f = frameFor(state.day, state.hour);
-  order = f.k === 0 ? [0, 1] : [1, 0];      // the month in use loads first; the other one on first switch
+  order = [f.k, ...SETS.map((_, j) => j).filter(j => j !== f.k)];      // the month in use loads first; the others on first switch
   const lang = (new URLSearchParams(location.search).get('lang') || 'en').startsWith('ko') ? 'ko' : 'en';
   box.classList.add('loading');
   loading = import('../map3d/map3d.js').then(({ mountLunarMap }) => {
