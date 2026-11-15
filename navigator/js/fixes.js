@@ -8,8 +8,8 @@ import { failStats, failReason } from './failreason.js';
 const KINDS = ['move', 'mast', 'wait'];
 let root, cards = {}, why;
 
-// MOVE keeps its card with the 3 km grid; MAST and WAIT are one line each; below them a local line map of the
-// spot (+-3.5 km): the spot, the arrow to the nearest GO cell and the 3 km circle on the contour map.
+// MAST and WAIT: one thin strip; below it the local line map of the spot (+-3.5 km), as big as the main map:
+// the spot, the arrow to the nearest GO cell and the 3 km circle. MOVE (3 km grid) is an inset in its corner.
 const R_LOC = 3.5, VB = 360;
 let loc;
 export function init(node) {
@@ -18,7 +18,6 @@ export function init(node) {
   const c = document.createElement('div');
   c.className = 'card'; c.style.setProperty('--fc', 'var(--move)');
   c.innerHTML = `<div class="left"><h2>${t('move')}</h2><div class="val"><b></b><span></span></div><div class="dir"></div><div class="effort"></div></div><div class="vis"><svg viewBox="0 0 176 168"></svg></div>`;
-  root.appendChild(c);
   cards.move = { c, val: c.querySelector('b'), dir: c.querySelector('.dir'), unit: c.querySelector('.val span'), effort: c.querySelector('.effort'), svg: c.querySelector('svg') };
   const rows = document.createElement('div'); rows.className = 'fixrows';
   for (const k of ['mast', 'wait']) {
@@ -34,15 +33,16 @@ export function init(node) {
   const l = document.createElement('div'); l.className = 'card local';
   l.innerHTML = `<svg viewBox="0 0 ${VB} ${VB}"></svg>`;
   root.appendChild(l);
+  c.classList.add('inset'); l.appendChild(c);   // MOVE sits in a corner of the line map, like the globe on the left map
   loc = l.querySelector('svg');
 }
 
 const UNIT = { move: 'unitKm', mast: 'unitM', wait: 'unitD' };
 
-// centre and 3 km radius of the MOVE grid in page px (for the connector)
+// centre and 3 km radius of the local line map's circle in page px (for the zoom connector from the main map)
 export function gridCenter() {
-  const r = cards.move.svg.getBoundingClientRect(), k = r.width / 176;
-  return { x: r.left + 88 * k, y: r.top + 84 * k, r: 3 / 3.125 * 84 * k };
+  const r = loc.getBoundingClientRect(), k = Math.min(r.width, r.height) / VB;
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2, r: 3 / R_LOC * VB / 2 * k };
 }
 
 export function render(st, data) {

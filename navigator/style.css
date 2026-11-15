@@ -50,7 +50,7 @@ select{border:1px solid var(--line);background:var(--surface);border-radius:0;pa
 :focus-visible{outline:2px solid var(--box);outline-offset:2px}
 
 main{flex:1;min-height:0;position:relative;display:grid;gap:12px;
-  grid-template-columns:minmax(320px,1fr) var(--S,588px) minmax(320px,1fr);
+  grid-template-columns:minmax(280px,1fr) var(--S,588px) minmax(0,var(--S,588px));
   grid-template-rows:minmax(0,1fr) 48px var(--cal,216px);
   grid-template-areas:"sky map fixes" "metrics map fixes" "cal cal cal"}
 .panel{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:0;padding:12px;min-width:0;min-height:0;position:relative}
@@ -334,9 +334,9 @@ header>.verdict .fix{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;m
 #basemap button[aria-pressed="true"]{background:#fff;color:#0f131b}
 main[data-view="compare"] #basemap,main[data-d3="1"] #basemap{display:none}
 /* fixes: three compact rows, then the local line map (+-3.5 km) */
-.fixrows{flex:none;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line)}
-.fixrow{display:grid;grid-template-columns:64px 92px minmax(0,1fr);grid-template-rows:auto auto;align-items:center;column-gap:10px;padding:6px 12px;border-left:3px solid transparent}
-.fixrow+.fixrow{border-top:1px solid var(--line)}
+.fixrows{flex:none;display:flex;flex-direction:row;background:var(--surface);border:1px solid var(--line)}
+.fixrow{flex:1 1 0;min-width:0;display:grid;grid-template-columns:auto auto minmax(30px,1fr);grid-template-rows:auto auto;align-items:center;column-gap:10px;padding:6px 12px;border-left:3px solid transparent}
+.fixrow+.fixrow{border-left:1px solid var(--line)}
 .fixrow.best{border-left-color:var(--fc)}
 .fixrow h2{color:var(--fc);margin:0}
 .fixrow h2::before{content:"";display:inline-block;width:9px;height:9px;margin-right:6px;background:var(--fc);vertical-align:0}
@@ -354,6 +354,12 @@ main[data-view="compare"] #basemap,main[data-d3="1"] #basemap{display:none}
 .card.local .tick{fill:#5a6377;font-size:11px}
 .locl{font-size:12px;font-weight:600;paint-order:stroke;stroke:#fff;stroke-width:3px}
 @media (max-width:700px){.card.local{flex:none;height:auto}.card.local svg{width:100%;height:auto}}
-#fixes>.card:not(.local){flex:0 0 auto;height:180px}
+/* MOVE card as an inset in the bottom-left corner of the local line map */
+.card.local{position:relative}
+.card.local>svg{width:100%;height:100%;max-width:none;aspect-ratio:auto}
+.card.inset{position:absolute;left:8px;bottom:8px;flex:none;height:auto;padding:8px 10px;gap:8px;background:rgba(255,255,255,.94);box-shadow:0 1px 6px rgba(0,0,0,.18);z-index:2}
+.card.inset .left{width:122px;gap:3px}.card.inset .effort{width:116px}
+.card.inset .val b{font-size:28px}.card.inset .val span{font-size:13px}
+.card.inset .vis svg{height:112px;max-height:112px}
 .fixrow .val b{font-size:20px}
-@media (max-width:700px){#fixes>.card:not(.local){height:150px}}
+@media (max-width:700px){.card.local{aspect-ratio:1/1}.card.inset .vis svg{height:84px}.card.inset .left{width:104px}.card.inset .effort{width:100px}.card.inset .val b{font-size:22px}}
