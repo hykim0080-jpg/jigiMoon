@@ -14,14 +14,14 @@ import { initPin, setOnCal } from './pin.js';
 import { syncShadow, syncExpo, renderTime, ensure as ensureTime } from './time.js';
 import { xyToCell, cellToXY } from './geo.js';
 import { initTrip, renderTrip, tripRanked, REGIONS, regionBBox } from './trip.js';
-import { mapHome, setBadges } from './mapview.js';
-import { syncWin, winToken } from './window.js';
+import { mapHome, setBadges, shadowLegend } from './mapview.js';
+import { syncWin, winToken, pending } from './window.js';
 import { initCart, renderCart, readCart, cartHash } from './cart.js';
 
 export async function mount(root, opts = {}) {
   const { dataUrl = './data/', header = true } = opts;
   const lq = new URLSearchParams(location.search).get('lang') || new URLSearchParams(location.hash.slice(1)).get('lang'), cmp = '../index.html' + (lq ? '?lang=' + lq : '') + '#v=focus';
-  root.innerHTML = `<div class="lyr-app">${header ? `<header><div class="seg lyr-sw"><a href="${cmp}">${t('compare')}</a><button aria-pressed="true">${t('find')}</button></div><a class="app-name" href="${cmp}">${t('app')}</a></header>` : ''}<div class="lyr-main"><section class="panel lyr-left"><div class="lyr-lh"><h2>${t('criteria')}</h2><button class="lyr-advb" aria-pressed="false">${t('adv')}</button></div><div class="lyr-crit"></div><div class="lyr-advwrap lyr-layers"></div><div class="lyr-tripl"></div><div class="lyr-zones"></div></section><section class="panel lyr-map" data-theme="dark"></section><section class="panel lyr-pinp"><button class="lyr-pclose" aria-label="${t('close')}">×</button><div class="lyr-pcard"></div></section></div></div><div id="tip" hidden></div>`;
+  root.innerHTML = `<div class="lyr-app">${header ? `<header><div class="seg lyr-sw"><a href="${cmp}">${t('compare')}</a><button aria-pressed="true">${t('find')}</button></div><div class="app-id"><a class="app-name" href="${cmp}">${t('app')}</a><span class="app-tag">${t('tagline')}</span></div></header>` : ''}<div class="lyr-main"><section class="panel lyr-left"><div class="lyr-lh"><h2>${t('criteria')}</h2><button class="lyr-advb" aria-pressed="false">${t('adv')}</button></div><div class="lyr-crit"></div><div class="lyr-advwrap lyr-layers"></div><div class="lyr-tripl"></div><div class="lyr-zones"></div></section><section class="panel lyr-map" data-theme="dark"></section><div class="lyr-loading" role="status">${t('loading')}</div><section class="panel lyr-pinp"><button class="lyr-pclose" aria-label="${t('close')}">×</button><div class="lyr-pcard"></div></section></div></div><div id="tip" hidden></div>`;
   const data = await loadAll(dataUrl);
   const main = root.querySelector('.lyr-main'), app = root.querySelector('.lyr-app'), pMap = main.querySelector('.lyr-map'), pLayers = main.querySelector('.lyr-advwrap'), pZones = main.querySelector('.lyr-zones'), pCrit = main.querySelector('.lyr-crit'), pPin = main.querySelector('.lyr-pinp'), advBtn = main.querySelector('.lyr-advb');
 
@@ -43,6 +43,7 @@ export async function mount(root, opts = {}) {
   if (state.adv && ['layers', 'mask', 'score'].includes(h.get('m'))) state.mode = h.get('m');
   if (data.sites.some(s => s.id === h.get('s'))) state.site = h.get('s');
   const dd = Date.parse((h.get('d') || '') + 'T00:00:00Z'); if (!isNaN(dd)) { state.tDay = Math.max(0, Math.min(364, Math.round((dd - Date.UTC(2027, 0, 1)) / 864e5))); state.tTouched = true; }
+  { const pd = Date.parse((h.get('pd') || '') + 'T00:00:00Z'); state.plan = isNaN(pd) ? state.tDay : Math.max(0, Math.min(364, Math.round((pd - Date.UTC(2027, 0, 1)) / 864e5))); }   // the planned day; the bar can slip the landing day away from it
   if (h.get('h') != null && h.get('h') !== '' && +h.get('h') >= 0 && +h.get('h') < 14 * 24) { state.tHour = Math.round(+h.get('h')); state.tTouched = true; }
   if (h.get('bm') === 'shade') state.basemap = 'shade';
   if (h.get('sh') === '1') state.shadow = true;
@@ -91,10 +92,11 @@ export async function mount(root, opts = {}) {
     syncWin(state); { const wt = winToken(state); if (wt !== lastWin) { lastWin = wt; p.add('pixels'); } }   // date, stay or basis changed the judged map
     app.dataset.adv = state.adv ? '1' : ''; advBtn.setAttribute('aria-pressed', state.adv);
     { const open = innerWidth > 700 && !state.autoPin && !!state.pin; if (app.classList.contains('pin-open') !== open) { app.classList.toggle('pin-open', open); setInsets(open ? 344 : 0); p.add('view'); } }   // the spot panel slides in when a spot is clicked
+    { const ld = root.querySelector('.lyr-loading'); if (ld) { const pd = pending(state); ld.hidden = !pd; if (pd) ld.textContent = t('computing', state.mission || 14); } }
     if (p.has('pixels')) { passPx = compose(state).passPx; if (state.adv) renderPanel(state); renderCriteria(state); renderZones(state); zonesSoon(); syncShadow(); syncExpo(state); renderTime(state); renderPinCard(state); renderPinSky(state); blit(); overlay(); readout(); }
     else {
       if (p.has('view')) { blit(); overlay(); }
-      if (p.has('time')) { syncShadow(); syncExpo(state); renderTime(state); renderPinCard(state); renderPinSky(state); blit(); overlay(); }
+      if (p.has('time')) { syncShadow(); syncExpo(state); renderTime(state); shadowLegend(); renderPinCard(state); renderPinSky(state); blit(); overlay(); }
       if (p.has('zones')) { renderZones(state); zonesSoon(); readout(); }
       if (p.has('panel')) { renderZones(state); renderPinCard(state); renderPinSky(state); overlay(); readout(); }
       if (p.has('site')) { overlay(); readout(); }
@@ -105,7 +107,7 @@ export async function mount(root, opts = {}) {
     const q = new URLSearchParams(); if (state.base !== 'sun') q.set('b', state.base); if (state.adv) { q.set('a', 1); q.set('m', state.mode); } if (state.site) q.set('s', state.site);
     if (state.pin && !state.autoPin) { const c = cellToXY(state.pin.col, state.pin.row); q.set('pin', Math.round(c.x) + ',' + Math.round(c.y)); }
     if (state.adv && state.month != null) q.set('mon', state.month + 1);
-    if (state.tTouched) { q.set('d', new Date(Date.UTC(2027, 0, 1 + state.tDay)).toISOString().slice(0, 10)); q.set('h', String(state.tHour).padStart(2, '0')); }
+    if (state.tTouched) { q.set('d', new Date(Date.UTC(2027, 0, 1 + state.tDay)).toISOString().slice(0, 10)); q.set('h', String(state.tHour).padStart(2, '0')); if (state.plan != null && state.plan !== state.tDay) q.set('pd', new Date(Date.UTC(2027, 0, 1 + state.plan)).toISOString().slice(0, 10)); }
     if (state.basemap === 'shade') q.set('bm', 'shade');
     if (state.shadow) q.set('sh', 1);
     if (state.eshadow) q.set('esh', 1);
@@ -146,9 +148,10 @@ export async function mount(root, opts = {}) {
   pPin.querySelector('.lyr-pclose').onclick = () => setState({ autoPin: true }, 'panel');
   // first visit: one plain hint over the map, gone on the first click
   if (innerWidth > 700 && !localStorage.getItem('mj-hint') && !state.pin) {
-    const hint = Object.assign(document.createElement('div'), { className: 'lyr-hint', textContent: t('hint') });
+    const hint = Object.assign(document.createElement('div'), { className: 'lyr-hint' }); hint.innerHTML = `<ol>${t('hint').map(x => `<li>${x}</li>`).join('')}</ol><p>${t('goMeans')}</p>`;
     pMap.append(hint);
-    const off = () => { hint.remove(); localStorage.setItem('mj-hint', '1'); removeEventListener('pointerdown', off, true); };
+    setTimeout(() => off(), 12000);
+    const off = () => { if (!hint.isConnected) return; hint.remove(); localStorage.setItem('mj-hint', '1'); removeEventListener('pointerdown', off, true); };
     addEventListener('pointerdown', off, true);
   }
   if (pinFly) flyToCell(pinFly.col, pinFly.row, 4, true); else if (state.site) flyTo(data.sites.find(s => s.id === state.site), true);

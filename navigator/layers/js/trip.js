@@ -162,7 +162,7 @@ export function initTrip(header, listEl, d, o = {}) {
     const s = e.target.closest('[data-stay]'), m = e.target.closest('[data-mon]'), dd = e.target.closest('[data-day]'), rg = e.target.closest('[data-reg]');
     if (s) { setState({ mission: +s.dataset.stay, autoPin: true }, 'pixels'); drawPop(); }
     else if (m) { calMonth = Math.max(0, Math.min(11, calMonth + +m.dataset.mon)); drawPop(); }
-    else if (dd) { setState({ tDay: +dd.dataset.day, tTouched: true, autoPin: true }, 'time'); open(state.region ? null : 'region'); }
+    else if (dd) { setState({ tDay: +dd.dataset.day, plan: +dd.dataset.day, tTouched: true, autoPin: true }, 'time'); open(state.region ? null : 'region'); }
     else if (rg) { open(null); pickRegion(rg.dataset.reg); }
   };
   list.onclick = e => { const a = e.target.closest('[data-addr]'); if (a) { e.stopPropagation(); const z = ranked[+a.dataset.addr - 1]; if (z) toggleCart(z.col, z.row); return; } const r = e.target.closest('[data-rank]'); if (r) { const z = ranked[+r.dataset.rank - 1]; if (z) opts.pick && opts.pick(z); } };

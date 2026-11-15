@@ -22,7 +22,7 @@
 *{box-sizing:border-box}
 button,select,input,textarea{border-radius:0}
 html,body{margin:0;height:100%}
-body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:13px;line-height:1.4}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:13px;line-height:1.4;font-variant-numeric:tabular-nums}
 button,select{font:inherit;color:inherit}
 svg{display:block}
 .n,.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
@@ -376,3 +376,12 @@ main[data-view="compare"] #basemap,main[data-d3="1"] #basemap{display:none}
 a{color:var(--accent)}
 input[type=range]{accent-color:var(--accent)}
 .app-name,.seg a,header a{color:inherit}
+#cal-panel{position:relative}
+#cal-big{position:absolute;right:4px;top:2px;z-index:3;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:12px/1 system-ui;padding:3px 6px;border-radius:0;cursor:pointer}
+#cal-big:hover{border-color:var(--ink)}
+#cal-panel.big{position:fixed;inset:6vh 5vw;z-index:50;height:auto!important;background:var(--surface);border:1px solid var(--ink);padding:8px}
+#cal-back{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:49}
+#cal-back[hidden]{display:none}
+#cal-panel.big #cal-big{top:-30px;right:-1px;padding:5px 9px;font-size:14px}
+/* digits keep the same width so changing numbers do not shake the layout (font shorthand would reset this, hence !important) */
+*{font-variant-numeric:tabular-nums!important}

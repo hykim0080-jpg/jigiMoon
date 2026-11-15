@@ -40,9 +40,9 @@ const PALETTE = {
 const CSS = `
 .lmap{position:relative;width:100%;height:100%;min-height:240px;overflow:hidden;background:#0f131b;color:#e8eaf0;
   --bg:#0f131b;--surface:#181d28;--ink:#e8eaf0;--muted:#98a1b4;--line:#2b3242;--sun:#f0a531;--earth:#74a2f2;--ok:#4cbf82;
-  font:12px/1.3 Inter,"Apple SD Gothic Neo",system-ui,sans-serif;-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none;outline:none;
+  font:12px/1.3 Inter,"Apple SD Gothic Neo",system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;user-select:none;-webkit-user-select:none;outline:none;
   --lmap-mono:Inter,system-ui,sans-serif}
-.lmap *,.lmap *::before,.lmap *::after{box-sizing:border-box}
+.lmap *,.lmap *::before,.lmap *::after{box-sizing:border-box;font-variant-numeric:tabular-nums!important}
 .lmap canvas.lmap-gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
 .lmap-ov{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .lmap-ov>*{position:absolute;left:0;top:0;will-change:transform;white-space:nowrap}

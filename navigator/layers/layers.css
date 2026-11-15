@@ -21,7 +21,7 @@
 *{box-sizing:border-box}
 button,select,input,textarea{border-radius:0}
 html,body{margin:0;height:100%}
-body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:13px;line-height:1.4}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:13px;line-height:1.4;font-variant-numeric:tabular-nums}
 button{font:inherit;color:inherit}
 svg{display:block}
 a{color:inherit;text-decoration:none}
@@ -480,3 +480,55 @@ input[type=range]{accent-color:var(--accent)}
 .lyr-ans a,.lyr-ans button{color:var(--accent)}
 .lyr-play[aria-pressed="true"]{background:#6f9cf0;border-color:#6f9cf0;color:#000}
 .app-name,.seg a,header a{color:inherit}
+.lyr-legend .lsh{display:flex;align-items:center;gap:6px;font-style:normal;font-size:12px;font-weight:500}
+.lyr-legend .lsh:empty{display:none}
+.lyr-legend .lsh i{display:block;width:12px;height:12px}
+.lyr-legend .lsh.esh i{background:#2459b8;border:1px solid #74a2f2}
+.lyr-legend .lsh.sh i{background:#000;border:1px solid #888}
+.lyr-fx.can{cursor:pointer}
+.lyr-fx.can:hover,.lyr-fx.can:focus-visible{background:var(--bg);outline:none}
+.lyr-fx.can>span:last-child{color:var(--accent,var(--ink))}
+/* title + one-line tagline */
+.app-id{display:flex;flex-direction:column;gap:2px;min-width:0}
+.app-tag{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* first-visit hint: three steps */
+.lyr-hint{text-align:left;max-width:520px}
+.lyr-hint ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px;font-size:16px}
+.lyr-hint p{margin:10px 0 0;font-size:13px;color:#c9cfdb}
+/* plan +N d next to the landing day */
+.lyr-plan{flex:none;border:1px solid rgba(255,255,255,.5);background:transparent;color:#fff;font:600 12px var(--f-mono);padding:2px 6px;cursor:pointer;white-space:nowrap}
+.lyr-plan[hidden]{display:none}
+.lyr-plan.late{border-color:#f0655a;color:#ffb3ad}
+/* spot panel: criteria as one compact block (no bars), a close-up map below */
+.lyr-pinp .lyr-cks{display:grid;grid-template-columns:1fr 1fr;gap:2px 14px}
+.lyr-pinp .lyr-ck{display:flex;align-items:center;gap:5px;min-width:0}
+.lyr-pinp .lyr-ck .lyr-ckb{display:none}
+.lyr-pinp .lyr-ck .lyr-nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}
+.lyr-zoom{display:block;width:100%;aspect-ratio:3/2;flex:none}
+.lyr-zkey{margin:2px 0 0;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.lyr-zkey i{display:block;width:10px;height:10px;background:rgba(240,101,90,.5)}
+/* 701-1179 px (small laptops, split windows): no horizontal scroll; the header wraps and the answer gets its own line */
+@media (min-width:701px) and (max-width:1179px){
+  .lyr-app{min-width:0}
+  .lyr-app header{height:auto;flex-wrap:wrap;row-gap:8px}
+  .lyr-app header .lyr-ans{flex:1 1 100%;margin:0;max-height:none}
+  .app-tag{display:none}
+  .lyr-tb{min-width:150px}
+  .lyr-main>.lyr-left{width:260px}
+  .lyr-map .lyr-legend{left:284px}
+  .lyr-map .lyr-home,.lyr-map.topen .lyr-home{left:284px}
+  .lyr-main>.lyr-pinp{width:290px}
+  .lyr-app.pin-open .lyr-main>.lyr-left{display:none}
+  .lyr-app.pin-open .lyr-map .lyr-legend,.lyr-app.pin-open .lyr-map .lyr-home{left:12px}
+}
+.lyr-map .lyr-time .lyr-plan[hidden]{display:none!important}
+@media (min-width:1180px) and (max-width:1500px){.lyr-app header .lyr-ans{font-size:13px;max-height:2.8em}}
+/* labels on the two sliders */
+.lyr-map .lyr-time .lyr-sl{flex:none;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#aab3c5;display:initial}
+/* first load: say what is happening instead of a blank map */
+.lyr-loading{position:absolute;left:50%;top:24%;transform:translate(-50%,-50%);z-index:8;background:rgba(15,19,27,.9);color:#fff;font-size:15px;padding:12px 20px;pointer-events:none}
+.lyr-loading[hidden]{display:none}
+.lyr-cr .lyr-tg[aria-pressed="true"]{background:var(--c)}
+@media (min-width:701px){.lyr-hint{top:64%}}
+/* digits keep the same width so changing numbers do not shake the layout (font shorthand would reset this, hence !important) */
+*{font-variant-numeric:tabular-nums!important}
