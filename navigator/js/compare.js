@@ -1,6 +1,6 @@
 // Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 import { state, setState, limitsOf } from './state.js';
-import { t, siteName } from './strings.js';
+import { t, siteName, PIN_IC } from './strings.js';
 import { THRESHOLDS } from './config.js';
 import { bar, el } from './svg.js';
 import { loadSite, getSite, calOf } from './data.js';
@@ -73,8 +73,8 @@ export function render(st, d) {
   const nums = s => {
     const v = { sun: mv(s, 'sun'), earth: mv(s, 'earth'), dark: mv(s, 'dark') };
     const bad = { sun: v.sun < THRESHOLDS.sun, earth: v.earth < THRESHOLDS.earth, dark: v.dark > THRESHOLDS.dark };
-    const it = (k, ic, txt) => `<span class="ci${bad[k] ? ' fail' : ''}" title="${t(k)}"><i style="color:var(--${k === 'dark' ? 'muted' : k})">${ic}</i>${txt}</span>`;
-    return `<div class="cline">${it('sun', '☀', t('pct', Math.round(v.sun)))}${it('earth', '⊕', t('pct', Math.round(v.earth)))}${it('dark', '☾', t('h', Math.round(v.dark)))}</div>`;
+    const it = (k, ic, txt) => `<span class="ci${bad[k] ? ' fail' : ''}" title="${k === 'dark' ? t('darkTip') : t(k)}"><i style="color:var(--${k === 'dark' ? 'muted' : k})">${ic}</i>${txt}</span>`;
+    return `<div class="cline">${it('sun', '☀', t('pct', Math.round(v.sun)))}${it('earth', '⊕', t('pct', Math.round(v.earth)))}${it('dark', '⟷', t('h', Math.round(v.dark)))}</div>`;
   };
   // one compact line of fixes; GO needs none
   const fixLine = s => {
@@ -88,7 +88,7 @@ export function render(st, d) {
     };
     return `<div class="cline">${['move', 'mast', 'wait'].map(it).join('')}</div>`;
   };
-  const head = (s, i) => `<div class="cell head${sel(s)}" data-pick="${s.id}" style="position:relative"><b class="cname">${siteName(data.index.byId[s.id])}<span class="cdd">▾<select data-col="${i}" aria-label="${t('hbWhere')}">${opts(s.id)}</select></span></b><span class="where">${where(data.index.byId[s.id])}</span><span>${verdict(s.id)}</span>${st.pinned.includes(s.id) ? `<button class="x" data-unpin="${s.id}" aria-label="${t('unpin')}">×</button>` : ''}</div>`;
+  const head = (s, i) => `<div class="cell head${sel(s)}" data-pick="${s.id}" style="position:relative"><b class="cname">${data.index.byId[s.id]?.isPin ? PIN_IC : ''}${siteName(data.index.byId[s.id])}<span class="cdd">▾<select data-col="${i}" aria-label="${t('hbWhere')}">${opts(s.id)}</select></span></b><span class="where">${where(data.index.byId[s.id])}</span><span>${verdict(s.id)}</span>${st.pinned.includes(s.id) ? `<button class="x" data-unpin="${s.id}" aria-label="${t('unpin')}">×</button>` : ''}</div>`;
   const sky = s => `<div class="cell${sel(s)}" data-pick="${s.id}"><div class="skyc" data-theme="dark"><svg class="csky" style="height:${SKY_H}px"></svg><svg class="cstrip" style="height:${STRIP_H}px"></svg></div></div>`;
   const year = s => `<div class="yearc"><canvas data-site="${s.id}"></canvas><span class="n">${yearPct(mode[s.id], st, lim)} %</span></div>`;
   const rows = [['', nums], ['', fixLine], [t('year'), year]];

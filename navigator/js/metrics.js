@@ -19,7 +19,7 @@ export function metricRows(site, day, mission, mast, crit = THRESHOLDS, notes = 
   const w = t('why'), L = t('whyLong'), n = (k, lim) => notes ? `${lim ? lim + ' · ' : ''}${w[k]}` : '';
   return row(t('sun'), sun, t('pct', Math.round(sun)), { frac: sun / 100, tick: c.sun / 100, color: 'var(--sun)' }, sun < c.sun, n('sun', `≥ ${c.sun} %`), L.sun)
     + row(t('earth'), earth, t('pct', Math.round(earth)), { frac: earth / 100, tick: c.earth / 100, color: 'var(--earth)' }, earth < c.earth, n('earth', `≥ ${c.earth} %`), L.earth)
-    + row(t('dark'), dark, t('h', Math.round(dark)), { frac: dark / 100, tick: c.dark / 100 }, dark > c.dark, n('dark', `≤ ${c.dark} h`), L.dark)
+    + row(t('dark'), dark, '⟷ ' + t('h', Math.round(dark)), { frac: dark / 100, tick: c.dark / 100 }, dark > c.dark, n('dark', `≤ ${c.dark} h`), t('darkTip') + '. ' + L.dark)
     + row(t('noComm'), nc, t('h', Math.round(nc)), { frac: nc / (mission * 24) }, false, n('noComm', ''), L.noComm);
 }
 
@@ -36,7 +36,7 @@ export function render(st, data) {
   root.innerHTML = `<div class="mline">`
     + item('☀', 'var(--sun)', t('pct', Math.round(sun)), sun < c.sun, `${t('sun')} ≥ ${c.sun} % · ${w.sun}\n${L.sun}`)
     + item('⊕', 'var(--earth)', t('pct', Math.round(earth)), earth < c.earth, `${t('earth')} ≥ ${c.earth} % · ${w.earth}\n${t('noComm')}: ${t('h', Math.round(nc))}\n${L.earth}`)
-    + item('☾', 'var(--muted)', t('h', Math.round(dark)), dark > c.dark, `${t('dark')} ≤ ${c.dark} h · ${w.dark}\n${L.dark}`)
+    + item('⟷', 'var(--muted)', t('h', Math.round(dark)), dark > c.dark, `${t('darkTip')} ≤ ${c.dark} h · ${w.dark}\n${L.dark}`)
     + (sl == null ? '' : item('∠', 'var(--muted)', `${sl.toFixed(1)}°`, sl > lim, `${t('slopeL')} ≤ ${lim}° · ${w.slope}\n${L.slope}`))
     + (ik == null ? '' : item('❄', '#9fe3ff', t('km', ik < 10 ? +ik.toFixed(1) : Math.round(ik)), false, t('iceTip')))
     + `</div>`;

@@ -76,6 +76,28 @@ export function drawPinSky(svg, st) {
   if (!state.pin || !svg) return;
   const sky = skies.get(state.pin.row * 800 + state.pin.col);
   if (sky) drawSky(svg, { sky }, { day: st.tDay, hour: st.tHour, mission: st.mission || 14 }, { compact: true, w: svg.clientWidth, h: svg.clientHeight });
+  const strip = svg.parentNode && svg.parentNode.querySelector('.lyr-dstrip');
+  if (sky && strip) darkStrip(strip, sky, st);
+}
+// under the sky: sunlight over the stay, and the longest stretch without it bracketed with its hours ("⟷ 74 h", red
+// over the Dark limit), so Dark reads as one unbroken stretch, not the total
+function darkStrip(svg, sky, st) {
+  const NS = 'http://www.w3.org/2000/svg', mk = (tag, a, p = svg) => { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); p.appendChild(e); return e; };
+  const w = svg.clientWidth || 280, n = (st.mission || 14) * 24, a = st.tDay * 24, x0 = 4, x1 = w - 4, cw = (x1 - x0) / n, H = 30;
+  svg.setAttribute('viewBox', `0 0 ${w} ${H}`); svg.textContent = '';
+  let best = { s: 0, len: 0 }, run = 0;
+  for (let j = 0; j < n; j++) {
+    const f = sky.sunFrac[a + j] || 0;
+    if (f > 0) mk('rect', { x: x0 + j * cw, y: 2, width: cw + .3, height: 8, fill: '#f0a531', 'fill-opacity': f });
+    run = f < 0.1 ? run + 1 : 0; if (run > best.len) best = { s: j - run + 1, len: run };
+  }
+  mk('rect', { x: x0, y: 2, width: x1 - x0, height: 8, fill: 'none', stroke: '#2b3242' });
+  if (!best.len) return;
+  const bx0 = x0 + best.s * cw, bx1 = x0 + (best.s + best.len) * cw, c = best.len > ((st.crit && st.crit.dark) || 50) ? '#ff6b5e' : '#a3abbb';
+  const tip = lang === 'ko' ? '햇빛이 한 번에 가장 오래 끊긴 시간' : 'Longest stretch without sunlight';
+  const g = mk('g', {}); mk('title', {}, g).textContent = tip;
+  mk('path', { d: `M${bx0},${11}V${14}H${bx1}V${11}`, fill: 'none', stroke: c }, g);
+  const tx = mk('text', { x: Math.min(Math.max((bx0 + bx1) / 2, 24), w - 24), y: 26, 'text-anchor': 'middle', style: `fill:${c};font:600 11px Inter,system-ui,sans-serif` }, g); tx.textContent = `⟷ ${best.len} h`;
 }
 
 // ---- shadow overlay ----

@@ -672,3 +672,6 @@ main[data-view="find"] #map3d .lmap-scale{margin-left:312px}
    (layers/layers.css, .panels header); its panels sit over the map below, the view buttons where Detail has them. */
 body[data-view="find"] header>.seg[data-key="view"]{margin-left:auto}
 @media (min-width:701px){main[data-view="find"] #find{position:fixed;inset:0}}
+/* saved spots (Find a site's shortlist): one pin glyph and number wherever they are listed */
+.pin-ic{display:inline-block;width:10px;height:13px;vertical-align:-2px;margin-right:5px;flex:none;fill:currentColor}
+#where-pop .wp-grp,.wp-grp{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:4px 10px 2px}

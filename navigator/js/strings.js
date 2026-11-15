@@ -23,7 +23,7 @@ const en = {
   slip: v => `plan ${v > 0 ? '+' : '−'}${Math.abs(v)} d`, slipTip: d => `days after the planned landing date (${d})`,
   noFixNeeded: 'no fix needed',
   noFix: (km, m, d) => `no fix within ${km} km / ${m} m / ${d} d`,
-  anytime: 'Anytime: best day for this place', anywhere: 'Anywhere: best spot on this date', anywhereBusy: 'Finding the best spot…',
+  anytime: 'Anytime: best day for this place', yourSpots: 'Your spots', darkTip: 'Longest stretch without sunlight', anywhere: 'Anywhere: best spot on this date', anywhereBusy: 'Finding the best spot…',
   hbWhen: 'When', hbWhere: 'Where', hbDays: n => `${n} days`, hbSlip: v => ` (${v > 0 ? '+' : '−'}${Math.abs(v)} d from plan)`,
   hbAns: (w, d, n, sl, v) => `If you land at ${w} on ${d} and stay ${n}${sl}: ${v}`,
   nearGo: 'Nearest GO', mastTall: 'high', fxMap: 'Map', fx2d: '2D', fx3d: '3D', fx2dTip: 'Whole map in 2D', fx3dTip: 'Back to the 3D map (Esc)',
@@ -96,7 +96,7 @@ const ko = {
   slip: v => `계획 ${v > 0 ? '+' : '−'}${Math.abs(v)}일`, slipTip: d => `계획한 착륙일(${d})보다 미뤄진 날 수`,
   noFixNeeded: '처방 필요 없음',
   noFix: (km, m, d) => `${km} km / ${m} m / ${d}일 안에 해법 없음`,
-  anytime: '언제든: 이 지점의 가장 좋은 날', anywhere: '어디든: 이 날짜의 가장 좋은 지점', anywhereBusy: '가장 좋은 지점 찾는 중…',
+  anytime: '언제든: 이 지점의 가장 좋은 날', yourSpots: '내 지점', darkTip: '햇빛이 한 번에 가장 오래 끊긴 시간', anywhere: '어디든: 이 날짜의 가장 좋은 지점', anywhereBusy: '가장 좋은 지점 찾는 중…',
   hbWhen: '언제', hbWhere: '어디', hbDays: n => `${n}일`, hbSlip: v => ` (계획보다 ${v > 0 ? '+' : '−'}${Math.abs(v)}일)`,
   hbAns: (w, d, n, sl, v) => `${d}에 ${w}에 내려 ${n} 머물면${sl}: ${v}`,
   nearGo: '가장 가까운 GO', mastTall: '높음', fxMap: '지도', fx2d: '2D', fx3d: '3D', fx2dTip: '전체 지도를 2D로', fx3dTip: '3D 지도로 돌아가기 (Esc)',
@@ -153,4 +153,8 @@ export function t(key, ...args) {
   return typeof v === 'function' ? v(...args) : v;
 }
 
-export const siteName = s => (lang === 'ko' && s.name_ko) || s.name;
+// a spot saved from Find a site (pin1..pin4) is named by its number, then where it is: "1 · on Mons Mouton, left side"
+export const pinNo = s => (s && s.isPin && (/^pin(\d+)$/.exec(s.id) || [])[1]) || '';
+export const siteName = s => { const n = (lang === 'ko' && s.name_ko) || s.name, k = pinNo(s); return k ? `${k} · ${n}` : n; };
+// the same pin glyph everywhere a saved spot is listed (maps, WHERE list, Side by side, calendar)
+export const PIN_IC = '<svg class="pin-ic" viewBox="0 0 12 16" aria-hidden="true"><path d="M6 15.5C3.8 11.5 1 9.6 1 6a5 5 0 0 1 10 0c0 3.6-2.8 5.5-5 9.5z"/><circle cx="6" cy="6" r="2" fill="#0f131b"/></svg>';

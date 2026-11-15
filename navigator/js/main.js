@@ -119,7 +119,7 @@ async function boot() {
     await new Promise(r => requestAnimationFrame(() => setTimeout(r, 30)));
     const list = state.pinsXY.split(';').map(s => s.split(',').map(Number));
     for (let k = list.length - 1; k >= 0; k--) {
-      try { await pin.setup(data.index, list[k][0], list[k][1], 'pin' + (k + 1)); data.index.byId['pin' + (k + 1)].name = t('spotN', k + 1); } catch (e) { console.error(e); }
+      try { await pin.setup(data.index, list[k][0], list[k][1], 'pin' + (k + 1)); } catch (e) { console.error(e); }
     }
     state.pinned = state.pinned.filter(id => data.index.byId[id]);
     $('busy').hidden = true;

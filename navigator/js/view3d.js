@@ -196,12 +196,13 @@ export const getMap = () => map;
 // the best spots for the day and stay: green numbered markers; NO-GO cursor cards point to the nearest GO ground
 let rankKey = '';
 function syncRank(st) {
-  const k = `${st.day}|${st.mission}|${st.crit.sun}|${st.crit.earth}|${st.crit.dark}|${maskKey}`;
+  const saved = (data?.index.sites || []).filter(s => s.isPin).map(s => ({ x: s.x_m, y: s.y_m, label: (/^pin(\d+)$/.exec(s.id) || [])[1] || '', kind: 'saved' }));
+  const k = `${st.day}|${st.mission}|${st.crit.sun}|${st.crit.earth}|${st.crit.dark}|${maskKey}|${saved.map(p => p.label + p.x).join()}`;
   if (k === rankKey) return; rankKey = k;
   ranked(st.day, st.mission, st.crit).then(list => {
     if (rankKey !== k) return;
     const top = list.slice(0, 5);
-    map.setPins(top.map(r => ({ x: r.x, y: r.y, col: r.col, row: r.row, label: '#' + r.id, kind: 'rank' })));
+    map.setPins([...top.map(r => ({ x: r.x, y: r.y, col: r.col, row: r.row, label: '#' + r.id, kind: 'rank' })), ...saved]);
     const ga = maskKey !== 'off' ? gomask.goArr() : null;   // the GO mask of the day when it exists, else the ranked GO spots
     const set = ga ? null : new Set(list.map(r => r.row * 800 + r.col));
     setNear(ga ? nearestField(i => ga[i] === 1) : list.length ? nearestField(i => set.has(i)) : null, list.map(r => r.id <= 5 ? r : { ...r, id: 0 }));   // numbers only for the spots marked on the map
