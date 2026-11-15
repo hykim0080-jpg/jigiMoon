@@ -6,6 +6,7 @@ import { initMap, blit, drawOverlay, resize, renderBadge, flyTo, flyToCells, fly
 import { initPanel, renderPanel, renderReadout } from './panel.js';
 import { initZones, scheduleZones, renderZones, loadOverride, getZones } from './zones.js';
 import { readCrit, saveCrit, critHash, applyLevels, isDefault } from './crit.js';
+import { forMission } from '../../js/criteria.js';
 import { initCriteria, renderCriteria, renderCritTick } from './criteria.js';
 import { initPinCard, renderPinCard, renderPinSky } from './pincard.js';
 import { DEFAULT_ON, ZONE } from './config.js';
@@ -74,13 +75,15 @@ export async function mount(root, opts = {}) {
   initPin(data); ensureTime(); setOnCal(() => setState({}, 'panel'));
 
   const { comp } = initCompose(data);
+  state.crit = forMission(state.crit, state.mission);   // 6-day stays default to sun 90 %
   { const ok = await applyLevels(data, state.crit, dataUrl); if (!ok) state.crit = readCrit(data.meta, new URLSearchParams()), await applyLevels(data, state.crit, dataUrl); }
   const pick = z => { setState({ pin: { col: z.best.col, row: z.best.row }, autoPin: false }, 'panel'); flyToCells(z.bbox, ZONE.fitMaxK); if (innerWidth <= 700) root.querySelector('.lyr-map').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
   initPanel(pLayers, data); const setCrit = async (param, v, whole) => {
-    const next = whole || { ...state.crit, [param]: v };
+    const next = whole || { ...state.crit, [param]: v, ...(param === 'sun' ? { sunSet: true } : {}) };
     if (!(await applyLevels(data, next, dataUrl))) { await applyLevels(data, state.crit, dataUrl); return false; }
     saveCrit(next); setState({ crit: next }, 'pixels'); return true;
   };
+  { let lastM = state.mission; subscribe(st => { if (st.mission === lastM) return; lastM = st.mission; const c = forMission(st.crit, st.mission); if (c !== st.crit) setCrit(null, null, c); }); }   // a new stay brings its sun default
   initCart(app, data, lang, lq); initCriteria(pCrit, data, setCrit); initCritPanel(main.querySelector('.lyr-left'), data, setCrit); initLayerTitle(main); onFactorData(() => setState({}, 'pixels')); initZones(pZones, data, { pick }); initPinCard(pPin.querySelector('.lyr-pcard'), data); initMap(pMap, data, comp); g3.init(pMap, data); setPick(pick);
   { const hd = root.querySelector('.lyr-app header'), tl = main.querySelector('.lyr-tripl');
     initTrip(hd || main, tl, data, { pick, fly: bb => flyToCells(bb, 8), home: () => mapHome(), ranked: rk => { if (state.autoPin && rk[0] && !(state.pin && state.pin.col === rk[0].col && state.pin.row === rk[0].row)) setState({ pin: { col: rk[0].col, row: rk[0].row } }, 'panel'); } });

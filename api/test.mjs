@@ -1,5 +1,5 @@
 // Checks the API against the Navigator's own data: node api/test.mjs
-// (1) every site x day x mission at default criteria matches the precomputed index,
+// (1) every site x day x mission at the precomputed criteria (sun 70 / Earth 50 / dark 50) matches the precomputed index,
 // (2) custom criteria match navigator/js/criteria.js buildEntry, (3) bad input gives 400.
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -19,7 +19,7 @@ for (const mission of Object.keys(index.modes)) {
   for (const s of index.sites) {
     const e = index.modes[mission].sites[s.id];
     for (let d = 0; d < 365; d++) {
-      const r = await check(load, q({ site: s.id, date: isoDate(d), mission }));
+      const r = await check(load, q({ site: s.id, date: isoDate(d), mission, sun: '70' }));
       const ok = e.ok[d] === '1';
       expect((r.verdict === 'GO') === ok, `${s.id} ${mission} ${d} verdict`);
       expect((r.fixes.mast?.m ?? null) === e.mast[d], `${s.id} ${mission} ${d} mast`);

@@ -62,7 +62,7 @@ export function init(el, data, o = {}) {
   btn.addEventListener('click', () => { adv.hidden = !adv.hidden; btn.setAttribute('aria-expanded', String(!adv.hidden)); });
   adv.addEventListener('click', e => {
     const b = e.target.closest('.crit button');
-    if (b) setState({ crit: { ...state.crit, [b.closest('.crit').dataset.c]: Number(b.dataset.v) } });
+    if (b) { const k = b.closest('.crit').dataset.c; setState({ crit: { ...state.crit, [k]: Number(b.dataset.v), ...(k === 'sun' ? { sunSet: true } : {}) } }); }
   });
   adv.addEventListener('input', e => {
     const v = parseFloat(e.target.value);
@@ -124,7 +124,7 @@ export function findHref(st, data, atSite) {
 export function render(st, data) {
   if (!refs.wpop.hidden) { const html = whereList(st, data), f = document.activeElement?.dataset?.v; if (refs.wpop.dataset.html !== html) { refs.wpop.innerHTML = html; refs.wpop.dataset.html = html; const b = f && refs.wpop.querySelector(`[data-v="${f}"]`); if (b) b.focus(); } }
   refs.adv.querySelectorAll('.crit').forEach(r => r.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(st.crit[r.dataset.c] === Number(b.dataset.v)))));
-  refs.advBtn.classList.toggle('changed', !isDefault(st.crit));
+  refs.advBtn.classList.toggle('changed', !isDefault(st.crit, st.mission));
   if (!root.querySelector('#when-pop').hidden) {
     refs.mn.textContent = `${t('months')[calMonth]} 2027`;
     refs.grid.innerHTML = monthGrid(st, data, calMonth);
@@ -245,7 +245,7 @@ function apiLink(st) {
   if (a.hidden) return;
   const q = new URLSearchParams({ site: st.site, date: isoDate(st.day), mission: String(st.mission) });
   if (st.mast) q.set('mast', st.mast);
-  if (!isDefault(st.crit)) { q.set('sun', st.crit.sun); q.set('earth', st.crit.earth); q.set('dark', st.crit.dark); }
+  if (!isDefault(st.crit, st.mission)) { q.set('sun', st.crit.sun); q.set('earth', st.crit.earth); q.set('dark', st.crit.dark); }
   if (st.moveMax !== BUDGET.move) q.set('max_move', st.moveMax);
   if (st.mastMax !== BUDGET.mast) q.set('max_mast', st.mastMax);
   if (st.waitMax !== BUDGET.wait) q.set('max_wait', st.waitMax);

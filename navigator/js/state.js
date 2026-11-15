@@ -1,6 +1,6 @@
 // Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 import { DEFAULT, MAST_HEIGHTS, ZOOM, FIRST_DAY } from './config.js';
-import { readCrit, saveCrit, critParams } from './criteria.js';
+import { readCrit, saveCrit, critParams, forMission } from './criteria.js';
 
 const KEYS = { site: 's', day: 'day', mission: 'm', mast: 'mast', mastMax: 'mx', moveMax: 'vx', waitMax: 'wx', baseline: 'base', view: 'v', hour: 'h', zoom: 'z', mode: 'pm', expo: 'ex', pan: 'c', d3: '3d', base: 'bm', lmap: 'lm', lzoom: 'lz', full: 'fs' };
 const subs = [];
@@ -27,7 +27,8 @@ function readHash() {
   return out;
 }
 
-export const state = { pinXY: '', pinsXY: '', ...DEFAULT, ...readHash(), crit: readCrit() };
+export const state = { pinXY: '', pinsXY: '', ...DEFAULT, ...readHash() };
+state.crit = readCrit(state.mission);
 
 function writeHash() {
   const p = new URLSearchParams();
@@ -43,6 +44,7 @@ function writeHash() {
 
 export function setState(patch) {
   Object.assign(state, patch);
+  if ('mission' in patch && !patch.crit) { const c = forMission(state.crit, state.mission); if (c !== state.crit) { state.crit = c; saveCrit(c); } }   // a new stay brings its sun default
   if ('site' in patch && !('pan' in patch)) state.pan = '';   // picking a site recentres on it
   if (patch.crit) saveCrit(state.crit);
   state.zoom = Math.max(1, Math.min(ZOOM.spot, Number(state.zoom) || 1));
