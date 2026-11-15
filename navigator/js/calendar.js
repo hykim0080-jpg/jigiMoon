@@ -169,7 +169,7 @@ export function render(st, d) {
   // colour key in the empty corner above the site names: GO and no-fix; the fix colours match the fix card titles
   let key = document.getElementById('cal-key');
   if (!key) { key = document.createElement('div'); key.id = 'cal-key'; canvas.parentNode.appendChild(key); }
-  const keyHtml = `<span><i style="background:var(--ok)"></i>${t('legendGo')}</span><span><i class="hatch" style="background-color:var(--wait)"></i>${t('legendFix')}</span><span><i style="background:var(--none)"></i>${t('legendNone')}</span>`;
+  const keyHtml = `<span><i style="background:var(--ok)"></i>${t('legendGo')}</span><span><i class="hatch" style="background-color:var(--wait)"></i>${lang === 'ko' ? '해결 가능' : 'fixable'}</span><span><i style="background:var(--none)"></i>${t('legendNone')}</span>`;
   if (key.innerHTML !== keyHtml) key.innerHTML = keyHtml;
 
   // overlay: selection line, bracket on selected row, baseline marker
