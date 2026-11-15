@@ -1836,7 +1836,12 @@ export function mountLunarMap(container, options = {}) {
     ctl3.enabled = false;
     if (tween) { const d = tween.done; tween = null; d(true); }
     return new Promise((res) => {
-      tween = { t0: performance.now(), dur: instant ? 1 : (o.dur ?? 1300), from: { r: s.radius, polar: s.phi, az: s.theta, tx: ctl3.target.x, tz: ctl3.target.z }, to: { r, polar: o.polar ?? home.polar, az: 0, tx, tz }, ty: ctl3.target.y, toY: (() => { try { const y = yAt(x_m, y_m); return Number.isFinite(y) ? y : null; } catch { return null; } })(),   // the site itself at the screen centre
+      tween = { t0: performance.now(), dur: instant ? 1 : (o.dur ?? 1300), from: { r: s.radius, polar: s.phi, az: s.theta, tx: ctl3.target.x, tz: ctl3.target.z }, to: { r, polar: o.eye ? ctl3.maxPolarAngle : o.polar ?? home.polar, az: 0, tx, tz }, ty: ctl3.target.y, toY: (() => { try {
+        const y = yAt(x_m, y_m); if (!Number.isFinite(y)) return null;
+        // o.eye (m): standing on the ground, eye o.eye m up, looking level at the place (Earth side ahead); the eye
+        // kept above the ground where the camera stands (r away, on the side away from Earth)
+        return o.eye ? Math.max(y, yAt(x_m, y_m - r * 1000)) + o.eye * exagV / 1000 : y;
+      } catch { return null; } })(),   // the site itself at the screen centre
         done: () => { ctl3.enabled = true; ctl3.update(); dirty = true; res(); } };
       dirty = true;
     });
