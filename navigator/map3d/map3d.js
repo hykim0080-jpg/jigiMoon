@@ -531,7 +531,7 @@ export function mountLunarMap(container, options = {}) {
   float ge = smoothstep(-0.002, 0.006, dot(gN, gEarth.xyz)) * gEarth.w * uEarthW;
   vec3 gT = mix(mix(cNone * 0.75, cEarth * 0.8, ge), mix(cSun, cBoth, ge), gs) * 0.7;
   float gD = clamp(dot(outgoingLight, vec3(0.3, 0.59, 0.11)) / 0.075, 0.35, 2.2);
-  outgoingLight = mix(outgoingLight, gT * gD, gR * (0.35 + 0.35 * gs));
+  outgoingLight = mix(outgoingLight, gT * gD, gR * (0.25 + 0.2 * gs));
 }
 #include <opaque_fragment>`);
   };
