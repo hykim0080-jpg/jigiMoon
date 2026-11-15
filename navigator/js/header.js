@@ -27,7 +27,8 @@ export function init(el, data) {
     <a id="api-link" class="api-link" target="_blank" rel="noopener" title="${t('apiTip')}">${t('apiLabel')}</a>
     <div class="adv"><button id="adv-btn" aria-label="${t('advanced')}" aria-expanded="false">⋯</button>
       <div id="adv-panel" hidden>${[['sun', '≥', '%'], ['earth', '≥', '%'], ['dark', '≤', 'h']].map(([k, op, u]) => `<div class="crit" data-c="${k}"><span>${t(k)} ${op}</span><span class="cseg">${LEVELS[k].map(v => `<button data-v="${v}">${v}</button>`).join('')}</span><span>${u}</span></div>`).join('')}<hr>${[['moveMax','maxMove',0.25,6,0.25],['mastMax','maxMast',MAST_SLIDER.min,MAST_SLIDER.max,1],['waitMax','maxWait',0,120,1]].map(([k,l,mn,mx,sp])=>`<label>${t(l)}<span class="rw"><input type="range" min="${mn}" max="${mx}" step="${sp}" data-k="${k}"></span><input class="n" type="number" min="${mn}" max="${mx}" step="${sp}" data-k="${k}"></label>`).join('')}</div></div>
-    ${seg([['find', t('modeFind')], ['focus', t('focus')], ['compare', t('compare')], ['sites', t('sites')]], 'view')}`;
+    <button id="side-btn" type="button" aria-pressed="false">${t('compare')}</button>
+    ${seg([['focus', t('focus')], ['find', t('modeFind')]], 'view')}`;
   refs = {
     select: root.querySelector('#site-select'),
     date: root.querySelector('.date'),
@@ -48,6 +49,8 @@ export function init(el, data) {
   });
   refs.adv = adv;
   refs.chips.addEventListener('click', e => { const b = e.target.closest('button'); if (b) setState({ day: Number(b.dataset.day) }); });
+  // Side by side lives inside Detail: a toggle beside the tabs, Detail stays the pressed tab
+  root.querySelector('#side-btn').addEventListener('click', () => setState({ view: state.view === 'compare' ? 'focus' : 'compare' }));
   refs.select.addEventListener('change', e => setState({ site: e.target.value }));
   root.querySelector('#prev').addEventListener('click', () => setState({ day: state.day - 1 }));
   root.querySelector('#next').addEventListener('click', () => setState({ day: state.day + 1 }));
@@ -79,8 +82,12 @@ export function render(st, data) {
   refs.slip.textContent = slip ? t('slip', slip) : '';
   refs.slip.title = t('slipTip', isoDate(st.baseline));
   root.querySelectorAll('.seg').forEach(g => g.querySelectorAll('button').forEach(b => {
-    b.setAttribute('aria-pressed', String(String(st[g.dataset.key]) === b.dataset.v));
+    const v = g.dataset.key === 'view' && st.view === 'compare' ? 'focus' : String(st[g.dataset.key]);
+    b.setAttribute('aria-pressed', String(v === b.dataset.v));
   }));
+  const side = root.querySelector('#side-btn');
+  side.hidden = st.view === 'find';
+  side.setAttribute('aria-pressed', String(st.view === 'compare'));
 
   refs.adv.querySelectorAll('input').forEach(i => {
     if (document.activeElement !== i) i.value = st[i.dataset.k];

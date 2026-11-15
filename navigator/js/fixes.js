@@ -1,8 +1,10 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 import { state, setState, limitsOf } from './state.js';
 import { t, siteName } from './strings.js';
 import { el, text, clear, bar, showTip, hideTip } from './svg.js';
 import { fixes, bestFix, shortDate, nearestOk } from './logic.js';
-import { movePhrase } from './orient.js';
+import { movePhrase, sector, bearing } from './orient.js';
+const ARROW = ['↑', '↗', '→', '↘', '↓', '↙', '←', '↖'];   // up = toward Earth, as on the map
 import { failStats, failReason } from './failreason.js';
 
 const KINDS = ['move', 'mast', 'wait'];
@@ -62,7 +64,9 @@ export function render(st, data) {
   cards.mast.c.dataset.h = !e.ok[st.day] && f.mast != null && f.mast <= lim.mast ? f.mast : '';
   cards.mast.c.classList.toggle('on', !!st.mast);
   const near = data.site && f.move != null && !e.ok[st.day] ? nearestOk(data.site, st.day) : null;
-  cards.move.dir.textContent = near && near.d > 0 && f.move <= lim.move ? movePhrase(near.c.dx, near.c.dy) : '';
+  const go = near && near.d > 0 && f.move <= lim.move;
+  cards.move.dir.textContent = go ? ARROW[sector(bearing(near.c.dx, near.c.dy))] : '';
+  cards.move.dir.title = go ? movePhrase(near.c.dx, near.c.dy) : '';
   if (!data.site) return;
   // no fix within the limits: say why in one sentence, above the fixes
   const none = !e.ok[st.day] && !best;

@@ -422,3 +422,28 @@ body[data-view="find"] header>*:not(.app-name):not([data-key="view"]):not(.grow)
 #space-hint[hidden]{display:none}
 main[data-d3="1"] #zoom{z-index:6}
 .mastcmp{display:flex;align-items:flex-end;gap:3px;height:100%}.mastcmp svg{display:block;fill:#d6dbe6;stroke:#0f131b;stroke-width:.6}
+
+/* MOVE inset: one small line "MOVE 0.6 km ↖" over the 3 km grid */
+.card.inset{flex-direction:column;padding:6px 8px;gap:4px}
+.card.inset .left{width:auto;flex-direction:row;align-items:baseline;gap:6px}
+.card.inset .left h2{font-size:11px;margin:0}
+.card.inset .val{gap:3px}
+.card.inset .val b{font-size:15px}.card.inset .val span{font-size:11px}
+.card.inset .dir{font-size:14px;line-height:1;min-height:0;color:var(--move)}
+.card.inset .effort{display:none}
+.card.inset .vis svg{height:128px;max-height:128px}
+@media (max-width:700px){.card.inset .vis svg{height:96px}.card.inset .val b{font-size:14px}}
+
+/* MAST side view: pole, astronaut and lander at one scale, sight line over the ridge */
+#mast-pop{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:60;width:min(560px,92vw);background:var(--bg);border:1px solid var(--line);padding:28px 14px 8px;box-shadow:0 12px 36px rgba(0,0,0,.55)}
+#mast-pop[hidden]{display:none}
+#mast-pop>button{position:absolute;right:6px;top:4px;border:0;background:none;color:var(--muted);font-size:20px;cursor:pointer}
+#mast-pop svg{display:block;width:100%;height:auto}
+.mastpole{cursor:pointer}
+.mastside-svg .ms-tick{font-size:10px;fill:#8c95a6}
+.mastside-svg .ms-lab{font-size:12px;font-weight:600;fill:var(--mast)}
+.raylab{font-size:12px;font-weight:600;fill:#fff;paint-order:stroke;stroke:#0f131b;stroke-width:3px}
+#intro{position:fixed;inset:0;z-index:100;background:#000;cursor:pointer;transition:opacity .6s}
+#intro.out{opacity:0;pointer-events:none}
+#intro canvas{display:block}
+#side-btn{margin-right:6px}#side-btn[hidden]{display:none}#side-btn[aria-pressed="true"]{background:var(--ink);color:var(--bg)}

@@ -1,3 +1,4 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 // Response helpers and the static-asset loader for the Cloudflare Pages Functions in /functions/api.
 import { ApiError } from './core.js';
 

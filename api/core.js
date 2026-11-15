@@ -1,3 +1,4 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 // Moon-jigi verdict API: the same GO / NO-GO verdict and fixes the Navigator shows, as JSON.
 // Shared by the Cloudflare Pages Functions in /functions/api and the tests in /api/test.mjs.
 // Reads the Navigator's own precomputed data (navigator/data); `load(path)` returns parsed JSON for a path

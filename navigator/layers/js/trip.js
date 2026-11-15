@@ -1,3 +1,4 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 // Trip bar: pick a landing date (fare-calendar popup, with the stay) and a region (destination popup),
 // then rank the best spots of that region for that date and stay. Numbers come from each spot's hourly sky
 // (time.js skyAt), the same series the pin card and the GO calendar use.

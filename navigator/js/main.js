@@ -18,6 +18,8 @@ import * as orient from './orient.js';
 import * as pin from './pin.js';
 import * as view3d from './view3d.js';
 import * as full from './full.js';
+import * as intro from './intro.js';
+if (intro.shouldPlay()) intro.play();   // opening shot: near side -> south pole
 
 const $ = id => document.getElementById(id);
 const data = { index: null, site: null };
@@ -55,7 +57,7 @@ function render(st) {
   if (st.view === 'compare') compare.render(st, data);
   if (st.view === 'find' && !$('find').firstChild) $('find').innerHTML = `<iframe src="${header.findHref(st, data, findAtSite)}" title="Find a site"></iframe>`;
   if (st.view !== 'find') findAtSite = true;
-  if (st.view === 'sites' && !$('sites').firstChild) $('sites').innerHTML = '<iframe src="selection.html" title="selection"></iframe>';
+  if (st.view === 'sites') { setState({ view: 'focus' }); return; }   // the Selection tab is gone: old links open Detail
   map.render(st, data);
   view3d.render(st);
   globe.render(st, data);
@@ -160,10 +162,9 @@ function onKey(e) {
     const i = ids.indexOf(state.site) + (e.key === 'ArrowUp' ? -1 : 1);
     setState({ site: ids[(i + ids.length) % ids.length] });
   } else if (e.key === ' ') { e.preventDefault(); if (!view3d.isOn()) setState({ playing: !state.playing }); }
-  else if (e.key === '0') setState({ view: 'find' });
   else if (e.key === '1') setState({ view: 'focus' });
-  else if (e.key === '2') setState({ view: 'compare' });
-  else if (e.key === '3') setState({ view: 'sites' });
+  else if (e.key === '2' || e.key === '0') setState({ view: 'find' });
+  else if (e.key === '3') setState({ view: state.view === 'compare' ? 'focus' : 'compare' });
   else if (e.key === 'z' || e.key === 'Z') setState({ zoom: state.zoom === 1 ? 4 : 1 });
   else if (e.key === 'Escape') setState({ zoom: 1 });
 }
