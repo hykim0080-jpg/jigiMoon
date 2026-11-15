@@ -1,7 +1,7 @@
 // Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
-// Shared by Detail and Find a site: the lighting frames of the 3D map (4 h steps) exist for Feb, Jun and Dec 2027.
+// Shared by Detail and Find a site: the lighting frames of the 3D map (4 h steps) exist for Jan to Jun and Dec 2027.
 // Other dates show the same day-of-month and hour of the nearest computed month.
-export const SETS = [{ label: '2027-02', url: 'data/3d/frames_feb/', y: 2027, m: 1 }, { label: '2027-06', url: 'data/3d/frames/', y: 2027, m: 5 }, { label: '2027-12', url: 'data/3d/frames_dec/', y: 2027, m: 11 }];
+export const SETS = [{ label: '2027-01', url: 'data/3d/frames_jan/', y: 2027, m: 0 }, { label: '2027-02', url: 'data/3d/frames_feb/', y: 2027, m: 1 }, { label: '2027-03', url: 'data/3d/frames_mar/', y: 2027, m: 2 }, { label: '2027-04', url: 'data/3d/frames_apr/', y: 2027, m: 3 }, { label: '2027-05', url: 'data/3d/frames_may/', y: 2027, m: 4 }, { label: '2027-06', url: 'data/3d/frames/', y: 2027, m: 5 }, { label: '2027-12', url: 'data/3d/frames_dec/', y: 2027, m: 11 }];
 export const STEP_H = 4;
 const T0 = Date.UTC(2027, 0, 1);
 // day = days since 1 Jan 2027, hour = hours from that day's 00:00 UTC (may run past 24)

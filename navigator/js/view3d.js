@@ -21,7 +21,7 @@ import * as gomask from './gomask3d.js';
 import { loadCam, saveCam, share, onShare } from './cam3d.js';
 import { isDefault } from './criteria.js';
 
-const SETS = [{ label: '2027-02', url: 'data/3d/frames_feb/', y: 2027, m: 1 }, { label: '2027-06', url: 'data/3d/frames/', y: 2027, m: 5 }, { label: '2027-12', url: 'data/3d/frames_dec/', y: 2027, m: 11 }];
+const SETS = [{ label: '2027-01', url: 'data/3d/frames_jan/', y: 2027, m: 0 }, { label: '2027-02', url: 'data/3d/frames_feb/', y: 2027, m: 1 }, { label: '2027-03', url: 'data/3d/frames_mar/', y: 2027, m: 2 }, { label: '2027-04', url: 'data/3d/frames_apr/', y: 2027, m: 3 }, { label: '2027-05', url: 'data/3d/frames_may/', y: 2027, m: 4 }, { label: '2027-06', url: 'data/3d/frames/', y: 2027, m: 5 }, { label: '2027-12', url: 'data/3d/frames_dec/', y: 2027, m: 11 }];
 const STEP_H = 4;
 let lastCells = '', mapReady = false, lastZoom = null, onPin = null, hint, box, note, btns, map = null, loading = null, order = null, lastKey = '', lastSite = '', data = null;
 let landerOn = false, landerBtn = null, poleBtn = null;
