@@ -24,5 +24,7 @@ export function metricRows(site, day, mission, mast, crit = THRESHOLDS, notes = 
 export function render(st, data) {
   const s = data.site;
   if (!s) return;
-  root.innerHTML = metricRows(s, st.day, st.mission, st.mast, st.crit || THRESHOLDS, true);
+  const sl = data.index.byId[st.site]?.slope_deg, lim = 8;
+  root.innerHTML = metricRows(s, st.day, st.mission, st.mast, st.crit || THRESHOLDS, true)
+    + (sl == null ? '' : row(t('slopeL'), sl, `${sl.toFixed(1)}°`, { frac: sl / 20, tick: lim / 20, color: 'var(--muted)' }, sl > lim, `≤ ${lim}° · ${t('why').slope}`, t('whyLong').slope));
 }

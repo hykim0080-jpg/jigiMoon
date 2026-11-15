@@ -308,3 +308,4 @@ header>.verdict .fix{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;m
   .card .left{width:150px}.card .effort{width:140px}.card .val b{font-size:34px}.card .vis svg{max-height:140px}
   header{gap:10px}
 }
+#detail-note{flex:none;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--box);padding:8px 12px;font-size:12.5px;line-height:1.45}
