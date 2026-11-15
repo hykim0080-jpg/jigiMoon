@@ -5,18 +5,18 @@ import { N, PX } from './config.js';
 import { state, setState } from './state.js';
 import { skyAt, skyCached, ensure } from './time.js';
 import { cellToXY, xyToCell } from './geo.js';
-import { describe } from './orient.js';
+import { describe, anchorOf } from './orient.js';
 import { decode } from './data.js';
 import { lang, MONTH_NAMES } from './strings.js';
 import { failStats, failReason } from '../../js/failreason.js';
 
 const T0 = Date.UTC(2027, 0, 1), DAYS = 365, LIM = { move: 3, mast: 20, wait: 60 };
 export const REGIONS = [
-  { id: 'shackleton', x: -10, y: -5, r: 40 },
-  { id: 'mouton', x: 85, y: 125, r: 30 },
-  { id: 'malapert', x: -25, y: 110, r: 30 },
-  { id: 'nobile', x: 155, y: 92, r: 25 },
-  { id: 'cabeus', x: -180, y: 71, r: 35 },
+  { id: 'shackleton', x: -10, y: -5, r: 40, lm: /Shackleton|Gerlache|Connecting/ },
+  { id: 'mouton', x: 85, y: 125, r: 30, lm: /Mouton/ },
+  { id: 'malapert', x: -5, y: 100, r: 32, lm: /Malapert|Haworth/ },
+  { id: 'nobile', x: 155, y: 92, r: 25, lm: /Nobile/ },
+  { id: 'cabeus', x: -140, y: 90, r: 60, lm: /Cabeus/ },
   { id: 'all' },
 ];
 const TX = {
@@ -105,6 +105,7 @@ function poolCells(rid, mission) {
   for (const i of cand) {
     const c = i % N, r = (i - c) / N;
     if (out.some(o => (o.col - c) ** 2 + (o.row - r) ** 2 < sp * sp)) continue;
+    if (reg.r) { const { x, y } = cellToXY(c, r), L = anchorOf(x, y, D.landmarks), nm = L ? L.name : ''; if (REGIONS.some(o => o.lm && o !== reg && o.lm.test(nm) && !reg.lm.test(nm))) continue; }
     out.push({ col: c, row: r }); if (out.length >= K) break;
   }
   return out;

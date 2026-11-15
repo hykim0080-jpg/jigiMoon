@@ -139,7 +139,7 @@ svg .lbl.red{fill:var(--block);font-family:var(--f-mono);font-size:11px}
 
 /* advanced limits */
 .adv{position:relative}
-.adv>button{border:1px solid var(--line);background:var(--surface);border-radius:0;width:28px;height:28px;cursor:pointer;font-size:16px;line-height:1}
+.adv>button{border:1px solid var(--line);background:var(--surface);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:16px;line-height:1}
 .adv>button[aria-expanded="true"]{border-color:var(--ink)}
 #adv-panel{position:absolute;right:0;top:34px;z-index:5;width:300px;background:var(--surface);border:1px solid var(--ink);border-radius:0;padding:12px;display:flex;flex-direction:column;gap:10px}
 #adv-panel[hidden]{display:none}
@@ -259,3 +259,5 @@ body:not([data-pro="1"]) :is(.pro-only,#expo,.adv,.seg[data-key="view"] button[d
 header>.verdict{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden}
 header>.verdict .fix{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 @media (max-width:1400px){header .seg[data-key="view"] button,header .seg[data-key="pro"] button{padding:5px 8px}header .slip{display:none}}
+/* square corners: rules kept unchanged above so parallel PRs merge cleanly */
+.adv>button,.api-link{border-radius:0}

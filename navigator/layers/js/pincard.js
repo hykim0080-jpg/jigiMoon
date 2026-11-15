@@ -44,7 +44,7 @@ export function renderPinCard(st) {
   el.innerHTML = `<div class="lyr-pt">${inf.title}</div>
 <div class="lyr-dt"><button data-step="-1">◀</button><span class="n">${isoOfDay(st.tDay)}</span><button data-step="1">▶</button></div>
 <div class="lyr-vd">${verdictHtml(v, inf, st)}</div>${winRow(inf, st)}
-<div class="lyr-fxs">${f('move', t('move'), mv)}${f('mast', t('mast'), v.mast ? t('mast_gain', v.mast.gain) : null, v.mast ? t('mast_title', v.mast.from, v.mast.to) : '')}${f('wait', t('wait'), v.goNow ? t('days', 0) : v.wait != null ? t('days', v.wait) : null)}</div>
+<div class="lyr-fxs">${f('move', t('move'), mv)}${f('mast', t('mast'), v.goNow ? t('not_needed') : v.mast ? t('mast_gain', v.mast.gain) : null, v.mast && !v.goNow ? t('mast_title', v.mast.from, v.mast.to) : '')}${f('wait', t('wait'), v.goNow ? t('days', 0) : v.wait != null ? t('days', v.wait) : null)}</div>
 <div class="lyr-cks">${checks}</div>${adv}
 <svg class="lyr-sky"></svg>
 ${inf.go ? `<div class="lyr-cal"><canvas class="lyr-pcal"></canvas><span class="n lyr-go-n">${t('go')} ${t('days', inf.go.count)}</span></div>` : ''}
