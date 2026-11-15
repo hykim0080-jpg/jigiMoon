@@ -447,3 +447,14 @@ main[data-d3="1"] #zoom{z-index:6}
 #intro.out{opacity:0;pointer-events:none}
 #intro canvas{display:block}
 #side-btn{margin-right:6px}#side-btn[hidden]{display:none}#side-btn[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+
+/* the verdict for the selected place, big at the top centre of the map */
+#vbadge{position:absolute;left:50%;top:44px;transform:translateX(-50%);z-index:7;display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none;text-align:center;max-width:min(520px,70%);padding:6px 16px 8px;background:rgba(15,19,27,.72)}
+#vbadge[hidden]{display:none}
+#vbadge b{font-size:40px;line-height:1;font-weight:700;letter-spacing:.02em}
+#vbadge.go b{color:var(--ok)}#vbadge.nogo b{color:#f0655a}
+#vbadge .vfail{font-size:15px;font-weight:600;color:#f0655a}
+#vbadge .vfix{font-size:16px;font-weight:700;margin-top:2px}
+#vbadge .vwhy{font-size:13px;color:var(--ink);line-height:1.35}
+main.full #vbadge{top:64px}
+@media (max-width:700px){#vbadge b{font-size:28px}#vbadge{top:36px}}
