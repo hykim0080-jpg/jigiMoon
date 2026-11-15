@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Sun and Earth position (azimuth, elevation) seen from a point on the Moon.
 
 Ephemeris: JPL DE421 (bundled by the skyfield-data package, public domain).

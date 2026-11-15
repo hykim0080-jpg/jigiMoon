@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Add per-landing-day verdicts for 11 mast heights to out/<id>.json and out/mission_6d/<id>.json."""
 import datetime as dt, json, sys
 import numpy as np

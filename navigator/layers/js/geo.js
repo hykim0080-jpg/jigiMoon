@@ -1,3 +1,4 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 import { N, PX, HALF, R_MOON } from './config.js';
 export const xyToCell = (x, y) => ({ col: Math.floor((x + HALF) / PX), row: Math.floor((HALF - y) / PX) });
 export const cellToXY = (col, row) => ({ x: -HALF + (col + .5) * PX, y: HALF - (row + .5) * PX });

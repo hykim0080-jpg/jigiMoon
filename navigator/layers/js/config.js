@@ -1,3 +1,4 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 export const N = 800, PX = 500, HALF = 200000, R_MOON = 1737400;
 export const FAIL_AT_255 = ['mast'];
 export const ZERO_TRANSPARENT = ['days', 'psr'];

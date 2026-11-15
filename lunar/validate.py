@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Compare our horizon+ephemeris model with PGDA Lunar Polar Illumination maps (products/69).
 PGDA: 18.6-yr average, hourly; sun = visible fraction of the solar disc, Earth = visible if ANY part of the disc
 is above the horizon. Ours: same definitions, 18.6 years (2008-01-01 + 6798 d) at 3-hour steps,

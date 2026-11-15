@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Headline numbers: of the 2027 landing days that are NO-GO at the chosen point (2 m mast), what share is
 fixed by (a) moving <= 1 km (slope <= 8 deg, same criteria), (b) a mast <= 20 m, (c) waiting <= N days,
 (d) any of a/b/c(<=7 d). Per site and pooled over the 12 sites."""

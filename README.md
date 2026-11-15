@@ -2,6 +2,8 @@
 
 NASA Space Apps Challenge 2026 · Challenge: Lunar Landing Site Navigator
 
+Large parts of this code were written with the help of Anthropic's Claude (AI coding assistant), directed and reviewed by team Moon-jigi. Details: `submission/AI_USE.md`.
+
 Compares lunar south-pole landing sites and dates by sunlight (power) and direct-to-Earth visibility on real LOLA terrain, and prescribes fixes when a site/date fails: move (km), raise a mast (m), or wait (days).
 
 | Folder | What |

@@ -1,3 +1,4 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 // Lunar south pole viewer: 3D / 2D terrain with time-varying sunlight and Earth visibility.
 //
 // Usage (the host page must map the bare specifier "three" to vendor/three.module.js):

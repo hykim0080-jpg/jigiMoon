@@ -1,3 +1,4 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 // Default left-top panel: one line + one handle per criterion (layers that carry a threshold). Hover = "why" view (focusCrit).
 import { state, setState } from './state.js';
 import { hue } from './config.js';

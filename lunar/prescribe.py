@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Site metrics and 'prescriptions' when a landing date slips:
 wait (days of delay), raise (mast height), move (nearest feasible + landable point).
 

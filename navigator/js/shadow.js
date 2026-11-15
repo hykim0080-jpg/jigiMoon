@@ -1,3 +1,4 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 // Time-varying shadows on the pole map.
 // For every 500 m pixel we have the terrain horizon height at 64 map azimuths (data/horizon/).
 // Given the Sun direction (moon-fixed unit vector) we compare the Sun's local elevation with the horizon.

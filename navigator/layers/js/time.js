@@ -1,3 +1,4 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 // Time axis of mode B: day/hour scrubber, shadow overlay on the map, sky panorama data for the pin.
 // Imported from mode A (read-only, no import side effects): ../../js/shadow.js (load, paint, pixelOf, pixelXY, horizonValues), ../../js/sky.js (drawSky).
 // Copied (navigator/js/pin.js): bodyDir, latLon, bodies, series — only the hourly Sun/Earth vectors and per-point az/el/visibility.

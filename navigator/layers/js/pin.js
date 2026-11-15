@@ -1,3 +1,4 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 // The pin: a chosen pixel, its GO calendar and the verdict for the selected day (GO / wait / move / mast / none).
 import { N, PX, BUDGET } from './config.js';
 import { cellToXY, cellToLatLon } from './geo.js';
