@@ -27,7 +27,8 @@ export function draggable(el, key, on = () => true) {
       saved[key] = [ox + dx, oy + dy];
       put(it);
     };
-    const up = () => { grip.removeEventListener('pointermove', move); grip.removeEventListener('pointerup', up); grip.removeEventListener('pointercancel', up); el.classList.remove('dragging'); save(); onMove(); };
+    const up = () => { if (saved[key] && Math.abs(saved[key][0]) < 1 && Math.abs(saved[key][1]) < 1) delete saved[key];   // a click on the bar is not a move
+      grip.removeEventListener('pointermove', move); grip.removeEventListener('pointerup', up); grip.removeEventListener('pointercancel', up); el.classList.remove('dragging'); save(); onMove(); };
     grip.addEventListener('pointermove', move); grip.addEventListener('pointerup', up); grip.addEventListener('pointercancel', up);
   });
   grip.addEventListener('dblclick', e => { e.stopPropagation(); delete saved[key]; save(); put(it); onMove(); });
@@ -37,7 +38,7 @@ export function draggable(el, key, on = () => true) {
 let onMove = () => {};
 export const onChange = (f) => { onMove = f; };
 // has this panel been moved away from its normal place (and is moving on now)?
-export const moved = (key) => { const it = items.find(i => i.key === key); return !!(it && active(it) && saved[key]); };
+export const moved = (key) => { const it = items.find(i => i.key === key), p = saved[key]; return !!(it && active(it) && p && (Math.abs(p[0]) >= 1 || Math.abs(p[1]) >= 1)); };
 
 const small = () => matchMedia('(max-width:700px)').matches;
 const active = (it) => !small() && it.on();
