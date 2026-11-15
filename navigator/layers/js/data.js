@@ -28,6 +28,14 @@ export async function loadAll(dataUrl = './data/') {
     for (let k = 0; k < a.length; k++) { const v = a[k]; if (v <= 250) h[Math.min(49, (v / 5) | 0)]++; }
     hist[m.id] = h;
   });
+  // water ice (a preference, not a must): distance to the nearest permanently shadowed cell (PSR = where ice may be,
+  // not proven). Built here from the psr layer as a layer of its own, so it can also be switched on as a criterion.
+  if (bs.psr && !bs.ice) {
+    const m = { id: 'ice', name: '얼음 근처 (선택)', unit: 'km', min: 0, max: 25, threshold: 5, direction: '<=', weight: 0, nodata: 255, optional: true };
+    bs.ice = iceDistance(bs.psr); layers.push(m); meta.layers.push(m);
+    const h = new Uint32Array(50); for (let k = 0; k < bs.ice.length; k++) { const v = bs.ice[k]; if (v <= 250) h[Math.min(49, (v / 5) | 0)]++; } hist.ice = h;
+    meta.definitions = { ...(meta.definitions || {}), ice: 'Distance to the nearest permanently shadowed cell (never sunlit in 2027 in our 500 m illumination run, from LOLA). Water ice may be there; it is not proven. A preference: it changes the order of GO spots, and becomes a must only when switched on.' };
+  }
   const img = new Image(); img.src = dataUrl + 'hillshade.png'; await img.decode();
   const c = document.createElement('canvas'); c.width = c.height = N;
   const cx = c.getContext('2d', { willReadFrequently: true }); cx.drawImage(img, 0, 0, N, N);
@@ -41,4 +49,25 @@ export async function loadAll(dataUrl = './data/') {
   const [ib, bits, m20] = await Promise.all([get('ok14_idx.wasm'), get('ok14_bits.wasm'), get('days6_m20.wasm')]);
   const ok14 = ib && bits && bits.length === (ib.length / 4) * 46 ? { idx: new Uint32Array(ib.buffer, ib.byteOffset, ib.length / 4), bits } : null;
   return { dataUrl, meta, layers, bytes: bs, hill, sites, hist, landmarks, landers, month, ok14, m20: m20 && m20.length === N * N ? m20 : null };
+}
+
+// distance (km, 0.1 km steps as bytes 0..250, 255 = farther than 25 km) to the nearest PSR cell; two-pass chamfer on the 500 m grid
+export function iceDistance(psr) {
+  const n = N, INF = 1e9, d = new Float32Array(n * n), a = 0.5, b = 0.5 * Math.SQRT2;
+  for (let i = 0; i < d.length; i++) d[i] = psr[i] >= 125 && psr[i] <= 250 ? 0 : INF;
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+    const i = r * n + c; let v = d[i];
+    if (c > 0) v = Math.min(v, d[i - 1] + a);
+    if (r > 0) { v = Math.min(v, d[i - n] + a); if (c > 0) v = Math.min(v, d[i - n - 1] + b); if (c < n - 1) v = Math.min(v, d[i - n + 1] + b); }
+    d[i] = v;
+  }
+  for (let r = n - 1; r >= 0; r--) for (let c = n - 1; c >= 0; c--) {
+    const i = r * n + c; let v = d[i];
+    if (c < n - 1) v = Math.min(v, d[i + 1] + a);
+    if (r < n - 1) { v = Math.min(v, d[i + n] + a); if (c < n - 1) v = Math.min(v, d[i + n + 1] + b); if (c > 0) v = Math.min(v, d[i + n - 1] + b); }
+    d[i] = v;
+  }
+  const out = new Uint8Array(n * n);
+  for (let i = 0; i < out.length; i++) out[i] = d[i] > 25 ? 255 : Math.round(d[i] * 10);
+  return out;
 }

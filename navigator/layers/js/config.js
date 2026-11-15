@@ -11,6 +11,7 @@ export const RAMPS = {
   dark:  ['#14181f', '#2f3746', '#5d6880', '#9aa6bd', '#e1e6ef'],
   slope: ['#1a2206', '#44580f', '#7c9a1e', '#b7d353', '#eef7c4'],
   days:  ['#06241a', '#0f5238', '#1f8a5b', '#4cbf82', '#d6f6e3'],
+  ice:   ['#e0f7ff', '#9fe3ff', '#3aa7cf', '#7fd4f5', '#0d4a63'],
   other: ['#1c1f26', '#3a404d', '#6c7488', '#a3abbd', '#e6e9f0'],
 };
 // steps: [upper bound (inclusive, in layer units), colour|null]; values above the last bound are transparent

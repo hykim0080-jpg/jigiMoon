@@ -56,7 +56,7 @@ export function renderPinCard(st) {
       const fail = val != null && (wk === 'dark' ? val > c : val < c), pc = x => Math.max(0, Math.min(100, 100 * x / mx));
       return `<div class="lyr-ck${st.on.mask[m.id] ? '' : ' off'}"><i class="lyr-tg" style="--c:${layerColor(m.id, false)}"></i><span class="lyr-nm">${critName(m)}</span><span class="lyr-ckb"><b style="width:${val == null ? 0 : pc(val)}%;background:${fail ? 'var(--block)' : layerColor(m.id, false)}"></b><u style="left:${pc(c)}%"></u></span><span class="n lyr-ckv${fail ? ' fail' : ''}">${val == null ? '–' : val + (wk === 'dark' ? ' h' : ' %')}</span></div>`;
     }
-    const val = inf.values[m.id], fail = state.threshold[m.id] != null && val != null && (m.direction === '<=' ? val > st.threshold[m.id] : val < st.threshold[m.id]);
+    const val = inf.values[m.id], fail = (!m.optional || st.on.mask[m.id]) && state.threshold[m.id] != null && val != null && (m.direction === '<=' ? val > st.threshold[m.id] : val < st.threshold[m.id]);
     const pc = x => Math.max(0, Math.min(100, 100 * (x - m.min) / (m.max - m.min)));
     return `<div class="lyr-ck${st.on.mask[m.id] ? '' : ' off'}"><i class="lyr-tg" style="--c:${layerColor(m.id, false)}"></i><span class="lyr-nm">${critName(m)}</span><span class="lyr-ckb"><b style="width:${val == null ? 0 : pc(val)}%;background:${fail ? 'var(--block)' : layerColor(m.id, false)}"></b><u style="left:${pc(st.threshold[m.id])}%"></u></span><span class="n lyr-ckv${fail ? ' fail' : ''}">${val == null ? '–' : fmt(m, val) + unitOf(m)}</span></div>`;
   }).join('');
