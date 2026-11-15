@@ -481,6 +481,11 @@ main[data-d3="1"] #zoom{z-index:6}
 #intro{position:fixed;inset:0;z-index:100;background:#000;cursor:pointer;transition:opacity .6s}
 #intro.out{opacity:0;pointer-events:none}
 #intro canvas{display:block}
+#intro .intro-title{position:absolute;left:0;right:0;top:4.5vh;text-align:center;color:#e8eaf0;font-family:Inter,system-ui,sans-serif;pointer-events:none;transition:opacity .5s}
+#intro .intro-title h1{margin:0;font-size:clamp(28px,min(4.6vw,7vh),56px);font-weight:700;letter-spacing:.14em;line-height:1}
+#intro .intro-title p{position:fixed;left:0;right:0;bottom:9.5vh;margin:0;font-size:clamp(14px,1.8vw,18px);color:#c3c9d6}
+#intro .intro-title small{position:fixed;left:0;right:0;bottom:4.5vh;font-size:13px;color:#98a1b4;opacity:.6;letter-spacing:.04em}
+#intro.go .intro-title{opacity:0}
 #side-btn{margin-right:6px}#side-btn[hidden]{display:none}#side-btn[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 
 /* the verdict for the selected place, big, on the top-left edge of the map (under the map title); what sat there moves down by its height (--vbh) */
