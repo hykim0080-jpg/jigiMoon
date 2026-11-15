@@ -4,7 +4,7 @@
 // verdictFor() is plain data so other views (3D hover card, Find a site) can show the same words.
 import { t } from './strings.js';
 import { THRESHOLDS } from './config.js';
-import { status, nearestOk } from './logic.js';
+import { status, nearestOk, blockage } from './logic.js';
 import { failStats, failReason } from './failreason.js';
 import { sector, bearing } from './orient.js';
 
@@ -17,9 +17,10 @@ export function verdictFor(st, data, lim) {
   if (!site || !e) return null;
   const c = st.crit || THRESHOLDS, d = st.day, m = st.mast && site.mast;
   const sun = m ? m.sun[st.mast][d] : site.cal.sun[d], earth = m ? m.earth[st.mast][d] : site.cal.earth[d], dark = m ? m.dark[st.mast][d] : site.cal.dark[d];
+  const b = site.sky ? blockage(site.sky, d * 24 + st.hour) : {}, hid = k => b[k] ? ` · ${t('hiddenRidge')}` : '';   // the ridge that hides it now
   const fails = [];
-  if (sun < c.sun) fails.push({ k: 'sun', text: `${t('sun')} ${Math.floor(sun)} % < ${c.sun} %` });
-  if (earth < c.earth) fails.push({ k: 'earth', text: `${t('earth')} ${Math.floor(earth)} % < ${c.earth} %` });
+  if (sun < c.sun) fails.push({ k: 'sun', text: `${t('sun')} ${Math.floor(sun)} % < ${c.sun} %${hid('sun')}` });
+  if (earth < c.earth) fails.push({ k: 'earth', text: `${t('earth')} ${Math.floor(earth)} % < ${c.earth} %${hid('earth')}` });
   if (dark > c.dark) fails.push({ k: 'dark', text: `${t('dark')} ${Math.ceil(dark)} h > ${c.dark} h` });
   const s = status(e, d, st.mast, lim);
   let fix = '', why = '';
