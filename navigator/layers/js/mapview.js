@@ -23,6 +23,8 @@ export function cellFromEvent(e) {
   return col >= 0 && row >= 0 && col < N && row < N ? { col, row } : null;
 }
 export const setPick = fn => { pickFn = fn; };
+let badgeSrc = null; export const setBadges = fn => { badgeSrc = fn; };
+const tripBadges = () => !!badgeSrc && !state.adv;
 export function initMap(el, d, compCanvas) {
   panel = el; data = d; comp = compCanvas;
   if (shade && data.hill) data.hill.fill(255);
@@ -133,7 +135,7 @@ function hitSite(mx, my) {
 // numbered badges of zones 1..simpleTop: stem from the best pixel, flipped below when two would touch
 function badges(s) {
   const out = [];
-  for (const z of getZones().slice(0, ZONE.simpleTop)) {
+  for (const z of tripBadges() ? badgeSrc() : getZones().slice(0, ZONE.simpleTop)) {
     const [x, y] = toScr(z.col + .5, z.row + .5);
     if (x < -20 || y < -40 || x > W + 20 || y > W + 40) continue;
     const flip = out.some(b => Math.hypot(b.x - x, b.cy - (y - 21)) < 24) || (state.pin && state.pin.col === z.col && state.pin.row === z.row);
@@ -182,7 +184,7 @@ function wire() {
       if (drag.moved) { const s = W * drag.v.k / N; setState({ view: clampView({ k: drag.v.k, cx: drag.v.cx - dx / s, cy: drag.v.cy - dy / s }) }, 'view'); }
     }
     const cell = cellFromEvent(e), hs = state.adv ? hitSite(mx, my) : null, hl = hitLander(mx, my), hb = hitBadge(mx, my);
-    if ((hb ? hb.id : null) !== (badgeHot ?? null)) { badgeHot = hb ? hb.id : null; setState({ hoverZone: badgeHot }, 'hover'); }
+    if ((hb ? hb.id : null) !== (badgeHot ?? null)) { badgeHot = hb ? hb.id : null; setState(tripBadges() ? { hoverTrip: badgeHot } : { hoverZone: badgeHot }, 'hover'); }
     const same = state.hover && cell && state.hover.col === cell.col && state.hover.row === cell.row;
     if (!same || (hs?.id ?? null) !== state.hoverSite || (hl?.id ?? null) !== state.hoverLander) setState({ hover: cell, hoverSite: hs ? hs.id : null, hoverLander: hl ? hl.id : null }, 'hover');
     showTip(e, cell);
@@ -282,7 +284,7 @@ export function drawOverlay(st, siteFill) {
   }
   h += `<line x1="0" x2="${W}" y1="${py}" y2="${py}" class="g"/><line y1="0" y2="${W}" x1="${px}" x2="${px}" class="g"/>`;
   const hot = id => id === st.site || id === st.hoverSite;
-  const pi = st.pin ? pinInfo(st) : null, Zs = st.mode === 'layers' ? [] : getZones(), hotZ = hotZoneId(st);
+  const pi = st.pin ? pinInfo(st) : null, Zs = st.mode === 'layers' || tripBadges() ? [] : getZones(), hotZ = tripBadges() ? st.hoverTrip : hotZoneId(st);
   const boxOf = si => { const [x0, y0] = toScr(...mToCf(si.box_m[0], si.box_m[3])), [x1, y1] = toScr(...mToCf(si.box_m[2], si.box_m[1])); return [x0, y0, x1, y1]; };
   for (const si of data.sites) {
     if (!si.box_m) continue;

@@ -178,7 +178,7 @@ function targetVp(st) {
 }
 
 // heavy map data (sharp hillshade 1.8 MB, horizon tiles for the shadow layer 23 MB): only once a map is on screen,
-// so the search screen opens light
+// so the selection screen opens light
 let heavy = false;
 function loadHeavy() {
   heavy = true;
@@ -190,7 +190,7 @@ function loadHeavy() {
 
 export function render(st, d) {
   data = d;
-  if (st.view === 'search' || st.view === 'sites') return;
+  if (st.view === 'sites') return;
   if (!heavy) loadHeavy();
   S = svg.clientWidth;
   if (!S) return;

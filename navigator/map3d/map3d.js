@@ -64,7 +64,7 @@ const CSS = `
 .lmap-ldn small{font:10px/1 var(--lmap-mono);color:var(--muted);margin-left:5px}
 .lmap-site.is-landed{border:0;border-radius:0;background:none!important;box-shadow:none;width:15px;height:15px;margin:-8.5px 0 0 -7.5px;filter:drop-shadow(0 0 1.5px #0f131b)}
 .lmap-site.is-landed svg{display:block;width:15px;height:15px;overflow:visible}
-.lmap-card{z-index:4;display:grid;gap:5px;min-width:150px;max-width:280px;padding:9px 11px 10px;background:rgba(24,29,40,.95);border:1px solid var(--line);border-radius:6px;white-space:normal;box-shadow:0 6px 24px rgba(0,0,0,.35)}
+.lmap-card{z-index:4;display:grid;gap:5px;min-width:150px;max-width:280px;padding:9px 11px 10px;background:rgba(24,29,40,.95);border:1px solid var(--line);border-radius:0;white-space:normal;box-shadow:0 6px 24px rgba(0,0,0,.35)}
 .lmap-card b{font-size:12.5px;font-weight:600}
 
 .lmap-card span{color:var(--muted);font-size:11.5px}
@@ -88,13 +88,13 @@ const CSS = `
 .lmap-body.is-sun{color:var(--sun)}.lmap-body.is-earth{color:var(--earth)}
 .lmap-panel{position:absolute;display:flex;align-items:center;gap:10px;z-index:2}
 .lmap-tl{left:12px;top:12px}.lmap-tr{right:12px;top:12px}
-.lmap-seg{display:flex;background:rgba(24,29,40,.86);border:1px solid var(--line);border-radius:6px;padding:2px;backdrop-filter:blur(6px)}
-.lmap-seg button{all:unset;display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:4px;color:var(--muted);cursor:pointer;font:inherit;font-weight:500;white-space:nowrap}
+.lmap-seg{display:flex;background:rgba(24,29,40,.86);border:1px solid var(--line);border-radius:0;padding:2px;backdrop-filter:blur(6px)}
+.lmap-seg button{all:unset;display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:0;color:var(--muted);cursor:pointer;font:inherit;font-weight:500;white-space:nowrap}
 .lmap-seg button:hover{color:var(--ink)}
 .lmap-seg button[aria-pressed="true"]{background:var(--line);color:var(--ink)}
 .lmap-seg button:focus-visible,.lmap-btn:focus-visible{outline:1px solid var(--muted);outline-offset:1px}
 .lmap-seg button i{width:8px;height:8px;border-radius:50%;flex:none}
-.lmap-exag{display:flex;align-items:center;gap:8px;background:rgba(24,29,40,.86);border:1px solid var(--line);border-radius:6px;padding:0 10px;height:30px;color:var(--muted);backdrop-filter:blur(6px)}
+.lmap-exag{display:flex;align-items:center;gap:8px;background:rgba(24,29,40,.86);border:1px solid var(--line);border-radius:0;padding:0 10px;height:30px;color:var(--muted);backdrop-filter:blur(6px)}
 .lmap-exag output{font:11px/1 var(--lmap-mono);color:var(--ink);min-width:2.4em}
 .lmap-exag input{width:72px}
 .lmap-bar{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:10px 14px 12px;background:linear-gradient(to top,rgba(15,19,27,.96) 60%,rgba(15,19,27,0));display:grid;gap:8px}
@@ -107,20 +107,20 @@ const CSS = `
 .lmap-st i{width:9px;height:9px;border-radius:50%;border:1.5px solid currentColor;flex:none}
 .lmap-st.is-off{color:var(--muted);opacity:.55}
 .lmap-st.is-sun i{color:var(--sun)}.lmap-st.is-earth i{color:var(--earth)}
-.lmap-btn{all:unset;width:28px;height:28px;display:grid;place-items:center;border-radius:5px;color:var(--ink);cursor:pointer;flex:none}
+.lmap-btn{all:unset;width:28px;height:28px;display:grid;place-items:center;border-radius:0;color:var(--ink);cursor:pointer;flex:none}
 .lmap-btn:hover{background:var(--line)}
 .lmap-btn svg{width:14px;height:14px;fill:currentColor}
 .lmap-btn.is-main{background:var(--ink);color:var(--bg);border-radius:50%}
 .lmap-btn.is-main:hover{background:#fff}
 .lmap-track{position:relative;flex:1;height:28px;min-width:60px}
-.lmap-track canvas{position:absolute;left:0;right:0;top:10px;width:100%;height:8px;border-radius:2px;image-rendering:pixelated}
+.lmap-track canvas{position:absolute;left:0;right:0;top:10px;width:100%;height:8px;border-radius:0;image-rendering:pixelated}
 .lmap input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;margin:0;cursor:pointer;height:28px}
 .lmap-track input{position:absolute;inset:0;width:100%}
 .lmap input[type=range]:focus{outline:none}
 .lmap input[type=range]::-webkit-slider-runnable-track{height:28px;background:transparent}
 .lmap input[type=range]::-moz-range-track{height:28px;background:transparent}
-.lmap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:3px;height:22px;margin-top:3px;border-radius:1px;background:var(--ink);box-shadow:0 0 0 2px rgba(15,19,27,.9)}
-.lmap input[type=range]::-moz-range-thumb{width:3px;height:22px;border:0;border-radius:1px;background:var(--ink);box-shadow:0 0 0 2px rgba(15,19,27,.9)}
+.lmap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:3px;height:22px;margin-top:3px;border-radius:0;background:var(--ink);box-shadow:0 0 0 2px rgba(15,19,27,.9)}
+.lmap input[type=range]::-moz-range-thumb{width:3px;height:22px;border:0;border-radius:0;background:var(--ink);box-shadow:0 0 0 2px rgba(15,19,27,.9)}
 .lmap-exag input[type=range]{height:28px;background:linear-gradient(var(--line),var(--line)) center/100% 2px no-repeat}
 .lmap-exag input[type=range]::-webkit-slider-thumb{width:10px;height:10px;margin-top:9px;border-radius:50%;box-shadow:none}
 .lmap-exag input[type=range]::-moz-range-thumb{width:10px;height:10px;border-radius:50%;box-shadow:none}

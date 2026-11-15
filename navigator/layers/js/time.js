@@ -54,12 +54,12 @@ export async function skyAt(col, row) {
   skies.set(i, sky); return sky;
 }
 // per landing day GO of a 14-day mission from a point's hourly series: sun% >= cs, Earth% >= ce, longest dark (frac < 0.1) <= cd h
-export function calendarFrom(sky, crit) {
-  const n = 336, go = new Uint8Array(365), cs = new Float64Array(sky.hours + 1), ce = new Float64Array(sky.hours + 1); let count = 0;
+export function calendarFrom(sky, crit, mission = 14) {
+  const n = mission * 24, go = new Uint8Array(365), cs = new Float64Array(sky.hours + 1), ce = new Float64Array(sky.hours + 1); let count = 0;
   for (let i = 0; i < sky.hours; i++) { cs[i + 1] = cs[i] + sky.sunFrac[i]; ce[i + 1] = ce[i] + sky.earthVis[i]; }
   for (let d = 0; d < 365; d++) {
-    const a = d * 24, b = a + n;
-    if ((cs[b] - cs[a]) / n * 100 < crit.sun - 1e-9 || (ce[b] - ce[a]) / n * 100 < crit.earth - 1e-9) continue;
+    const a = d * 24, b = Math.min(sky.hours, a + n), w = b - a;
+    if ((cs[b] - cs[a]) / w * 100 < crit.sun - 1e-9 || (ce[b] - ce[a]) / w * 100 < crit.earth - 1e-9) continue;
     let run = 0, dark = 0;
     for (let i = a; i < b; i++) { run = sky.sunFrac[i] < 0.1 ? run + 1 : 0; if (run > dark) dark = run; }
     if (dark <= crit.dark) { go[d] = 1; count++; }
@@ -70,7 +70,7 @@ export const skyCached = (col, row) => skies.has(row * 800 + col);
 export function drawPinSky(svg, st) {
   if (!state.pin || !svg) return;
   const sky = skies.get(state.pin.row * 800 + state.pin.col);
-  if (sky) drawSky(svg, { sky }, { day: st.tDay, hour: st.tHour, mission: 14 }, { compact: true, w: svg.clientWidth, h: svg.clientHeight });
+  if (sky) drawSky(svg, { sky }, { day: st.tDay, hour: st.tHour, mission: st.mission || 14 }, { compact: true, w: svg.clientWidth, h: svg.clientHeight });
 }
 
 // ---- shadow overlay ----
@@ -79,15 +79,15 @@ export const shadowCanvas = () => state.expo ? (expoOk ? expoCv : null) : state.
 let expoCv = null, expoOk = false, expoKey = null, expoTimer = 0, expoData = null, slopeBytes = null; export let expoTop = [];
 export function syncExpo(st) {
   if (!st.expo) { clearTimeout(expoTimer); bar.expo && bar.expo.classList.remove('busy'); return; }
-  if (st.tDay === expoKey) return;
+  if (st.tDay + '|' + st.mission === expoKey) return;
   clearTimeout(expoTimer); bar.expo.classList.add('busy');
   expoTimer = setTimeout(async () => {
     await ensure(); const day = state.tDay;
     await new Promise(r => requestAnimationFrame(() => setTimeout(r, 20)));   // let the busy state paint before the 2.5 s job
-    const list = []; for (let h = 0; h < 14 * 24; h += 3) { const o = Math.min(B.n - 1, day * 24 + h) * 3; list.push(B.S.subarray(o, o + 3)); }
+    const list = []; for (let h = 0; h < (state.mission || 14) * 24; h += 3) { const o = Math.min(B.n - 1, day * 24 + h) * 3; list.push(B.S.subarray(o, o + 3)); }
     const ex = shadow.exposure(list); expoCv = expoCv || document.createElement('canvas'); shadow.paintExposure(expoCv, ex);
     expoTop = slopeBytes ? shadow.brightest(ex, slopeBytes, 5, 10, state.threshold.slope ?? 8) : [];
-    expoOk = true; expoKey = day; bar.expo.classList.remove('busy');
+    expoOk = true; expoKey = day + '|' + state.mission; bar.expo.classList.remove('busy');
     setState({}, state.tDay === day ? 'view' : 'time');
   }, 150);
 }
@@ -119,5 +119,5 @@ export function initTime(panel, d) {
 export function renderTime(st) {
   bar.el.classList.toggle('open', !!st.shadow); bar.el.parentNode.classList.toggle('topen', !!st.shadow);
   bar.expo.setAttribute('aria-pressed', !!st.expo); bar.sun.setAttribute('aria-pressed', st.shadow); bar.d.value = st.tDay; bar.h.value = st.tHour;
-  bar.td.textContent = dateText(st.tDay); bar.th.textContent = String(st.tHour).padStart(2, '0') + ':00';
+  bar.td.textContent = dateText(st.tDay); bar.expo.textContent = t('expo', st.mission || 14); bar.th.textContent = String(st.tHour).padStart(2, '0') + ':00';
 }

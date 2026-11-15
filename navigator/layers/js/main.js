@@ -12,11 +12,13 @@ import { t, lang } from './strings.js';
 import { initPin, setOnCal } from './pin.js';
 import { syncShadow, syncExpo, renderTime, ensure as ensureTime } from './time.js';
 import { xyToCell, cellToXY } from './geo.js';
+import { initTrip, renderTrip, tripRanked, REGIONS, regionBBox } from './trip.js';
+import { mapHome, setBadges } from './mapview.js';
 
 export async function mount(root, opts = {}) {
   const { dataUrl = './data/', header = true } = opts;
-  const lq = new URLSearchParams(location.search).get('lang') || new URLSearchParams(location.hash.slice(1)).get('lang'), cmp = '../index.html' + (lq ? '?lang=' + lq : '');
-  root.innerHTML = `<div class="lyr-app">${header ? `<header><a class="app-name" href="${cmp}">${t('app')}</a><div class="seg lyr-sw"><a href="${cmp}">${t('compare')}</a><button aria-pressed="true">${t('find')}</button></div></header>` : ''}<div class="lyr-main"><section class="panel lyr-left"><div class="lyr-lh"><h2>${t('criteria')}</h2><button class="lyr-advb" aria-pressed="false">${t('adv')}</button></div><div class="lyr-crit"></div><div class="lyr-advwrap lyr-layers"></div><div class="lyr-zones"></div></section><section class="panel lyr-map" data-theme="dark"></section><section class="panel lyr-pinp"></section></div></div><div id="tip" hidden></div>`;
+  const lq = new URLSearchParams(location.search).get('lang') || new URLSearchParams(location.hash.slice(1)).get('lang'), cmp = '../index.html' + (lq ? '?lang=' + lq : '') + '#v=focus';
+  root.innerHTML = `<div class="lyr-app">${header ? `<header><a class="app-name" href="${cmp}">${t('app')}</a><div class="seg lyr-sw"><a href="${cmp}">${t('compare')}</a><button aria-pressed="true">${t('find')}</button></div></header>` : ''}<div class="lyr-main"><section class="panel lyr-left"><div class="lyr-lh"><h2>${t('criteria')}</h2><button class="lyr-advb" aria-pressed="false">${t('adv')}</button></div><div class="lyr-crit"></div><div class="lyr-advwrap lyr-layers"></div><div class="lyr-tripl"></div><div class="lyr-zones"></div></section><section class="panel lyr-map" data-theme="dark"></section><section class="panel lyr-pinp"></section></div></div><div id="tip" hidden></div>`;
   const data = await loadAll(dataUrl);
   const main = root.querySelector('.lyr-main'), app = root.querySelector('.lyr-app'), pMap = main.querySelector('.lyr-map'), pLayers = main.querySelector('.lyr-advwrap'), pZones = main.querySelector('.lyr-zones'), pCrit = main.querySelector('.lyr-crit'), pPin = main.querySelector('.lyr-pinp'), advBtn = main.querySelector('.lyr-advb');
 
@@ -39,6 +41,8 @@ export async function mount(root, opts = {}) {
   const dd = Date.parse((h.get('d') || '') + 'T00:00:00Z'); if (!isNaN(dd)) { state.tDay = Math.max(0, Math.min(364, Math.round((dd - Date.UTC(2027, 0, 1)) / 864e5))); state.tTouched = true; }
   if (h.get('h') != null && h.get('h') !== '' && +h.get('h') >= 0 && +h.get('h') <= 23) { state.tHour = Math.round(+h.get('h')); state.tTouched = true; }
   if (h.get('sh') === '1') state.shadow = true;
+  if (h.get('st') === '6') state.mission = 6;
+  if (REGIONS.some(r => r.id === h.get('r'))) state.region = h.get('r');
   const mon = +h.get('mon'); if (state.adv && mon >= 1 && mon <= 12 && data.month) state.month = mon - 1;
   let pinFly = null;
   if (h.get('pin')) { const [px, py] = h.get('pin').split(',').map(Number), c = xyToCell(px, py); if (Number.isFinite(c.col) && c.col >= 0 && c.row >= 0 && c.col < 800 && c.row < 800) { state.pin = c; pinFly = c; state.autoPin = false; } }
@@ -53,6 +57,9 @@ export async function mount(root, opts = {}) {
     saveCrit(next); setState({ crit: next }, 'pixels'); return true;
   };
   initCriteria(pCrit, data, setCrit); initZones(pZones, data, { pick }); initPinCard(pPin, data); initMap(pMap, data, comp); setPick(pick);
+  { const hd = root.querySelector('.lyr-app header'), tl = main.querySelector('.lyr-tripl');
+    initTrip(hd || main, tl, data, { pick, fly: bb => flyToCells(bb, 8), home: () => mapHome(), ranked: rk => { if (state.autoPin && rk[0] && !(state.pin && state.pin.col === rk[0].col && state.pin.row === rk[0].row)) setState({ pin: { col: rk[0].col, row: rk[0].row } }, 'panel'); } });
+    setBadges(() => tripRanked().slice(0, 5)); }
   const setAdv = v => setState(v ? { adv: true } : { adv: false, mode: 'mask', month: null, edit: null, minArea: 1 }, 'pixels');
   advBtn.onclick = () => setAdv(!state.adv);
 
@@ -74,6 +81,7 @@ export async function mount(root, opts = {}) {
   const flush = () => {
     raf = 0; const p = pend; pend = new Set();
     app.dataset.adv = state.adv ? '1' : ''; advBtn.setAttribute('aria-pressed', state.adv);
+    renderTrip(state);
     if (p.has('pixels')) { passPx = compose(state).passPx; if (state.adv) renderPanel(state); renderCriteria(state); renderZones(state); zonesSoon(); syncShadow(); syncExpo(state); renderTime(state); renderPinCard(state); renderPinSky(state); blit(); overlay(); readout(); }
     else {
       if (p.has('view')) { blit(); overlay(); }
@@ -88,14 +96,16 @@ export async function mount(root, opts = {}) {
     if (state.adv && state.month != null) q.set('mon', state.month + 1);
     if (state.tTouched) { q.set('d', new Date(Date.UTC(2027, 0, 1 + state.tDay)).toISOString().slice(0, 10)); q.set('h', String(state.tHour).padStart(2, '0')); }
     if (state.shadow) q.set('sh', 1);
+    if (state.mission !== 14) q.set('st', state.mission);
+    if (state.region) q.set('r', state.region);
     { const ch = critHash(data.meta, state.crit); for (const kv of ch ? ch.split('&') : []) { const [a, b] = kv.split('='); q.set(a, b); } }
     if (lq) q.set('lang', lq);
-    { const ch = critHash(data.meta, state.crit), href = '../index.html' + (lq ? '?lang=' + lq : '') + (ch ? '#' + ch : ''); for (const a of app.querySelectorAll('.lyr-sw a, .app-name')) a.setAttribute('href', href); }
+    { const ch = critHash(data.meta, state.crit), href = '../index.html' + (lq ? '?lang=' + lq : '') + '#v=focus&day=' + state.tDay + '&m=' + state.mission + (ch ? '&' + ch : ''); for (const a of app.querySelectorAll('.lyr-sw a, .app-name')) a.setAttribute('href', href); }
     history.replaceState(null, '', '#' + q.toString().replace(/%2C/g, ','));
   };
   const zonesSoon = () => scheduleZones(state, () => {
     const z = getZones()[0];
-    if (state.autoPin && state.mode === 'mask' && z && !(state.pin && state.pin.col === z.best.col && state.pin.row === z.best.row)) { state.pin = { col: z.best.col, row: z.best.row }; renderPinCard(state); renderPinSky(state); readout(); }
+    if (state.adv && state.autoPin && state.mode === 'mask' && z && !(state.pin && state.pin.col === z.best.col && state.pin.row === z.best.row)) { state.pin = { col: z.best.col, row: z.best.row }; renderPinCard(state); renderPinSky(state); readout(); }
     overlay();
   });
   subscribe((s, what) => { pend.add(what); if (!raf) raf = requestAnimationFrame(flush); });
@@ -107,7 +117,7 @@ export async function mount(root, opts = {}) {
     const m = state.adv ? { 1: 'layers', 2: 'mask', 3: 'score' }[e.key] : null;
     if (m) setState({ mode: m }, 'pixels');
     else if (e.key === '0') setState({ view: { k: 1, cx: 400, cy: 400 } }, 'view');
-    else if (e.key === 'Escape') { const z = getZones()[0]; setState({ autoPin: true, pin: z ? { col: z.best.col, row: z.best.row } : state.pin, edit: null }, 'panel'); }
+    else if (e.key === 'Escape') { const z = tripRanked()[0] || getZones()[0]; setState({ autoPin: true, pin: z ? { col: z.best.col, row: z.best.row } : state.pin, edit: null }, 'panel'); }
     else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') setState({ tDay: Math.max(0, Math.min(364, state.tDay + (e.key === 'ArrowRight' ? 1 : -1))), tTouched: true }, 'time');
   };
   addEventListener('keydown', onKey);
@@ -119,5 +129,6 @@ export async function mount(root, opts = {}) {
   setS(); resize();
   setState({}, 'pixels');
   if (pinFly) flyToCell(pinFly.col, pinFly.row, 4, true); else if (state.site) flyTo(data.sites.find(s => s.id === state.site), true);
+  else if (regionBBox(state.region)) flyToCells(regionBBox(state.region), 8);
   return { destroy() { removeEventListener('resize', onResize); removeEventListener('keydown', onKey); root.innerHTML = ''; } };
 }
