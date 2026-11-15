@@ -1377,11 +1377,21 @@ export function mountLunarMap(container, options = {}) {
       // solar panels on top, and the astronaut stand at the place
       const ppm = camera === cam3 ? canvas.clientHeight / (2 * camera.position.distanceTo(v3) * Math.tan(FOV * DEG / 2)) / 1000 : 0;
       const k = ppm * exagV, rig = Math.max(mastPt.h, 4.3) * k >= 14;
-      const key = mastPt.h + ':' + (rig ? k.toFixed(2) : '-') + JSON.stringify(mastPt.fx) + mastPt.label;
+      // the slope as seen from here: the downhill direction (height gradient over ±250 m) against the screen's right
+      let gd = 0;
+      if (rig && mastPt.fx.ground && heights) {
+        const S = mastPt.fx.ground, d = 250, ex = heightAt(mastPt.x + d, mastPt.y) - heightAt(mastPt.x - d, mastPt.y), ey = heightAt(mastPt.x, mastPt.y + d) - heightAt(mastPt.x, mastPt.y - d), n = Math.hypot(ex, ey);
+        if (n > 0) {
+          const me = camera.matrixWorld.elements, rx = me[0], ry = -me[2], rn = Math.hypot(rx, ry) || 1;   // camera right, in map x / y
+          const cos = -(ex * rx + ey * ry) / (n * rn);                                                     // downhill · right
+          gd = Math.round(Math.atan(Math.tan(S * DEG) * cos) / DEG);
+        }
+      }
+      const key = mastPt.h + ':' + (rig ? k.toFixed(2) : '-') + JSON.stringify(mastPt.fx) + gd + mastPt.label;
       const ok = project(v3);
       if (mastEl._h !== key) {
         mastEl.firstChild.textContent = mastPt.label; mastEl._h = key;
-        const r = mastEl.querySelector('.rig'); r.innerHTML = rig ? MAST_RIG(Math.min(mastPt.h, 100), k, mastPt.fx).svg : '';
+        const r = mastEl.querySelector('.rig'); r.innerHTML = rig ? MAST_RIG(Math.min(mastPt.h, 100), k, { ...mastPt.fx, ground: gd }).svg : '';
         mastEl.querySelector('b').style.display = rig || !mastPt.h ? 'none' : '';
         mastEl.firstChild.style.display = mastPt.h || (rig && mastPt.label) ? '' : 'none';
         mastEl.classList.toggle('is-nogo', !mastPt.h && !!mastPt.label);

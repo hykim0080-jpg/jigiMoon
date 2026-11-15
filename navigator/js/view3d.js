@@ -244,7 +244,8 @@ function sync(st) {
   if (map.setMarks) map.setMarks(det ? marks : []);
   const h = det && s && e ? mastShown(e, st.day, st.mast, limitsOf(st)) : 0;
   // NO-GO without a mast fix: the lander shows why (cold, no Earth link, too steep) on the model itself
-  const fx = det && !h && data.site ? stageFx(st, data) : {};
+  // every place: the model tilts with the ground's real slope (map3d turns it into the angle seen from the camera)
+  const fx = { ...(det && !h && data.site ? stageFx(st, data) : {}), ground: det && s ? s.slope_deg || 0 : 0 };
   if (map.setMast) map.setMast(h, s?.x_m, s?.y_m, h ? t('mastPole', h) : stageLine(fx), fx);
   note.hidden = f.exact;
   if (!f.exact) {

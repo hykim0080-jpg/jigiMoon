@@ -18,7 +18,7 @@ export function openMastPop(data) {
     addEventListener('keydown', ev => { if (ev.key === 'Escape' && !pop.hidden) { ev.stopImmediatePropagation(); close(); } }, true);
     addEventListener('pointerdown', ev => { if (!pop.hidden && !pop.contains(ev.target) && !ev.target.closest('.mastpole,.lmap-mast')) close(); }, true);
   }
-  pop.lastChild.innerHTML = mastSide(h, tg);
+  pop.lastChild.innerHTML = mastSide(h, tg, data.index.byId[st.site]?.slope_deg);
   pop.hidden = false;
 }
 export function close() { if (pop) pop.hidden = true; }
