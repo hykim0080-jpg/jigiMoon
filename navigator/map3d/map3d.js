@@ -22,6 +22,7 @@
 
 import * as THREE from './vendor/three.module.js';
 import { OrbitControls } from './vendor/OrbitControls.js';
+import { SCALE_FIGS } from '../js/figs.js';
 
 const R_MOON = 1737400; // m
 const DEG = Math.PI / 180;
@@ -44,12 +45,17 @@ const CSS = `
   --lmap-mono:Inter,system-ui,sans-serif}
 .lmap-mast{position:absolute;left:0;top:0;pointer-events:none;z-index:3;display:flex;flex-direction:column;align-items:center;transform-origin:50% 100%}
 .lmap-mast i{display:block;width:3px;background:var(--mast,#4fc0c9);box-shadow:0 0 0 1px #0f131b}
+.lmap-mast .cmp{position:absolute;bottom:0;left:calc(50% + 6px);display:flex;align-items:flex-end;gap:3px}
+.lmap-mast .cmp svg{display:block;fill:#d6dbe6;stroke:#0f131b;stroke-width:.6}
 .lmap-mast b{display:block;width:12px;height:12px;border:2px solid var(--mast,#4fc0c9);border-radius:50%;border-bottom-color:transparent;transform:rotate(45deg);margin-bottom:-2px}
 .lmap-mast span{font:600 11px/1 Inter,system-ui,sans-serif;color:#fff;background:rgba(15,19,27,.85);border:1px solid var(--mast,#4fc0c9);padding:2px 5px;margin-bottom:3px;white-space:nowrap}
 .lmap *,.lmap *::before,.lmap *::after{box-sizing:border-box;font-variant-numeric:tabular-nums!important}
 .lmap canvas.lmap-gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
 .lmap-ov{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .lmap-ov>*{position:absolute;left:0;top:0;will-change:transform;white-space:nowrap}
+.lmap-ov>svg.lmap-marks{width:100%;height:100%;overflow:visible}
+.lmap-scale{font:11px/1 Inter,system-ui,sans-serif;color:#e8eaf0;text-shadow:0 0 3px #0f131b;display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+.lmap-scale i{display:block;height:5px;border:1.5px solid #e8eaf0;border-top:0}
 .lmap-site{width:11px;height:11px;margin:-5.5px 0 0 -5.5px;border-radius:50%;border:1.5px solid var(--ink);background:var(--line);
   pointer-events:auto;cursor:pointer;box-shadow:0 0 0 1px rgba(15,19,27,.85)}
 .lmap-site::after{content:"";position:absolute;inset:-7px;border-radius:50%}
@@ -299,6 +305,8 @@ export function mountLunarMap(container, options = {}) {
   root.dataset.lang = ko ? 'ko' : 'en';
   const canvas = el('canvas', 'lmap-gl');
   const ov = el('div', 'lmap-ov');
+  const marksSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  marksSvg.setAttribute('class', 'lmap-marks');
   const msg = el('div', 'lmap-msg');
 
   const segMode = el('div', 'lmap-seg');
@@ -386,7 +394,7 @@ export function mountLunarMap(container, options = {}) {
   let hMin = 0, hMax = 0;
   let sites = [];
   let landmarks = [], landers = [];
-  let mastPt = null, mastEl = null;   // MAST fix: a pole of h metres at a map point, drawn on the overlay
+  let scaleEl = null, mastPt = null, mastEl = null, marks = [];   // marks: lines on the ground from the host (MOVE, blocked Sun/Earth)   // MAST fix: a pole of h metres at a map point, drawn on the overlay
   let hoverSite = null, selSite = null, hoverPt = null, hoverLander = null, hoverLm = null;
   let pointer = null;                 // last pointer position over the canvas (client px)
   let tween = null;
@@ -414,8 +422,8 @@ export function mountLunarMap(container, options = {}) {
   // directions from the pole (azimuth, elevation from the frame metadata); sizes are enlarged to be seen.
   const R_MOON = 1737.4;
   const moonGroup = new THREE.Group();
-  const moonMat = new THREE.MeshBasicMaterial({ color: 0x8a8f99 });
-  if (opt.moonUrl) new THREE.TextureLoader().load(opt.moonUrl, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; moonMat.map = tx; moonMat.color.set(0x9aa0aa); moonMat.needsUpdate = true; dirty = true; });
+  const moonMat = new THREE.MeshBasicMaterial({ color: 0x3a3e46 });   // dark, so the lit south-pole patch stands out
+  if (opt.moonUrl) new THREE.TextureLoader().load(opt.moonUrl, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; moonMat.map = tx; moonMat.color.set(0x474b54); moonMat.needsUpdate = true; dirty = true; });
   const moonGeo = new THREE.SphereGeometry(R_MOON, 160, 80);
   const moonMesh = new THREE.Mesh(moonGeo, moonMat);
   moonMesh.rotation.x = Math.PI;          // south pole to +y
@@ -441,11 +449,21 @@ export function mountLunarMap(container, options = {}) {
     for (const [x, y, w, h] of [[44, 50, 30, 5], [60, 68, 34, 6], [40, 80, 22, 4]]) { g.beginPath(); g.ellipse(x + w / 2, y, w / 2, h / 2, -.3, 0, 7); g.fill(); }
     const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace; return tx;
   };
+  // Sun: NASA/SDO HMI continuum disc with a glow (sprite, constant screen size).
+  // Earth: a globe with the NASA Blue Marble texture, lit from the Sun's direction so its phase is right.
+  const sunMat = new THREE.SpriteMaterial({ map: glowTex('#fff8e0', 'rgba(255,190,80,.35)', 0.22), sizeAttenuation: false, depthWrite: false, transparent: true });
+  if (opt.sunUrl) new THREE.TextureLoader().load(opt.sunUrl, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; sunMat.map = tx; sunMat.needsUpdate = true; dirty = true; });
+  const earthMat = new THREE.MeshLambertMaterial({ map: earthTex(), color: 0xffffff });
+  if (opt.earthUrl) new THREE.TextureLoader().load(opt.earthUrl, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; earthMat.map = tx; earthMat.needsUpdate = true; dirty = true; });
+  const SKY_D0 = 3400, EARTH_R = SKY_D0 * Math.tan(3.5 * DEG);   // drawn about 7 times its real size
+  const earthMesh = new THREE.Mesh(new THREE.SphereGeometry(EARTH_R, 48, 24), earthMat);
+  const sunLight = new THREE.DirectionalLight(0xffffff, 2.2);
+  scene.add(sunLight, sunLight.target, new THREE.AmbientLight(0x223044, 0.35));
   const sky = {
-    sun: new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex('#fff8e0', 'rgba(255,190,80,.35)', 0.22), sizeAttenuation: false, depthWrite: false, transparent: true })),
-    earth: new THREE.Sprite(new THREE.SpriteMaterial({ map: earthTex(), sizeAttenuation: false, depthWrite: false, transparent: true })),
+    sun: new THREE.Sprite(sunMat),
+    earth: earthMesh,
   };
-  sky.sun.scale.set(0.16, 0.16, 1); sky.earth.scale.set(0.11, 0.11, 1);
+  sky.sun.scale.set(0.2, 0.2, 1);
   for (const k in sky) { sky[k].visible = false; sky[k].renderOrder = -1; scene.add(sky[k]); }
   const SKY_D = 3400;
   function placeSky(tt) {
@@ -455,7 +473,9 @@ export function mountLunarMap(container, options = {}) {
       const a = b.az * DEG, e = b.el * DEG;
       sp.position.set(Math.sin(a) * Math.cos(e) * SKY_D, Math.sin(e) * SKY_D, -Math.cos(a) * Math.cos(e) * SKY_D);
       sp.visible = true;
+      if (k === 'sun') { sunLight.position.copy(sp.position); sunLight.target.position.copy(earthMesh.position); }
     }
+    earthMesh.lookAt(0, 0, 0);
   }
   function placeMoon() {
     if (!Number.isFinite(hMin)) return;
@@ -1055,7 +1075,7 @@ export function mountLunarMap(container, options = {}) {
 
     // Sun / Earth direction as seen from the pole, placed on the map margin
     for (const k of ['sun', 'earth']) {
-      const b = bodies[k], st = bodyAt(b.key, t);
+      const b = bodies[k], st = opt.bodyMarkers === false ? null : bodyAt(b.key, t);   // the host can draw the real Sun/Earth instead
       if (!st) { place(b.e, 0, 0, false); continue; }
       const ok = project(edgePoint(st.az, 20, v3));
       const txt = `${b.name} ${st.el >= 0 ? '+' : '−'}${Math.abs(st.el).toFixed(1)}°`;
@@ -1106,10 +1126,40 @@ export function mountLunarMap(container, options = {}) {
       m.sx = v3.x; m.sy = v3.y; m.on = ok && inView(v3.x, v3.y);
       if (m.pt) { place(m.pt, m.sx, m.sy, m.on); if (m.on) boxes.push([m.sx - 6, m.sy - 6, m.sx + 6, m.sy + 6]); }
     }
+    if (marksSvg.parentNode !== ov) ov.prepend(marksSvg);
+    { // scale bar for the ground at the view centre (perspective: true there only)
+      if (!scaleEl) { scaleEl = el('div', 'lmap-scale', '<span></span><i></i>'); ov.appendChild(scaleEl); }
+      const c = camera === cam3 ? ctl3.target : ctl2.target, a = v3.copy(c); project(a); const ax = a.x, ay = a.y;
+      const b2 = v3.set(c.x + 1, c.y, c.z); project(b2);
+      const ppk = Math.hypot(b2.x - ax, b2.y - ay);
+      if (ppk > 0 && Number.isFinite(ppk)) {
+        const want = 110 / ppk, p10 = Math.pow(10, Math.floor(Math.log10(want))), km = [1, 2, 5, 10].map(m => m * p10).filter(v => v <= want).pop() || p10;
+        const w = Math.round(km * ppk), txt = km >= 1 ? `${km} km` : `${Math.round(km * 1000)} m`;
+        if (scaleEl._t !== txt + w) { scaleEl.firstChild.textContent = txt; scaleEl.lastChild.style.width = w + 'px'; scaleEl._t = txt + w; }
+        place(scaleEl, 14, limitB - 44, true);
+      } else place(scaleEl, 0, 0, false);
+    }
+    {
+      let html = '';
+      for (const m of marks) {
+        const pts = [];
+        for (let i = 0; i <= 24; i++) {
+          const f = i / 24, ok = project(worldOf(m.x1 + (m.x2 - m.x1) * f, m.y1 + (m.y2 - m.y1) * f, v3));
+          if (ok) pts.push(`${v3.x.toFixed(1)},${v3.y.toFixed(1)}`);
+        }
+        if (pts.length < 2) continue;
+        const d = 'M' + pts.join('L'), [ex, ey] = pts[pts.length - 1].split(',').map(Number);
+        html += `<path d="${d}" fill="none" stroke="#000" stroke-opacity=".5" stroke-width="${(m.w || 2) + 2}"/><path d="${d}" fill="none" stroke="${m.color}" stroke-width="${m.w || 2}"${m.dash ? ` stroke-dasharray="${m.dash}"` : ''}/>`;
+        if (m.end === 'ring') html += `<circle cx="${ex}" cy="${ey}" r="8" fill="none" stroke="#000" stroke-opacity=".5" stroke-width="4"/><circle cx="${ex}" cy="${ey}" r="8" fill="none" stroke="#fff" stroke-width="2"/>`;
+        else if (m.end) html += `<circle cx="${ex}" cy="${ey}" r="7" fill="${m.end}" stroke="${m.color}" stroke-width="1.5"/><line x1="${ex - 7}" y1="${ey + 4}" x2="${ex + 7}" y2="${ey - 4}" stroke="${m.color}" stroke-width="1.5"/>`;
+        if (m.label) html += `<text x="${ex + 11}" y="${ey + 4}" font-size="12" font-weight="600" fill="#fff" paint-order="stroke" stroke="#0f131b" stroke-width="3">${m.label}</text>`;
+      }
+      if (marksSvg._h !== html) { marksSvg.innerHTML = html; marksSvg._h = html; }
+    }
     if (mastPt) {
-      if (!mastEl) { mastEl = el('div', 'lmap-mast', '<span></span><b></b><i></i>'); ov.appendChild(mastEl); }
+      if (!mastEl) { mastEl = el('div', 'lmap-mast', `<span></span><b></b><i></i><div class="cmp">${SCALE_FIGS(6)}</div>`); ov.appendChild(mastEl); }
       const ok = project(worldOf(mastPt.x, mastPt.y, v3));
-      const px = Math.round(10 + Math.min(mastPt.h, 20) * 3);   // drawn tall enough to see: 3 px per metre
+      const px = Math.round(Math.min(mastPt.h, 20) * 6);   // 6 px per metre, the same scale as the astronaut and lander beside it
       if (mastEl._h !== mastPt.h) { mastEl.firstChild.textContent = mastPt.label; mastEl.lastChild.style.height = px + 'px'; mastEl._h = mastPt.h; }
       const hh = mastEl.offsetHeight || px + 30;
       place(mastEl, v3.x - (mastEl.offsetWidth || 40) / 2, v3.y - hh, ok && inView(v3.x, v3.y));
@@ -1511,6 +1561,7 @@ export function mountLunarMap(container, options = {}) {
     setDataset,
     setExaggeration: setExag,
     focus: focusOn,
+    setMarks(list) { marks = list || []; dirty = true; },
     setMast(h, x_m, y_m, label) { mastPt = h > 0 ? { h, x: x_m, y: y_m, label: label || `${h} m` } : null; if (mastEl) mastEl._h = null; dirty = true; },
     selectSite(id) { selSite = sites.find((s) => s.id === id) ?? null; stripDirty = true; dirty = true; },
     loaded: () => ({ loaded: ds.loaded, total: ds.n }),

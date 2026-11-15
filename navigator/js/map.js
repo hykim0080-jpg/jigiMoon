@@ -1,6 +1,7 @@
 // Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 import { state, setState, limitsOf, ui, setHover, onHover } from './state.js';
 import { ZOOM } from './config.js';
+import { SCALE_FIGS } from './figs.js';
 import { siteName, t } from './strings.js';
 import { el, text, clear, showTip, hideTip } from './svg.js';
 import { status, fixText, shortDate, blockage, azToMapDir, nearestOk, mastShown } from './logic.js';
@@ -409,11 +410,14 @@ function draw(st) {
   if (data.site && !compare) {
     const e = data.index.modes[st.mission].sites[st.site], h = e ? mastShown(e, st.day, st.mast, limitsOf(st)) : 0;
     if (h) {
-      const x0 = px(site.x_m / 1000), y0 = py(site.y_m / 1000), L = 10 + Math.min(h, 20) * 3, g = el('g', { class: 'mastpole' }, svg);
+      const x0 = px(site.x_m / 1000), y0 = py(site.y_m / 1000), L = Math.min(h, 20) * 6, g = el('g', { class: 'mastpole' }, svg);   // 6 px per metre, like the figures beside it
       el('line', { x1: x0, y1: y0, x2: x0, y2: y0 - L, stroke: '#0f131b', 'stroke-width': 5 }, g);
       el('line', { x1: x0, y1: y0, x2: x0, y2: y0 - L, stroke: 'var(--mast)', 'stroke-width': 3 }, g);
       el('path', { d: `M${x0 - 7},${y0 - L - 6}a7 7 0 0 0 14 0`, fill: 'none', stroke: 'var(--mast)', 'stroke-width': 2 }, g);
       text(g, t('mastPole', h), { x: x0 + 10, y: y0 - L - 4, class: 'mastlab' });
+      // an astronaut (1.8 m) and a small lander (4 m) at the same scale, standing on the same ground
+      const fo = el('foreignObject', { x: x0 + 6, y: y0 - 4 * 6, width: 40, height: 4 * 6 + 1 }, g);
+      fo.innerHTML = `<div xmlns="http://www.w3.org/1999/xhtml" class="mastcmp">${SCALE_FIGS(6)}</div>`;
     }
   }
 

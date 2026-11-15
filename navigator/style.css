@@ -260,7 +260,7 @@ main[data-view="compare"] #dim{display:none}
 #map3d .lmap-tr{top:40px}
 #map3d .lmap-tr .lmap-seg{display:none}
 #note3d{position:absolute;left:50%;transform:translateX(-50%);bottom:96px;z-index:5;background:rgba(15,19,27,.85);color:#fff;font-size:12px;padding:4px 10px;border-radius:0;white-space:nowrap;pointer-events:none}
-main[data-d3="1"] #zoom,main[data-d3="1"] #expo,main[data-d3="1"] #globe,main[data-d3="1"] #pending-pin,main[data-d3="1"] #lander-card{display:none}
+main[data-d3="1"] #expo,main[data-d3="1"] #globe,main[data-d3="1"] #pending-pin,main[data-d3="1"] #lander-card{display:none}
 main[data-d3="1"] #chain{display:none}
 main[data-d3="1"] .map-panel h2{z-index:5}
 /* factor notes: what each limit is for (full reason and source on hover) */
@@ -420,3 +420,5 @@ main[data-view="find"] #find{display:block;position:absolute;inset:0}
 body[data-view="find"] header>*:not(.app-name):not([data-key="view"]):not(.grow){display:none}
 #space-hint{position:absolute;right:12px;bottom:86px;z-index:6;font-size:11px;color:#c9cfdb;background:rgba(15,19,27,.75);padding:3px 7px;pointer-events:none}
 #space-hint[hidden]{display:none}
+main[data-d3="1"] #zoom{z-index:6}
+.mastcmp{display:flex;align-items:flex-end;gap:3px;height:100%}.mastcmp svg{display:block;fill:#d6dbe6;stroke:#0f131b;stroke-width:.6}
