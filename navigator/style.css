@@ -288,6 +288,14 @@ header>.verdict .fix{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;m
 #fixes .fixrow h2,#fixes .card.inset .left h2{font-size:11px;font-weight:600;letter-spacing:.08em;margin:0}
 #fixes .fixrow .val b{font-size:20px}
 #fixes .fixrow.na h2{opacity:.55}
+/* Detail tidy-up (현기 11-15): the header verdict goes (the big verdict block says it), the API becomes a small link in the
+   bottom-right corner, the Sun/Earth legend sits bottom-left above the scale, the Earth compass clears the Height control */
+header>.verdict{display:none!important}
+header>.api-link{position:fixed;right:12px;bottom:0;z-index:60;height:auto;min-width:0;padding:0 2px;border:0!important;background:none!important;font-size:10px;line-height:12px;color:var(--muted);opacity:.8}
+header>.api-link:hover{opacity:1;text-decoration:underline}
+header>.api-link .api-txt{display:inline!important}
+#map3d .lmap-tl{top:auto!important;bottom:150px}
+#map3d .lmap-compass{top:80px}
 /* movable panels (js/drag.js): a bar on the top edge */
 .dgrip{position:absolute;left:0;right:0;top:0;height:12px;cursor:grab;z-index:6;pointer-events:auto;touch-action:none}
 .dgrip::after{content:"";position:absolute;left:50%;top:3px;width:24px;height:1px;margin-left:-12px;background:#8892a6;opacity:.4}

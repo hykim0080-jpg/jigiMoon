@@ -1344,7 +1344,7 @@ export function mountLunarMap(container, options = {}) {
     };
     const around = (x, y, w, h, g) => [[x + g, y - h / 2], [x - g - w, y - h / 2], [x - w / 2, y - h - g + 1], [x - w / 2, y + g - 1]];
     const size = (o) => { if (!o.w) { o.w = o.lab.offsetWidth || 60; o.h = o.lab.offsetHeight || 14; } };
-    const zoom = pxPerKm();
+    const zoom = pxPerKm(), LANDER_PX = 9;
 
     // project everything, reserve the symbols
     for (const m of landmarks) {
@@ -1450,11 +1450,19 @@ export function mountLunarMap(container, options = {}) {
     if (hoverLm && hoverLm.on && !hoverLm.done) lmLabel(hoverLm, true);
     const rank = (s) => (s === hoverSite ? 0 : s === selSite ? 1 : 2);
     vis.sort((a, b) => rank(a) - rank(b));
-    for (const s of vis) { size(s); tryPlace(s.lab, s.w, s.h, around(s.sx, s.sy, s.w, s.h, 10), rank(s) < 2); }
+    // one name per place: a candidate named after a landmark close by ('Malapert Massif' by 'Mons Malapert',
+    // 'Shackleton rim' by 'Shackleton') leaves the name to the landmark, unless it is the one picked or hovered
+    const base = (n) => String(n || '').toLowerCase().replace(/^(mons|mount|mt\.?)\s+/, '').split(/\s+/)[0];
+    const dupOf = (st) => landmarks.some((m) => m.on && Math.hypot(m.x_m - st.x_m, m.y_m - st.y_m) < 30000 && base(m.name) && base(m.name) === base(st.name));
+    for (const s of vis) {
+      if (rank(s) === 2 && dupOf(s)) { place(s.lab, 0, 0, false); continue; }
+      size(s); tryPlace(s.lab, s.w, s.h, around(s.sx, s.sy, s.w, s.h, 10), rank(s) < 2);
+      if (rank(s) < 2) for (const m of landmarks) if (m.done && m.on && Math.hypot(m.x_m - s.x_m, m.y_m - s.y_m) < 30000 && base(m.name) === base(s.name)) place(m.lab, 0, 0, false);   // the picked one keeps its own name
+    }
     for (const m of landmarks) if (m.on && !m.done && m.tier === 2) { if (zoom >= TIER2_PX) lmLabel(m, false); else place(m.lab, 0, 0, false); }
     for (const l of landers) {
       if (!l.dot) continue;
-      if (!l.on) { place(l.lab, 0, 0, false); continue; }
+      if (!l.on || (zoom < LANDER_PX && l !== hoverLander)) { place(l.lab, 0, 0, false); continue; }   // names only up close (Site and nearer)
       size(l);
       tryPlace(l.lab, l.w, l.h, around(l.sx, l.sy, l.w, l.h, 10), l === hoverLander);
     }
