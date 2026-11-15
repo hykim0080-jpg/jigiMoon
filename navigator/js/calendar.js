@@ -100,7 +100,7 @@ export function render(st, d) {
   order = data.index.sites.map(s => s.id).sort((a, b) => /^pin/.test(b) - /^pin/.test(a) || mode[b].summary.ok_days - mode[a].summary.ok_days);
 
   ctx.clearRect(0, 0, W, H);
-  ctx.font = '12px "IBM Plex Sans KR", system-ui, sans-serif';
+  ctx.font = '12px Inter, "Apple SD Gothic Neo", system-ui, sans-serif';
   ctx.textBaseline = 'middle';
   order.forEach((id, r) => {
     const y = AXIS + r * ROW, e = mode[id];
@@ -114,7 +114,7 @@ export function render(st, d) {
     }
     const selected = id === st.site;
     ctx.fillStyle = selected ? ink : muted;
-    ctx.font = `${selected ? 600 : 400} ${narrow ? 11 : 12}px "IBM Plex Sans KR", system-ui, sans-serif`;
+    ctx.font = `${selected ? 600 : 400} ${narrow ? 11 : 12}px Inter, "Apple SD Gothic Neo", system-ui, sans-serif`;
     ctx.textAlign = 'left';
     const pinned = st.pinned.includes(id);
     if (pinned) { ctx.fillStyle = ink; ctx.fillRect(2, y + 5, 4, 4); ctx.fillStyle = selected ? ink : muted; }
@@ -123,13 +123,13 @@ export function render(st, d) {
     const pct = Math.round(ok / 365 * 100), bx = W - GUT_R + 8;
     if (!narrow) { ctx.fillStyle = line; ctx.fillRect(bx, y + 5, 44, 4); ctx.fillStyle = col.ok; ctx.fillRect(bx, y + 5, 44 * ok / 365, 4); }
     ctx.fillStyle = selected ? ink : muted; ctx.textAlign = 'right';
-    ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.font = '11px Inter, system-ui, sans-serif';
     ctx.fillText(String(pct), W - 6, y + CELL_H / 2);
   });
 
   ctx.globalAlpha = 1;
   // month axis
-  ctx.font = '10px "IBM Plex Mono", ui-monospace, monospace';
+  ctx.font = '10px Inter, system-ui, sans-serif';
   ctx.textAlign = 'left'; ctx.fillStyle = muted;
   const months = t('months');
   for (let m = 0; m < 12; m++) {

@@ -56,7 +56,7 @@ Living list: last updated 2026-11-15 (KST morning). Items marked **[verify]** st
 
 | # | Font | Used in | Licence |
 |---|---|---|---|
-| F1 | IBM Plex Sans KR, IBM Plex Mono — loaded from Google Fonts | Web tool | SIL Open Font License 1.1 |
+| F1 | Inter (variable, Latin + Latin Extended), by The Inter Project Authors — woff2 files bundled in `navigator/fonts/` (from the @fontsource-variable/inter package), licence text in `navigator/fonts/Inter-OFL.txt`; Korean text uses the system font | Web tool | SIL Open Font License 1.1 |
 
 ## 5. Images and media made by the team
 
@@ -79,7 +79,6 @@ Site results (`lunar/out/`), mast study (`lunar/masts.json`), validation (`lunar
 |---|---|---|
 | Cloudflare Pages — https://pages.cloudflare.com | Public site https://moonjigi.pages.dev, deployed from GitHub `main`; Pages Functions serve the verdict API (`/api/check`, `/api/sites`; added in PR #7) | Cloudflare terms of service |
 | GitHub — https://github.com | Code repository and pull requests | GitHub terms of service |
-| Google Fonts | Serving the IBM Plex fonts (F1) | SIL OFL 1.1 fonts; Google Fonts terms |
 
 ## Still to add before submission
 - [ ] Any new source added by other work threads after this date (check `lunar/README.md`, `navigator/README.md`, `lunar/map3d/`)

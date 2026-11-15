@@ -40,8 +40,8 @@ const PALETTE = {
 const CSS = `
 .lmap{position:relative;width:100%;height:100%;min-height:240px;overflow:hidden;background:#0f131b;color:#e8eaf0;
   --bg:#0f131b;--surface:#181d28;--ink:#e8eaf0;--muted:#98a1b4;--line:#2b3242;--sun:#f0a531;--earth:#74a2f2;--ok:#4cbf82;
-  font:12px/1.3 "IBM Plex Sans KR",system-ui,sans-serif;-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none;outline:none;
-  --lmap-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  font:12px/1.3 Inter,"Apple SD Gothic Neo",system-ui,sans-serif;-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none;outline:none;
+  --lmap-mono:Inter,system-ui,sans-serif}
 .lmap *,.lmap *::before,.lmap *::after{box-sizing:border-box}
 .lmap canvas.lmap-gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
 .lmap-ov{position:absolute;inset:0;pointer-events:none;overflow:hidden}
@@ -72,7 +72,7 @@ const CSS = `
 .lmap-card .lmap-mono{font:10.5px/1.3 var(--lmap-mono)}
 .lmap-card .lmap-sts{display:flex;gap:12px;margin-top:1px}
 .lmap-card .lmap-st{color:var(--ink)}.lmap-card .lmap-st.is-off{color:var(--muted)}
-.lmap-read .lmap-rel{font:12px/1 "IBM Plex Sans KR",system-ui,sans-serif;color:var(--ink);overflow:hidden;text-overflow:ellipsis}
+.lmap-read .lmap-rel{font:12px/1 Inter,"Apple SD Gothic Neo",system-ui,sans-serif;color:var(--ink);overflow:hidden;text-overflow:ellipsis}
 .lmap[data-lang=en] .lmap-lm{letter-spacing:.06em}
 .lmap[data-lang=en] .lmap-compass{font-size:9.5px}
 .lmap-compass{all:unset;position:absolute;right:12px;top:62px;z-index:2;width:50px;height:50px;border-radius:50%;background:rgba(24,29,40,.86);border:1px solid var(--line);cursor:pointer;backdrop-filter:blur(6px);display:grid;place-items:center;font-size:10px;font-weight:500;color:var(--earth)}
@@ -102,8 +102,8 @@ const CSS = `
 .lmap-time{font:500 15px/1 var(--lmap-mono);letter-spacing:.01em;white-space:nowrap}
 .lmap-time small{font-size:10px;color:var(--muted);margin-left:6px;font-weight:400}
 .lmap-read{margin-left:auto;display:flex;align-items:center;gap:12px;min-width:0;font:11px/1 var(--lmap-mono);color:var(--muted);white-space:nowrap;overflow:hidden}
-.lmap-read b{font:600 12px/1 "IBM Plex Sans KR",system-ui,sans-serif;color:var(--ink);overflow:hidden;text-overflow:ellipsis}
-.lmap-st{display:flex;align-items:center;gap:5px;font:11px/1 "IBM Plex Sans KR",system-ui,sans-serif;color:var(--ink)}
+.lmap-read b{font:600 12px/1 Inter,"Apple SD Gothic Neo",system-ui,sans-serif;color:var(--ink);overflow:hidden;text-overflow:ellipsis}
+.lmap-st{display:flex;align-items:center;gap:5px;font:11px/1 Inter,"Apple SD Gothic Neo",system-ui,sans-serif;color:var(--ink)}
 .lmap-st i{width:9px;height:9px;border-radius:50%;border:1.5px solid currentColor;flex:none}
 .lmap-st.is-off{color:var(--muted);opacity:.55}
 .lmap-st.is-sun i{color:var(--sun)}.lmap-st.is-earth i{color:var(--earth)}
