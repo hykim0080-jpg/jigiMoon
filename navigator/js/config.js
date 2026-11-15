@@ -4,7 +4,7 @@ export const BUDGET = { move: 3, mast: 20, wait: 60 };
 export const THRESHOLDS = { sun: 70, dark: 50, earth: 50 };
 // filled from the data's mast_ok keys by loadIndex()
 export const MAST_HEIGHTS = [];
-export const MAST_SLIDER = { min: 2, max: 100, mark: 20 };
+export const MAST_SLIDER = { min: 2, max: 20 };   // 20 m is the practical maximum
 export const GLOBE = { r: 96 };   // disc radius in a 232-unit plate
 export const FIRST_DAY = Date.UTC(2027, 0, 1);
 
@@ -28,7 +28,7 @@ export const DEFAULT = {
   expo: 0,
   pan: '',
   d3: 0,
-  pro: 0
+  lmap: 'line',   // right map: 'line' = whole pole contour map, 'relief' = the spot up close
 };
 // zoom factor: 1 = +-200 km; presets Region 1, Site 4, Spot (+-3.5 km)
 export const ZOOM = { site: 4, spot: 200 / 3.5, slideMs: 250 };
