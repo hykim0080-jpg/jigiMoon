@@ -11,6 +11,7 @@ import { SPOT5 } from './map.js';
 import * as intro from './intro.js';
 import { openMastPop } from './mastpop.js';
 import { stageFx, stageLine } from './verdict.js';
+import * as verdict from './verdict.js';
 import { t } from './strings.js';
 import { initHover, hover } from './hover3d.js';
 import { ranked } from './rank3d.js';
@@ -173,7 +174,9 @@ function syncFind() {
 }
 // the picked spot (Find a site's pin, or Detail's selected place), when NO-GO: a dashed line to the nearest GO ground
 let nearCur = null, rankCur = [], linkKey = '', nearGen = 0;
-function setNear(f, list) { nearCur = f; rankCur = list || []; nearGen++; }
+function setNear(f, list) { nearCur = f; rankCur = list || []; nearGen++; verdict.refresh(); }
+// the verdict's far 'Nearest GO' (beyond the 3 km MOVE grid) from the same field
+verdict.setFar((x, y) => { const col = Math.floor((x + 200000) / 500), row = Math.floor((200000 - y) / 500); return col >= 0 && row >= 0 && col < 800 && row < 800 ? nearestOf(nearCur, col, row, rankCur) : null; });
 function syncLink(st) {
   let c = null;
   if (st.view === 'find') { const p = findlink.data().pin; if (p) c = p; }

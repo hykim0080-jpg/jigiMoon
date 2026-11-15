@@ -30,7 +30,7 @@ export function verdictFor(st, data, lim) {
   let fix = '', why = '';
   if (s.kind === 'move') {
     const n = nearestOk(site, d);
-    fix = `${t('move')} ${t('km', s.value)}${n && n.d > 0 ? ' ' + ARROW[sector(bearing(n.c.dx, n.c.dy))] : ''}`;
+    fix = `${t('nearGo')} ${t('km', s.value)}${n && n.d > 0 ? ' ' + ARROW[sector(bearing(n.c.dx, n.c.dy))] : ''}`;
   } else if (s.kind === 'mast') fix = `${t('mast')} ${t('m', s.value)}`;
   else if (s.kind === 'wait') fix = `${t('wait')} ${t('d', s.value)}`;
   else if (s.kind === 'none') {
@@ -40,7 +40,10 @@ export function verdictFor(st, data, lim) {
 }
 
 let box = null;
+let lastArgs = null;
+export const refresh = () => { if (lastArgs) render(...lastArgs); };
 export function render(st, data, panel, lim) {
+  lastArgs = [st, data, panel, lim];
   if (!box) {
     box = document.createElement('div'); box.id = 'vbadge'; panel.appendChild(box);
     // the three fixes in one line under the verdict: MOVE flies to the place at Site zoom (the MOVE ring and arrow),
@@ -69,13 +72,24 @@ export function render(st, data, panel, lim) {
     + row;
   vbh(main, box);
 }
+// far ground (beyond the MOVE grid): the nearest GO from the 3D map's GO field, set by view3d.js
+let farOf = () => null;
+export const setFar = f => { farOf = f; };
 function fixRow(st, data, e, lim) {
   const f = fixes(e, st.day), best = bestFix(e, st.day, lim), n = data.site ? nearestOk(data.site, st.day) : null;
-  const item = (k, v, unit, extra = '') => {
+  const item = (k, label, v, unit, extra = '') => {
     const ok = v != null && v <= lim[k];
-    return `<button type="button" data-fx="${k}" data-v="${ok ? v : ''}"${ok ? '' : ' disabled'} class="${best && best.kind === k ? 'best' : ''}" style="--fc:var(--${k})"><i>${t(k)}</i> ${ok ? `${v} ${unit}${extra}` : '—'}</button>`;
+    return `<button type="button" data-fx="${k}" data-v="${ok ? v : ''}"${ok ? '' : ' disabled'} class="${best && best.kind === k ? 'best' : ''}" style="--fc:var(--${k})"><i>${label}</i> ${ok ? `${v} ${unit}${extra}` : '—'}</button>`;
   };
-  return `<span class="vfx">${item('move', f.move, 'km', n && n.d > 0 ? ' ' + ARROW[sector(bearing(n.c.dx, n.c.dy))] : '')}${item('mast', f.mast, 'm')}${item('wait', f.wait, 'd')}</span>`;
+  const arrow = n && n.d > 0 ? ' ' + ARROW[sector(bearing(n.c.dx, n.c.dy))] : '';
+  // Nearest GO within the MOVE limit: a fix (a button); farther: grey text at the end, not a fix
+  const inLim = f.move != null && f.move <= lim.move;
+  let far = '';
+  if (!inLim) {
+    const s = data.index.byId[st.site], g = f.move != null ? { km: f.move, arrow } : s ? farOf(s.x_m, s.y_m) : null;
+    if (g && g.km) far = `<span class="vfar">${t('nearGo')} ${g.km < 10 ? (+g.km).toFixed(1) : Math.round(g.km)} km${g.arrow ? ' ' + g.arrow.trim() : ''}</span>`;
+  }
+  return `<span class="vfx">${inLim ? item('move', t('nearGo'), f.move, 'km', arrow) : ''}${item('mast', t('mast'), f.mast, 'm')}${item('wait', t('wait'), f.wait, 'd')}${far}</span>`;
 }
 // the dock, sky pop-up and 3D legend sit below the block, unless it was dragged away
 const vbh = (main, box) => main.style.setProperty('--vbh', moved('verdict') ? '0px' : box.offsetHeight + 8 + 'px');

@@ -578,3 +578,4 @@ main.full #dock #adv-btn.changed{border-color:var(--accent)}
 #zoom .z-dim{border-left:1px solid #fff}
 @media (max-width:700px){#zoom .z-dim{display:none}}
 #space-hint{display:none!important}   /* the Space key still recentres; no hint on the map */
+#vbadge .vfar{align-self:center;font-size:13px;color:#9aa3b2;padding:0 4px}
