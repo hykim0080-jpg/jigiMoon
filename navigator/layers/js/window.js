@@ -26,6 +26,7 @@ function start() {
       wk.postMessage({ type: 'init', hor: shadow.horizonBuf(), S: B.S, E: B.E, n: B.n });
       wk.onmessage = e => {
         const m = e.data; if (!busy || m.key !== busy.key) return;
+        if (m.type === 'prog') { parts.done[m.i0] = m.done; onProg && onProg(m.key, progressOf()); return; }
         parts.sun.set(m.sun, m.i0); parts.earth.set(m.earth, m.i0); parts.dark.set(m.dark, m.i0); parts.ms = Math.max(parts.ms, m.ms);
         if (--parts.left) return;
         cache.set(m.key, { sun: parts.sun, earth: parts.earth, dark: parts.dark, ms: parts.ms }); busy = null;
@@ -37,8 +38,13 @@ function start() {
     }
   });
 }
+// share of the running window done (0..1), from the workers' progress notes
+let onProg = null;
+const progressOf = () => parts ? Object.values(parts.done).reduce((a, b) => a + b, 0) / NW : 0;
+export const setWinProgress = f => { onProg = f; };
+export const winProgress = st => busy && busy.key === keyOf(st) ? progressOf() : 0;
 function post(j) {
-  busy = j; want = null; parts = { sun: new Uint8Array(NPX), earth: new Uint8Array(NPX), dark: new Uint16Array(NPX), left: NW, ms: 0 };
+  busy = j; want = null; parts = { sun: new Uint8Array(NPX), earth: new Uint8Array(NPX), dark: new Uint16Array(NPX), left: NW, ms: 0, done: {} };
   const per = Math.ceil(800 / NW) * 800;
   workers.forEach((wk, w) => wk.postMessage({ type: 'run', ...j, i0: w * per, i1: Math.min(NPX, (w + 1) * per) }));
 }

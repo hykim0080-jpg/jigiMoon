@@ -54,10 +54,12 @@ function samples(day, mission, step) {
 }
 // coarse samples everywhere; pixels close to a criterion are redone hour by hour, so that the map agrees with
 // the hourly verdict of the pin card
-function run(day, mission, step, i0, i1, crit) {
+function run(day, mission, step, i0, i1, crit, key) {
   const A = samples(day, mission, step), H = samples(day, mission, 1);
   const M = i1 - i0, sun = new Uint8Array(M), earth = new Uint8Array(M), dark = new Uint16Array(M);   // sun, earth: % x 2
+  const tick = Math.max(1, Math.ceil(M / 20));   // about 20 progress notes per run, for the % in the loading label
   for (let i = i0; i < i1; i++) {
+    if ((i - i0) % tick === 0 && i > i0) postMessage({ type: 'prog', key, i0, done: (i - i0) / M });
     let [su, ea, mx] = pixel(i, A.Sv, A.Ev, A.n), dh = mx * step;
     if (Math.abs(100 * su - crit.sun) < 4 || Math.abs(100 * ea - crit.earth) < 4 || Math.abs(dh - crit.dark) <= 2 * step) { [su, ea, mx] = pixel(i, H.Sv, H.Ev, H.n, true); dh = mx; }
     const j = i - i0; sun[j] = Math.floor(200 * su + 1e-6); earth[j] = Math.floor(200 * ea + 1e-6); dark[j] = dh;
@@ -67,6 +69,6 @@ function run(day, mission, step, i0, i1, crit) {
 onmessage = e => {
   const m = e.data;
   if (m.type === 'init') { init(m); return; }
-  const t0 = performance.now(), r = run(m.day, m.mission, m.step, m.i0, m.i1, m.crit);
+  const t0 = performance.now(), r = run(m.day, m.mission, m.step, m.i0, m.i1, m.crit, m.key);
   postMessage({ key: m.key, i0: m.i0, ...r, ms: performance.now() - t0 }, [r.sun.buffer, r.earth.buffer, r.dark.buffer]);
 };

@@ -22,6 +22,8 @@
 *{box-sizing:border-box}
 button,select,input,textarea{border-radius:0}
 html,body{margin:0;height:100%}
+/* Calendar key: striped swatch for fixable NO-GO days (matches the canvas stripes) */
+#cal-key i.hatch{background-image:repeating-linear-gradient(135deg,transparent 0 2px,color-mix(in srgb,var(--surface) 60%,transparent) 2px 4px)}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:13px;line-height:1.4;font-variant-numeric:tabular-nums}
 button,select{font:inherit;color:inherit}
 svg{display:block}

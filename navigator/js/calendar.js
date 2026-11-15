@@ -87,6 +87,20 @@ function tooltip(id, day) {
   return parts.join(' · ');
 }
 
+// 6 px tile with a 2 px diagonal stripe, drawn in the page surface colour over the fix colour
+function stripes(c) {
+  const dpr = devicePixelRatio || 1, n = Math.round(6 * dpr), tile = document.createElement('canvas');
+  tile.width = tile.height = n;
+  const g = tile.getContext('2d');
+  g.strokeStyle = c; g.globalAlpha = 0.6; g.lineWidth = 2 * dpr;
+  g.beginPath();
+  for (const o of [-n, 0, n]) { g.moveTo(o, n); g.lineTo(o + n, 0); }
+  g.stroke();
+  const p = ctx.createPattern(tile, 'repeat');
+  p.setTransform(new DOMMatrix([1 / dpr, 0, 0, 1 / dpr, 0, 0]));
+  return p;
+}
+
 const css = (n) => getComputedStyle(canvas).getPropertyValue(n).trim();
 
 export function render(st, d) {
@@ -102,6 +116,9 @@ export function render(st, d) {
   sel.style.height = hoverLine.style.height = data.index.sites.length * ROW + 'px';
   const col = { ok: css('--ok'), move: css('--move'), mast: css('--mast'), wait: css('--wait'), none: css('--none') };
   const ink = css('--ink'), muted = css('--muted'), line = css('--line');
+  // colour-blind safe: only GO is a solid fill; NO-GO days that a fix rescues get diagonal stripes
+  // (one canvas pattern, so the stripes run on across neighbouring days), days with no fix stay flat grey
+  const hatch = stripes(css('--surface'));
 
   // rows: sites sorted by baseline OK days, best on top
   order = data.index.sites.map(s => s.id).sort((a, b) => /^pin/.test(b) - /^pin/.test(a) || mode[b].summary.ok_days - mode[a].summary.ok_days);
@@ -117,6 +134,7 @@ export function render(st, d) {
       const s = status(e, d, st.mast, lim);
       ctx.fillStyle = col[s.kind];
       ctx.fillRect(GUT_L + d * cw, y, Math.ceil(cw), CELL_H);
+      if (s.kind !== 'ok' && s.kind !== 'none') { ctx.fillStyle = hatch; ctx.fillRect(GUT_L + d * cw, y, Math.ceil(cw), CELL_H); }
       if (s.kind === 'ok') { ok++; if (s.capped) { ctx.fillStyle = col.mast; ctx.fillRect(GUT_L + d * cw, y, Math.ceil(cw), 3); } }
     }
     const selected = id === st.site;
@@ -151,7 +169,7 @@ export function render(st, d) {
   // colour key in the empty corner above the site names: GO and no-fix; the fix colours match the fix card titles
   let key = document.getElementById('cal-key');
   if (!key) { key = document.createElement('div'); key.id = 'cal-key'; canvas.parentNode.appendChild(key); }
-  const keyHtml = `<span><i style="background:var(--ok)"></i>${t('legendGo')}</span><span><i style="background:var(--none)"></i>${t('legendNone')}</span>`;
+  const keyHtml = `<span><i style="background:var(--ok)"></i>${t('legendGo')}</span><span><i class="hatch" style="background-color:var(--wait)"></i>${lang === 'ko' ? '해결 가능' : 'fixable'}</span><span><i style="background:var(--none)"></i>${t('legendNone')}</span>`;
   if (key.innerHTML !== keyHtml) key.innerHTML = keyHtml;
 
   // overlay: selection line, bracket on selected row, baseline marker
