@@ -10,6 +10,7 @@ import { FIRST_DAY } from './config.js';
 import { SPOT5 } from './map.js';
 import * as intro from './intro.js';
 import { openMastPop } from './mastpop.js';
+import { stageFx, stageLine } from './verdict.js';
 import { t } from './strings.js';
 import { initHover, hover } from './hover3d.js';
 import { ranked } from './rank3d.js';
@@ -34,7 +35,7 @@ export function init(panel, d, pinAt) {
   panel.appendChild(seg);
   btns = [...seg.children];
   btns.forEach(b => b.addEventListener('click', () => setState({ d3: Number(b.dataset.d) })));
-  // Lander view (3D only): down beside the lander, looking toward Earth, close enough to see it and the mast whole
+  // Lander view (3D only): on the ground in front of the lander at eye height, looking level toward Earth, close enough to see it and the mast whole
   const zoom = document.getElementById('zoom');
   if (zoom) {
     // Pole: the whole south pole (±200 km) from straight above, Earth up; the selected place stays selected
@@ -214,12 +215,12 @@ function sync(st) {
   if (lastZoom === null) lastZoom = st.zoom;
   else if (st.zoom !== lastZoom) { lastZoom = st.zoom; recenter(); }   // Region / Site / Spot buttons
   const s = data.index.byId[st.site], e = data.index.modes[st.mission]?.sites[st.site];
-  // the same mark as the 2D map: MOVE to the nearest GO cell
+  // the same mark as the 2D map: MOVE to the nearest GO cell, labelled with the distance the verdict and Fixes show
   const marks = [];
   if (s && e && data.site) {
     if (!e.ok[st.day]) {
       const n = nearestOk(data.site, st.day);
-      if (n && n.d > 0) marks.push({ x1: s.x_m, y1: s.y_m, x2: s.x_m + n.c.dx * 1000, y2: s.y_m + n.c.dy * 1000, color: '#fff', w: 2, end: 'ring', label: t('moveToGo', +n.d.toFixed(1)) });
+      if (n && n.d > 0) marks.push({ x1: s.x_m, y1: s.y_m, x2: s.x_m + n.c.dx * 1000, y2: s.y_m + n.c.dy * 1000, color: '#fff', w: 2, end: 'ring', label: t('moveToGo', e.move?.[st.day] ?? +n.d.toFixed(1)) });
     }
   }
   // the 3 km MOVE grid on the ground, as on the MOVE card: GO cells blue, the rest dark; ring and cross as marks
@@ -242,7 +243,10 @@ function sync(st) {
   }
   if (map.setMarks) map.setMarks(det ? marks : []);
   const h = det && s && e ? mastShown(e, st.day, st.mast, limitsOf(st)) : 0;
-  if (map.setMast) map.setMast(h, s?.x_m, s?.y_m, h ? t('mastPole', h) : '');
+  // NO-GO without a mast fix: the lander shows why (cold, no Earth link, too steep) on the model itself
+  // every place: the model tilts with the ground's real slope (map3d turns it into the angle seen from the camera)
+  const fx = { ...(det && !h && data.site ? stageFx(st, data) : {}), ground: det && s ? s.slope_deg || 0 : 0 };
+  if (map.setMast) map.setMast(h, s?.x_m, s?.y_m, h ? t('mastPole', h) : stageLine(fx), fx);
   note.hidden = f.exact;
   if (!f.exact) {
     const d = new Date(f.shown);
@@ -269,7 +273,8 @@ function landerView(dur = 1800) {
   const h = e ? mastShown(e, state.day, state.mast, limitsOf(state)) : 0;
   // the rig (lander, mast, panels) about 40 % of the map's height: k px per metre -> camera distance
   const H = box.clientHeight || 700, k = 0.4 * H / (Math.max(h, 4.3) + 1.2), ppm = k / (map.exaggeration ? map.exaggeration() : 3);
-  map.focus(s.x_m, s.y_m, 0, { r: Math.max(0.03, H / (2 * Math.tan(15 * Math.PI / 180) * ppm * 1000)), polar: 1.25, dur });
+  // standing on the ground in front of it at eye height (1.8 m), looking level toward Earth: horizon and ridges behind
+  map.focus(s.x_m, s.y_m, 0, { r: Math.max(0.03, H / (2 * Math.tan(15 * Math.PI / 180) * ppm * 1000)), eye: 1.8, dur });
 }
 
 // Space: centre the 3D camera on the selected site again

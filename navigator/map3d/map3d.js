@@ -55,6 +55,7 @@ const CSS = `
 .lmap-mast{position:absolute;left:0;top:0;pointer-events:none;cursor:pointer;z-index:3;display:flex;flex-direction:column;align-items:center}
 .lmap-mast .rig svg{display:block;overflow:visible}.lmap-mast .rig{pointer-events:auto}
 .lmap-mast b{display:block;width:8px;height:8px;border-radius:50%;background:var(--mast,#4fc0c9);box-shadow:0 0 0 2px #0f131b;margin-top:2px}
+.lmap-mast.is-nogo span{border-color:#f0655a;color:#ffd9d5}
 .lmap-mast span{pointer-events:auto;font:600 11px/1 Inter,system-ui,sans-serif;color:#fff;background:rgba(15,19,27,.85);border:1px solid var(--mast,#4fc0c9);padding:2px 5px;margin-bottom:3px;white-space:nowrap}
 .lmap *,.lmap *::before,.lmap *::after{box-sizing:border-box;font-variant-numeric:tabular-nums!important}
 .lmap canvas.lmap-gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
@@ -1343,7 +1344,7 @@ export function mountLunarMap(container, options = {}) {
     };
     const around = (x, y, w, h, g) => [[x + g, y - h / 2], [x - g - w, y - h / 2], [x - w / 2, y - h - g + 1], [x - w / 2, y + g - 1]];
     const size = (o) => { if (!o.w) { o.w = o.lab.offsetWidth || 60; o.h = o.lab.offsetHeight || 14; } };
-    const zoom = pxPerKm();
+    const zoom = pxPerKm(), LANDER_PX = 9;
 
     // project everything, reserve the symbols
     for (const m of landmarks) {
@@ -1376,13 +1377,24 @@ export function mountLunarMap(container, options = {}) {
       // solar panels on top, and the astronaut stand at the place
       const ppm = camera === cam3 ? canvas.clientHeight / (2 * camera.position.distanceTo(v3) * Math.tan(FOV * DEG / 2)) / 1000 : 0;
       const k = ppm * exagV, rig = Math.max(mastPt.h, 4.3) * k >= 14;
-      const key = mastPt.h + ':' + (rig ? k.toFixed(2) : '-');
+      // the slope as seen from here: the downhill direction (height gradient over ±250 m) against the screen's right
+      let gd = 0;
+      if (rig && mastPt.fx.ground && heights) {
+        const S = mastPt.fx.ground, d = 250, ex = heightAt(mastPt.x + d, mastPt.y) - heightAt(mastPt.x - d, mastPt.y), ey = heightAt(mastPt.x, mastPt.y + d) - heightAt(mastPt.x, mastPt.y - d), n = Math.hypot(ex, ey);
+        if (n > 0) {
+          const me = camera.matrixWorld.elements, rx = me[0], ry = -me[2], rn = Math.hypot(rx, ry) || 1;   // camera right, in map x / y
+          const cos = -(ex * rx + ey * ry) / (n * rn);                                                     // downhill · right
+          gd = Math.round(Math.atan(Math.tan(S * DEG) * cos) / DEG);
+        }
+      }
+      const key = mastPt.h + ':' + (rig ? k.toFixed(2) : '-') + JSON.stringify(mastPt.fx) + gd + mastPt.label;
       const ok = project(v3);
       if (mastEl._h !== key) {
         mastEl.firstChild.textContent = mastPt.label; mastEl._h = key;
-        const r = mastEl.querySelector('.rig'); r.innerHTML = rig ? MAST_RIG(Math.min(mastPt.h, 100), k).svg : '';
+        const r = mastEl.querySelector('.rig'); r.innerHTML = rig ? MAST_RIG(Math.min(mastPt.h, 100), k, { ...mastPt.fx, ground: gd }).svg : '';
         mastEl.querySelector('b').style.display = rig || !mastPt.h ? 'none' : '';
-        mastEl.firstChild.style.display = mastPt.h ? '' : 'none';
+        mastEl.firstChild.style.display = mastPt.h || (rig && mastPt.label) ? '' : 'none';
+        mastEl.classList.toggle('is-nogo', !mastPt.h && !!mastPt.label);
       }
       const hh = mastEl.offsetHeight || 30, mw = mastEl.offsetWidth || 40, mx = v3.x - mw / 2, my = v3.y - hh + (rig ? 0 : 6);
       const on = ok && inView(v3.x, v3.y) && (rig || mastPt.h > 0);
@@ -1448,11 +1460,19 @@ export function mountLunarMap(container, options = {}) {
     if (hoverLm && hoverLm.on && !hoverLm.done) lmLabel(hoverLm, true);
     const rank = (s) => (s === hoverSite ? 0 : s === selSite ? 1 : 2);
     vis.sort((a, b) => rank(a) - rank(b));
-    for (const s of vis) { size(s); tryPlace(s.lab, s.w, s.h, around(s.sx, s.sy, s.w, s.h, 10), rank(s) < 2); }
+    // one name per place: a candidate named after a landmark close by ('Malapert Massif' by 'Mons Malapert',
+    // 'Shackleton rim' by 'Shackleton') leaves the name to the landmark, unless it is the one picked or hovered
+    const base = (n) => String(n || '').toLowerCase().replace(/^(mons|mount|mt\.?)\s+/, '').split(/\s+/)[0];
+    const dupOf = (st) => landmarks.some((m) => m.on && Math.hypot(m.x_m - st.x_m, m.y_m - st.y_m) < 30000 && base(m.name) && base(m.name) === base(st.name));
+    for (const s of vis) {
+      if (rank(s) === 2 && dupOf(s)) { place(s.lab, 0, 0, false); continue; }
+      size(s); tryPlace(s.lab, s.w, s.h, around(s.sx, s.sy, s.w, s.h, 10), rank(s) < 2);
+      if (rank(s) < 2) for (const m of landmarks) if (m.done && m.on && Math.hypot(m.x_m - s.x_m, m.y_m - s.y_m) < 30000 && base(m.name) === base(s.name)) place(m.lab, 0, 0, false);   // the picked one keeps its own name
+    }
     for (const m of landmarks) if (m.on && !m.done && m.tier === 2) { if (zoom >= TIER2_PX) lmLabel(m, false); else place(m.lab, 0, 0, false); }
     for (const l of landers) {
       if (!l.dot) continue;
-      if (!l.on) { place(l.lab, 0, 0, false); continue; }
+      if (!l.on || (zoom < LANDER_PX && l !== hoverLander)) { place(l.lab, 0, 0, false); continue; }   // names only up close (Site and nearer)
       size(l);
       tryPlace(l.lab, l.w, l.h, around(l.sx, l.sy, l.w, l.h, 10), l === hoverLander);
     }
@@ -1816,7 +1836,12 @@ export function mountLunarMap(container, options = {}) {
     ctl3.enabled = false;
     if (tween) { const d = tween.done; tween = null; d(true); }
     return new Promise((res) => {
-      tween = { t0: performance.now(), dur: instant ? 1 : (o.dur ?? 1300), from: { r: s.radius, polar: s.phi, az: s.theta, tx: ctl3.target.x, tz: ctl3.target.z }, to: { r, polar: o.polar ?? home.polar, az: 0, tx, tz }, ty: ctl3.target.y, toY: (() => { try { const y = yAt(x_m, y_m); return Number.isFinite(y) ? y : null; } catch { return null; } })(),   // the site itself at the screen centre
+      tween = { t0: performance.now(), dur: instant ? 1 : (o.dur ?? 1300), from: { r: s.radius, polar: s.phi, az: s.theta, tx: ctl3.target.x, tz: ctl3.target.z }, to: { r, polar: o.eye ? ctl3.maxPolarAngle : o.polar ?? home.polar, az: 0, tx, tz }, ty: ctl3.target.y, toY: (() => { try {
+        const y = yAt(x_m, y_m); if (!Number.isFinite(y)) return null;
+        // o.eye (m): standing on the ground, eye o.eye m up, looking level at the place (Earth side ahead); the eye
+        // kept above the ground where the camera stands (r away, on the side away from Earth)
+        return o.eye ? Math.max(y, yAt(x_m, y_m - r * 1000)) + o.eye * exagV / 1000 : y;
+      } catch { return null; } })(),   // the site itself at the screen centre
         done: () => { ctl3.enabled = true; ctl3.update(); dirty = true; res(); } };
       dirty = true;
     });
@@ -1861,7 +1886,8 @@ export function mountLunarMap(container, options = {}) {
     setCells,
     setDetail(list) { clearDetail(); for (const d of list || []) addDetail(d); dirty = true; },
     // h = 0: no mast, only the lander and astronaut close up (nothing from afar)
-    setMast(h, x_m, y_m, label) { mastPt = x_m != null && y_m != null ? { h: h > 0 ? h : 0, x: x_m, y: y_m, label: h > 0 ? label || `${h} m` : '' } : null; if (mastEl) mastEl._h = null; dirty = true; },
+    // fx: how a NO-GO place is staged on the model (figs.js MAST_RIG); label then = the one short reason line
+    setMast(h, x_m, y_m, label, fx) { mastPt = x_m != null && y_m != null ? { h: h > 0 ? h : 0, x: x_m, y: y_m, label: h > 0 ? label || `${h} m` : label || '', fx: fx || {} } : null; if (mastEl) mastEl._h = null; dirty = true; },
     exaggeration: () => exagV,
     selectSite(id) { selSite = sites.find((s) => s.id === id) ?? null; stripDirty = true; dirty = true; },
     loaded: () => ({ loaded: ds.loaded, total: ds.n }),
