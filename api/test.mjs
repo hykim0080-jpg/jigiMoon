@@ -30,17 +30,17 @@ for (const mission of Object.keys(index.modes)) {
   }
 }
 
-// demo state shown on the slides
-const demo = await check(load, q({ site: 'nobile-rim-1', date: '2027-02-15' }));
+// demo state shown on the slides (demo links pin the precomputed sun 70 %)
+const demo = await check(load, q({ site: 'nobile-rim-1', date: '2027-02-15', sun: '70' }));
 expect(demo.verdict === 'NO-GO' && demo.recommended.text === 'AVAILABLE 0.6 KM AWAY', 'demo recommended');
 expect(demo.fixes.mast.m === 7 && demo.fixes.wait.days === 16 && demo.failing.join() === 'earth', 'demo fixes');
-const withMast = await check(load, q({ site: 'nobile-rim-1', date: '2027-02-15', mast: '7' }));
+const withMast = await check(load, q({ site: 'nobile-rim-1', date: '2027-02-15', mast: '7', sun: '70' }));
 expect(withMast.verdict === 'GO' && withMast.go_with_mast_m === 7, 'demo with 7 m mast');
-const plan = await check(load, q({ site: 'nobile-rim-1', date: '2027-02-06' }));
+const plan = await check(load, q({ site: 'nobile-rim-1', date: '2027-02-06', sun: '70' }));
 expect(plan.verdict === 'GO', 'demo plan day GO');
 
-// custom criteria at the default values must equal the precomputed answer
-const same = await check(load, q({ site: 'malapert-massif', date: '2027-05-01', sun: '70', earth: '50', dark: '50' }));
+// explicit criteria at the default values (sun 90 / Earth 50 / dark 50) must equal the default answer
+const same = await check(load, q({ site: 'malapert-massif', date: '2027-05-01', sun: '90', earth: '50', dark: '50' }));
 const def = await check(load, q({ site: 'malapert-massif', date: '2027-05-01' }));
 expect(JSON.stringify(same) === JSON.stringify(def), 'explicit default criteria');
 // looser criteria never turn a GO day into NO-GO

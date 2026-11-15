@@ -5,7 +5,7 @@ import { cellToXY, cellToLatLon } from './geo.js';
 import { describe, sectorOf } from './orient.js';
 import { sample, failBase, critIds } from './compose.js';
 import { skyAt, calendarFrom } from './time.js';
-import { isDefault, critHash } from './crit.js';
+import { isBase, critHash } from './crit.js';
 import { decode } from './data.js';
 import { lang } from './strings.js';
 import { goNear } from './trip.js';
@@ -70,7 +70,7 @@ function verdict(st, p, go, slopeV, nd) {
 
 export function pinInfo(st) {
   const p = st.pin; if (!p) { key = ''; return info = null; }
-  const nd = !isDefault(D.meta, st.crit) || st.mission !== 14, ck = `${p.row * N + p.col}|${JSON.stringify(st.crit)}|${st.mission}`;
+  const nd = !isBase(st.crit) || st.mission !== 14, ck = `${p.row * N + p.col}|${JSON.stringify(st.crit)}|${st.mission}`;
   const k = `${p.col},${p.row},${st.tDay},${JSON.stringify(st.threshold)},${JSON.stringify(st.on.mask)},${ck},${cal.has(ck)},${st.mode}`;
   if (k === key) return info; key = k;
   const i = p.row * N + p.col, { x, y } = cellToXY(p.col, p.row), ll = cellToLatLon(p.col, p.row);

@@ -104,7 +104,7 @@ export async function check(load, params, origin = '') {
   if (!index.modes[mission]) throw new ApiError(400, `mission must be one of ${Object.keys(index.modes).join(', ')} (days)`);
 
   const crit = {
-    sun: num(params, 'sun', defFor(+mission).sun, 0, 100),   // 90 % for 6-day stays, 70 % for 14
+    sun: num(params, 'sun', defFor(+mission).sun, 0, 100),   // the stay's default (js/criteria.js SUN_DEF)
     earth: num(params, 'earth', DEFAULT_CRITERIA.earth, 0, 100),
     dark: num(params, 'dark', DEFAULT_CRITERIA.dark, 0, mission * 24)
   };
@@ -181,7 +181,7 @@ export const USAGE = {
     date: 'landing day, YYYY-MM-DD in 2027 (required)',
     mission: 'mission length in days: 14 (default) or 6',
     mast: 'antenna mast height in m to apply (snapped down to 2, 3, 5, 7, 10, 15, 20, 30, 50, 75 or 100)',
-    sun: 'minimum share of the mission in sunlight, % (default 90 for 6-day missions, 70 for 14)',
+    sun: 'minimum share of the mission in sunlight, % (default 90)',
     earth: 'minimum share of the mission with Earth in view, % (default 50)',
     dark: 'longest allowed dark spell, hours (default 50)',
     max_move: 'largest move to recommend, km (default 3)',
