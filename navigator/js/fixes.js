@@ -36,11 +36,10 @@ export function init(node) {
   // MAST line: click to raise the antenna to the lowest height that works (click again to lower it)
   cards.mast.c.addEventListener('click', () => { const h = cards.mast.c.dataset.h; if (h) setState({ mast: state.mast === +h ? 0 : +h }); });
   root.appendChild(rows);
-  // the map below is folded by default; ⤢ turns the whole centre map into the 2D map (again, or Esc: back to 3D)
+  // the map below is folded by default. Esc on the 2D centre map (⤢ 2D in the view buttons): back to 3D
   fxbar = document.createElement('div'); fxbar.className = 'fxbar';
-  fxbar.innerHTML = `<button type="button" class="fxmap" aria-expanded="false">${t('fxMap')}</button><button type="button" class="fxfull" aria-pressed="false"></button>`;
+  fxbar.innerHTML = `<button type="button" class="fxmap" aria-expanded="false">${t('fxMap')}</button>`;
   fxbar.querySelector('.fxmap').addEventListener('click', () => { mapOpen = !mapOpen; render(state, lastData); dispatchEvent(new Event('resize')); });
-  fxbar.querySelector('.fxfull').addEventListener('click', () => setState({ d3: state.d3 ? 0 : 1 }));
   addEventListener('keydown', ev => {
     if (ev.key !== 'Escape' || state.view !== 'focus' || state.d3 || innerWidth <= 700) return;
     if (document.querySelector('#mast-pop:not([hidden]),#when-pop:not([hidden]),#cal-panel.big')) return;
@@ -71,10 +70,8 @@ export function render(st, data) {
   lastData = data;
   const e = data.index.modes[st.mission].sites[st.site], lim = limitsOf(st);
   loc.parentNode.hidden = !mapOpen;
-  const mb = fxbar.querySelector('.fxmap'), fb = fxbar.querySelector('.fxfull');
+  const mb = fxbar.querySelector('.fxmap');
   mb.setAttribute('aria-expanded', String(mapOpen)); mb.textContent = (mapOpen ? '▾ ' : '▸ ') + t('fxMap');
-  fb.setAttribute('aria-pressed', String(!st.d3)); fb.textContent = '⤢ ' + (st.d3 ? t('fx2d') : t('fx3d'));
-  fb.title = st.d3 ? t('fx2dTip') : t('fx3dTip');
   const f = fixes(e, st.day), best = e.ok[st.day] ? null : bestFix(e, st.day, lim);
   for (const k of KINDS) {
     const v = e.ok[st.day] ? 0 : f[k], avail = v != null && v <= lim[k], card = cards[k];

@@ -24,7 +24,7 @@ import { isDefault } from './criteria.js';
 const SETS = [{ label: '2027-01', url: 'data/3d/frames_jan/', y: 2027, m: 0 }, { label: '2027-02', url: 'data/3d/frames_feb/', y: 2027, m: 1 }, { label: '2027-03', url: 'data/3d/frames_mar/', y: 2027, m: 2 }, { label: '2027-04', url: 'data/3d/frames_apr/', y: 2027, m: 3 }, { label: '2027-05', url: 'data/3d/frames_may/', y: 2027, m: 4 }, { label: '2027-06', url: 'data/3d/frames/', y: 2027, m: 5 }, { label: '2027-12', url: 'data/3d/frames_dec/', y: 2027, m: 11 }];
 const STEP_H = 4;
 let lastCells = '', mapReady = false, lastZoom = null, onPin = null, hint, box, note, btns, map = null, loading = null, order = null, lastKey = '', lastSite = '', data = null;
-let landerOn = false, landerBtn = null, poleBtn = null;
+let landerOn = false, landerBtn = null, poleBtn = null, dimBtn = null;
 export function poleView() { landerOn = false; if (map && mapReady) map.focus(0, 0, 200, { dur: 1300, polar: 0.0005 }); render(state); }   // Lander view
 
 export function init(panel, d, pinAt) {
@@ -49,6 +49,10 @@ export function init(panel, d, pinAt) {
     zoom.addEventListener('click', e => { const b = e.target.closest('button'); was = landerOn && b && b !== landerBtn ? state.zoom : null; if (was !== null) landerOn = false; }, true);
     zoom.addEventListener('click', () => { if (was !== null && state.zoom === was && map && !entering) recenter(); if (was !== null) render(state); was = null; });
     zoom.appendChild(landerBtn);
+    // ⤢ 2D: the whole centre map as the 2D map (⤢ 3D or Esc: back); the 2D | 3D switch stays only on phones
+    dimBtn = document.createElement('button'); dimBtn.type = 'button'; dimBtn.className = 'z-dim';
+    dimBtn.addEventListener('click', e => { e.stopPropagation(); setState({ d3: state.d3 ? 0 : 1 }); });
+    zoom.appendChild(dimBtn);
   }
   box = document.createElement('div'); box.id = 'map3d'; box.hidden = true;
   hint = document.createElement('div'); hint.id = 'space-hint'; hint.hidden = true; hint.textContent = t('spaceHint'); panel.appendChild(hint);
@@ -294,6 +298,7 @@ export function render(st) {
   const on = st.view === 'find' || (!!st.d3 && st.view === 'focus');   // Find a site lays its panels over this same map
   btns.forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.d) === (on ? 1 : 0))));
   if (poleBtn) poleBtn.hidden = !on;
+  if (dimBtn) { dimBtn.textContent = '⤢ ' + (on ? t('fx2d') : t('fx3d')); dimBtn.title = on ? t('fx2dTip') : t('fx3dTip'); dimBtn.setAttribute('aria-pressed', String(!on)); dimBtn.hidden = st.view !== 'focus'; }
   if (landerBtn) {
     landerBtn.hidden = !on;
     if (!on) landerOn = false;

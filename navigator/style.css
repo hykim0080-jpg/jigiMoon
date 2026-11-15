@@ -563,9 +563,18 @@ main.full #dock #adv-btn.changed{border-color:var(--accent)}
 #fixes .fxbar{display:flex;justify-content:space-between;gap:6px;padding:4px 0 0}
 #fixes .fxbar button{font:inherit;font-size:12px;padding:3px 10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:0;cursor:pointer}
 #fixes .fxbar button:hover{border-color:var(--muted)}
-#fixes .fxbar .fxfull[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 #fixes .card.local[hidden]{display:none}
 #fixes .fixrow .mdir{font-style:normal;font-size:16px;color:var(--move)}
 @media (min-width:701px){#dim{display:none!important}}
-@media (max-width:700px){#fixes .fxbar .fxfull{display:none}}
 #fixes .fixrow[data-k="move"] .val{white-space:nowrap;padding-right:6px}
+
+/* the fixes in one line under the verdict (MOVE · MAST · WAIT): each a button; ⤢ 2D / 3D at the end of the view buttons */
+#vbadge .vfx{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;pointer-events:auto}
+#vbadge .vfx button{font:inherit;font-size:13px;font-weight:600;padding:3px 8px;border:1px solid rgba(255,255,255,.35);background:rgba(15,19,27,.6);color:#fff;border-radius:0;cursor:pointer;white-space:nowrap}
+#vbadge .vfx button i{font-style:normal;font-size:10px;letter-spacing:.08em;color:var(--fc);margin-right:2px}
+#vbadge .vfx button.best{border-color:var(--fc);box-shadow:inset 3px 0 0 var(--fc)}
+#vbadge .vfx button:hover:not([disabled]){border-color:#fff}
+#vbadge .vfx button[disabled]{opacity:.45;cursor:default}
+#zoom .z-dim{border-left:1px solid #fff}
+@media (max-width:700px){#zoom .z-dim{display:none}}
+#space-hint{display:none!important}   /* the Space key still recentres; no hint on the map */

@@ -5,7 +5,8 @@
 import { moved } from './drag.js';
 import { t } from './strings.js';
 import { THRESHOLDS } from './config.js';
-import { status, nearestOk, blockage } from './logic.js';
+import { status, nearestOk, blockage, fixes, bestFix } from './logic.js';
+import { state, setState } from './state.js';
 import { failStats, failReason } from './failreason.js';
 import { sector, bearing } from './orient.js';
 
@@ -40,21 +41,41 @@ export function verdictFor(st, data, lim) {
 
 let box = null;
 export function render(st, data, panel, lim) {
-  if (!box) { box = document.createElement('div'); box.id = 'vbadge'; panel.appendChild(box); }
+  if (!box) {
+    box = document.createElement('div'); box.id = 'vbadge'; panel.appendChild(box);
+    // the three fixes in one line under the verdict: MOVE flies to the place at Site zoom (the MOVE ring and arrow),
+    // MAST raises the mast on the lander (again: lowers it), WAIT moves the landing date
+    box.addEventListener('click', ev => {
+      const b = ev.target.closest('[data-fx]'); if (!b || b.disabled) return;
+      if (b.dataset.fx === 'move') document.querySelector('#zoom [data-z="4"]')?.click();
+      else if (b.dataset.fx === 'mast') setState({ mast: state.mast === +b.dataset.v ? 0 : +b.dataset.v });
+      else if (b.dataset.fx === 'wait') setState({ day: state.day + +b.dataset.v });
+    });
+  }
   const v = st.view === 'focus' ? verdictFor(st, data, lim) : null;
   box.hidden = !v;
   const main = document.getElementById('main');
   if (!v) { main.style.setProperty('--vbh', '0px'); return; }
-  const key = JSON.stringify(v);
+  const e = data.index.modes[st.mission]?.sites[st.site], row = e && !e.ok[st.day] ? fixRow(st, data, e, lim) : '';
+  const key = JSON.stringify(v) + row;
   if (box.dataset.k === key) { vbh(main, box); return; }
   box.dataset.k = key;
   box.className = v.go ? 'go' : 'nogo';
   box.innerHTML = `<b>${v.go ? t('go') : t('nogo')}</b>`
     + (v.go && v.capped ? `<span class="vfix" style="color:var(--mast)">${t('mast')} ${t('m', st.mast)}</span>` : '')
     + v.fails.map(f => `<span class="vfail">${f.text}</span>`).join('')
-    + (v.fix ? `<span class="vfix" style="color:var(--${v.fixKind})">→ ${v.fix}</span>` : '')
-    + (v.why ? `<span class="vwhy">${v.why}</span>` : '');
+    + (v.fix && !row ? `<span class="vfix" style="color:var(--${v.fixKind})">→ ${v.fix}</span>` : '')   // the row below carries the fix
+    + (v.why ? `<span class="vwhy">${v.why}</span>` : '')
+    + row;
   vbh(main, box);
+}
+function fixRow(st, data, e, lim) {
+  const f = fixes(e, st.day), best = bestFix(e, st.day, lim), n = data.site ? nearestOk(data.site, st.day) : null;
+  const item = (k, v, unit, extra = '') => {
+    const ok = v != null && v <= lim[k];
+    return `<button type="button" data-fx="${k}" data-v="${ok ? v : ''}"${ok ? '' : ' disabled'} class="${best && best.kind === k ? 'best' : ''}" style="--fc:var(--${k})"><i>${t(k)}</i> ${ok ? `${v} ${unit}${extra}` : '—'}</button>`;
+  };
+  return `<span class="vfx">${item('move', f.move, 'km', n && n.d > 0 ? ' ' + ARROW[sector(bearing(n.c.dx, n.c.dy))] : '')}${item('mast', f.mast, 'm')}${item('wait', f.wait, 'd')}</span>`;
 }
 // the dock, sky pop-up and 3D legend sit below the block, unless it was dragged away
 const vbh = (main, box) => main.style.setProperty('--vbh', moved('verdict') ? '0px' : box.offsetHeight + 8 + 'px');
