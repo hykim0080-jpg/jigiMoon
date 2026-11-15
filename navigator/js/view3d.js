@@ -13,7 +13,7 @@ import { openMastPop } from './mastpop.js';
 import { stageFx, stageLine } from './verdict.js';
 import * as verdict from './verdict.js';
 import { t } from './strings.js';
-import { initHover, hover } from './hover3d.js';
+import { initHover, hover, setGrid } from './hover3d.js';
 import { ranked } from './rank3d.js';
 import { nearestField, nearestOf, linkOf } from './nearestgo.js';
 import * as findlink from './findlink.js';
@@ -235,6 +235,9 @@ function sync(st) {
   const ck = det && s && data.site ? `${st.site}:${s.x_m},${s.y_m}:${st.day}` : '';
   if (map.setCells && ck !== lastCells) {
     lastCells = ck;
+    // the hover card inside the grid: the cell's own verdict (the same as its colour)
+    const G = ck ? data.site : null, sx = s?.x_m, sy = s?.y_m;
+    setGrid(G ? (x, y) => { const h = G.stepKm / 2, dx = (x - sx) / 1000, dy = (y - sy) / 1000; if (Math.abs(dx) > 3 + h || Math.abs(dy) > 3 + h) return null; const c = G.grid.find(c => Math.abs(c.dx - dx) <= h && Math.abs(c.dy - dy) <= h); return c || null; } : null);
     map.setCells(ck ? data.site.grid.map(c => {
       const ok = c.ok[st.day] === '1';
       return { x: s.x_m + c.dx * 1000, y: s.y_m + c.dy * 1000, half: data.site.stepKm * 500, rgb: ok ? [0.455, 0.635, 0.949] : [0.13, 0.15, 0.2], a: ok ? (c.landable ? 0.85 : 0.45) : (c.landable ? 0.6 : 0.35) };

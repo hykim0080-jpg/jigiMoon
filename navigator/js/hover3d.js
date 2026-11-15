@@ -72,6 +72,11 @@ export async function stayOf(col, row, mission, mast = 2) {   // mast 10 / 20: s
 }
 const val = (arr, i, max) => arr && arr[i] <= 250 ? arr[i] * max / 250 : null;
 
+// Detail's 3 km MOVE grid (250 m cells, worked out on the finer terrain): inside it the card takes the cell's verdict,
+// the same one that colours the cell and gives the fixes, instead of the 500 m map's (view3d.js sets this)
+let gridAt = () => null;
+export const setGrid = f => { gridAt = f || (() => null); };
+const GTX = { en: { note: 'From the 250 m MOVE grid, as the cell colour and the fixes', slope: 'Slope' }, ko: { note: '250 m MOVE 격자 판정(칸 색·처방과 같음)', slope: '경사' } };
 export function initHover(el) {
   host = el;
   tip = document.createElement('div'); tip.className = 'h3d-tip'; tip.hidden = true;
@@ -84,6 +89,12 @@ function html(p, st) {
   if (col < 0 || row < 0 || col >= N || row >= N) return '';
   const i = row * N + col, c = state.crit || {}, day = state.day, mission = state.mission || 14;
   let out = '';
+  const g = gridAt(p.x, p.y);
+  if (g) {
+    const gt = GTX[lang] || GTX.en, go = g.ok[day] === '1';
+    return `<div class="v ${go ? 'go' : 'no'}">${go ? TX.go : TX.nogo}<small>${TX.stay(mission)}</small></div>`
+      + `<div class="s">${gt.slope} <b>${g.slope != null ? (+g.slope).toFixed(1) + '°' : '–'}</b></div><div class="s"><small>${gt.note}</small></div>`;
+  }
   if (!st) out += `<div class="v wait">…<small>${TX.calc}</small></div>`;
   else {
     const sun = st.sun[day], earth = st.earth[day], dark = st.dark[day], slope = st.slope;
