@@ -1,13 +1,13 @@
 // Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 // Landing criteria the user can change (sun %, Earth %, longest dark h), shared with the layer viewer.
 // Hash keys cs / ce / cd (left out at the defaults), remembered in localStorage 'moonjigi.crit'.
-// The sun default depends on the stay: 90 % for 6 days, 70 % for 14. Until the user picks a sun level (sunSet),
+// The sun default (SUN_DEF) can depend on the stay; now 90 % for both 6 and 14 days. Until the user picks a sun level (sunSet),
 // switching the stay moves sun to that stay's default. Precomputed data (index, layers, 3D) is at DEF (70/50/50).
 import { THRESHOLDS, MAST_HEIGHTS } from './config.js';
 
 export const LEVELS = { sun: [50, 60, 70, 80, 90], earth: [30, 50, 70], dark: [24, 50, 100] };
 export const DEF = { sun: 70, earth: 50, dark: 50 };   // the precomputed basis
-export const SUN_DEF = { 6: 90, 14: 70 };
+export const SUN_DEF = { 6: 90, 14: 90 };
 export const defFor = m => ({ ...DEF, sun: SUN_DEF[m] ?? DEF.sun });
 // the criteria for stay m: the user's sun level if they picked one, else the stay's default
 export const forMission = (c, m) => c.sunSet || c.sun === defFor(m).sun ? c : { ...c, sun: defFor(m).sun };
@@ -28,7 +28,9 @@ export function readCrit(m = 14) {
   return c;
 }
 export function saveCrit(c) { try { localStorage.setItem(STORE, JSON.stringify(c)); } catch (e) { /* no storage */ } }
-// at the defaults of stay m (14 by default = the precomputed basis)
+// at the precomputed basis DEF (70/50/50): precomputed entries, 3D data and layer files apply as they are
+export const isBase = c => Object.keys(DEF).every(k => c[k] === DEF[k]);
+// at the defaults of stay m (what the UI shows as unchanged)
 export const isDefault = (c, m = 14) => { const d = defFor(m); return Object.keys(DEF).every(k => c[k] === d[k]); };
 export const critKey = c => `${c.sun}/${c.earth}/${c.dark}`;
 // [[key, value]] of the criteria that differ from the defaults, for hashes and links
@@ -77,7 +79,7 @@ export function applyCriteria(index, mission, c, metricsOf) {
   const sites = index.modes[mission].sites;
   orig[mission] = orig[mission] || { ...sites };
   for (const id of Object.keys(sites)) {
-    if (isDefault(c) && orig[mission][id] && !/^pin\d*$/.test(id)) { sites[id] = orig[mission][id]; continue; }
+    if (isBase(c) && orig[mission][id] && !/^pin\d*$/.test(id)) { sites[id] = orig[mission][id]; continue; }
     const m = metricsOf(id);
     if (!m) return false;
     sites[id] = buildEntry(m, c);
