@@ -3,7 +3,7 @@ const S = {
   en: {
     app: 'LUNAR LANDING SITE NAVIGATOR', compare: 'Compare sites', find: 'Find a site', go: 'GO', none: 'none', here: 'here', open_cmp: 'Open in Compare ↗',
     layers: 'LAYERS', sites: 'SITES', zones: 'ZONES', d: 'd', ds: ' d', z_add: 'Add', z_erase: 'Erase', z_clear: 'Clear', z_area: 'km²', z_score: 'Score', month: 'Landing days (month)', shadow: 'Shadow',
-    m_layers: 'Layers', m_mask: 'Mask', m_score: 'Score', km: 'km', home: '⌂', open: '↗',
+    b_line: 'Lines', b_shade: 'Relief', m_layers: 'Layers', m_mask: 'Mask', m_score: 'Score', km: 'km', home: '⌂', open: '↗',
     suitable: 'SUITABLE', criteria: 'CRITERIA', adv: 'Advanced',
     c_sun: p => `Sun ≥ ${p} %`, c_earth: p => `Earth in view ≥ ${p} %`, c_dark: h => `Dark spell ≤ ${h} h`, c_slope: 'Slope',
     ge_d: v => `≥ ${v} d`, le_deg: v => `≤ ${v}°`, col_area: 'km²', col_go: 'GO d',
@@ -16,7 +16,7 @@ const S = {
   ko: {
     app: '달 착륙지 내비게이터', compare: '사이트 비교', find: '입지 분석', go: 'GO', none: '없음', here: '여기', open_cmp: '사이트 비교에서 보기 ↗',
     layers: '레이어', sites: '후보지', zones: '구역', d: '일', ds: '일', z_add: '추가', z_erase: '지우기', z_clear: '초기화', z_area: 'km²', z_score: '점수', month: '가능 착륙일 (월)', shadow: '그림자',
-    m_layers: '레이어', m_mask: '마스크', m_score: '점수', km: 'km', home: '⌂', open: '↗',
+    b_line: '선', b_shade: '음영', m_layers: '레이어', m_mask: '마스크', m_score: '점수', km: 'km', home: '⌂', open: '↗',
     suitable: '적합', criteria: '조건', adv: '고급',
     c_sun: p => `햇빛 ≥ ${p} %`, c_earth: p => `지구 가시 ≥ ${p} %`, c_dark: h => `연속 어둠 ≤ ${h}시간`, c_slope: '경사',
     ge_d: v => `${v}일 이상`, le_deg: v => `${v}° 이하`, col_area: 'km²', col_go: 'GO 일',

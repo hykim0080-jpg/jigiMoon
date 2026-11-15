@@ -44,6 +44,7 @@ export async function mount(root, opts = {}) {
   if (data.sites.some(s => s.id === h.get('s'))) state.site = h.get('s');
   const dd = Date.parse((h.get('d') || '') + 'T00:00:00Z'); if (!isNaN(dd)) { state.tDay = Math.max(0, Math.min(364, Math.round((dd - Date.UTC(2027, 0, 1)) / 864e5))); state.tTouched = true; }
   if (h.get('h') != null && h.get('h') !== '' && +h.get('h') >= 0 && +h.get('h') <= 23) { state.tHour = Math.round(+h.get('h')); state.tTouched = true; }
+  if (h.get('bm') === 'shade') state.basemap = 'shade';
   if (h.get('sh') === '1') state.shadow = true;
   if (h.get('st') === '6') state.mission = 6;
   if (state.adv && h.get('jb') === 'y') state.basis = 'year';
@@ -103,6 +104,7 @@ export async function mount(root, opts = {}) {
     if (state.pin && !state.autoPin) { const c = cellToXY(state.pin.col, state.pin.row); q.set('pin', Math.round(c.x) + ',' + Math.round(c.y)); }
     if (state.adv && state.month != null) q.set('mon', state.month + 1);
     if (state.tTouched) { q.set('d', new Date(Date.UTC(2027, 0, 1 + state.tDay)).toISOString().slice(0, 10)); q.set('h', String(state.tHour).padStart(2, '0')); }
+    if (state.basemap === 'shade') q.set('bm', 'shade');
     if (state.shadow) q.set('sh', 1);
     if (state.mission !== 14) q.set('st', state.mission);
     if (state.adv && state.basis === 'year') q.set('jb', 'y');

@@ -11,6 +11,7 @@ export const FIRST_DAY = Date.UTC(2027, 0, 1);
 // Demo state: GO on the baseline day, NO-GO nine days later
 export const DEFAULT = {
   site: 'nobile-rim-1',
+  base: 'shade',   // base map: 'shade' (LOLA hillshade) or 'line' (contour line map)
   day: 45,
   baseline: 36,
   mission: 14,

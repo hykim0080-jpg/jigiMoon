@@ -315,3 +315,8 @@ header>.verdict .fix{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;m
   header{gap:10px}
 }
 #detail-note{flex:none;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--box);padding:8px 12px;font-size:12.5px;line-height:1.45}
+/* base map switch: hillshade or contour lines */
+#basemap{position:absolute;right:8px;bottom:8px;z-index:3;background:rgba(15,19,27,.8);border-color:#fff}
+#basemap button{color:#fff;font-size:12px;padding:3px 9px}
+#basemap button[aria-pressed="true"]{background:#fff;color:#0f131b}
+main[data-view="compare"] #basemap,main[data-d3="1"] #basemap{display:none}

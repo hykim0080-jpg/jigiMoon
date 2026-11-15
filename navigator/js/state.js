@@ -2,7 +2,7 @@
 import { DEFAULT, MAST_HEIGHTS, ZOOM, FIRST_DAY } from './config.js';
 import { readCrit, saveCrit, critParams } from './criteria.js';
 
-const KEYS = { site: 's', day: 'day', mission: 'm', mast: 'mast', mastMax: 'mx', moveMax: 'vx', waitMax: 'wx', baseline: 'base', view: 'v', hour: 'h', zoom: 'z', mode: 'pm', expo: 'ex', pan: 'c', d3: '3d', pro: 'x' };
+const KEYS = { site: 's', day: 'day', mission: 'm', mast: 'mast', mastMax: 'mx', moveMax: 'vx', waitMax: 'wx', baseline: 'base', view: 'v', hour: 'h', zoom: 'z', mode: 'pm', expo: 'ex', pan: 'c', d3: '3d', pro: 'x', base: 'bm' };
 const subs = [];
 
 function readHash() {
