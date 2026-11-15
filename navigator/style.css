@@ -546,7 +546,17 @@ main[data-view="find"] .tbar .tb-pole{display:block}   /* Find a site tab: Detai
 .hb-tb[aria-expanded="true"]{background:var(--ink);color:var(--bg)}
 .hb-tb[aria-expanded="true"] span{color:var(--bg);opacity:.75}
 .hb-where b::after{content:' ▾';color:var(--muted);font-weight:400}
-.hb-where #site-select{position:absolute;inset:0;width:100%;height:100%;max-width:none;opacity:0;cursor:pointer}
+.hb-where[aria-expanded="true"] b::after{color:inherit}
+#where-pop{position:absolute;left:180px;top:46px;z-index:70;display:flex;flex-direction:column;padding:6px 0;min-width:260px;max-width:min(360px,90vw);max-height:min(70vh,560px);overflow:auto;background:var(--surface);border:1px solid var(--ink)}
+#where-pop[hidden]{display:none}
+#where-pop hr{border:0;border-top:1px solid var(--line);margin:6px 0;width:100%}
+#where-pop button{display:flex;align-items:center;gap:10px;width:100%;min-height:32px;padding:4px 14px;border:0;border-radius:0;background:transparent;color:var(--ink);font:inherit;font-size:13px;text-align:left;cursor:pointer}
+#where-pop button:hover,#where-pop button:focus-visible{background:var(--line);outline:0}
+#where-pop button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+#where-pop .wp-any{font-weight:600}
+#where-pop .wd{flex:none;width:8px;height:8px;border-radius:50%;background:transparent;border:1px solid var(--muted)}
+#where-pop .wd.go{background:var(--ok);border-color:var(--ok)}#where-pop .wd.nogo{background:#f0655a;border-color:#f0655a}
+#where-pop .wd.any{border-radius:0;border-color:currentColor}
 #when-pop{position:absolute;left:0;top:46px;z-index:70;display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:12px;width:max-content;max-width:min(560px,90vw);background:var(--surface);border:1px solid var(--ink)}
 #when-pop[hidden]{display:none}
 #when-pop .chips{max-width:100%;flex-wrap:wrap;overflow:visible}

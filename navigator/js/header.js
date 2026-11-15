@@ -21,7 +21,8 @@ export function init(el, data, o = {}) {
     <span class="app-name">${t('app')}</span>
     <div class="hb-trip">
       <button type="button" class="hb-tb" id="when-btn" aria-expanded="false"><span>${t('hbWhen')}</span><b class="hb-when"></b></button>
-      <label class="hb-tb hb-where"><span>${t('hbWhere')}</span><b class="hb-wn"></b><select id="site-select">${siteOptions(data)}</select></label>
+      <button type="button" class="hb-tb hb-where" id="where-btn" aria-haspopup="listbox" aria-expanded="false"><span>${t('hbWhere')}</span><b class="hb-wn"></b></button>
+      <div id="where-pop" role="listbox" tabindex="-1" aria-label="${t('hbWhere')}" hidden></div>
       <div id="when-pop" hidden>
         <div class="stepper">
           <button id="prev" aria-label="${t('prev')}">◀</button><span class="date n"></span><button id="next" aria-label="${t('next')}">▶</button>
@@ -40,7 +41,7 @@ export function init(el, data, o = {}) {
     <button id="side-btn" type="button" aria-pressed="false">${t('compare')}</button>
     ${seg([['focus', t('focus')], ['find', t('modeFind')]], 'view')}`;
   refs = {
-    select: root.querySelector('#site-select'),
+    wpop: root.querySelector('#where-pop'), wbtn: root.querySelector('#where-btn'),
     date: root.querySelector('.date'),
     slip: root.querySelector('.slip'),
     verdict: root.querySelector('.verdict'),
@@ -69,12 +70,35 @@ export function init(el, data, o = {}) {
   refs.chips.addEventListener('click', e => { const b = e.target.closest('button'); if (b) setState({ day: Number(b.dataset.day) }); });
   // Side by side lives inside Detail: a toggle beside the tabs, Detail stays the pressed tab
   root.querySelector('#side-btn').addEventListener('click', () => setState({ view: state.view === 'compare' ? 'focus' : 'compare' }));
-  refs.select.addEventListener('change', e => {
-    if (e.target.value !== ANY) { setState({ site: e.target.value }); return; }
+  // WHERE: our own list under the box (same look as the WHEN pop-up): Anywhere, then saved pins, then the example sites,
+  // each with a GO / NO-GO dot for the chosen date and stay. Arrow keys move, Enter picks, Esc or a click outside closes.
+  const pick = v => {
+    ropen(false);
+    if (v !== ANY) { setState({ site: v }); return; }
     // Anywhere: the best spot for the date and stay (the same ranking as Find a site), opened as the pin
-    e.target.value = state.site; refs.wn.textContent = t('anywhereBusy');
+    refs.wn.textContent = t('anywhereBusy');
     ranked(state.day, state.mission, state.crit).then(l => { if (l[0] && opts.openPin) opts.openPin(Math.round(l[0].x), Math.round(l[0].y)); else render(state, dataRef); }).catch(err => { console.error(err); render(state, dataRef); });
+  };
+  const items = () => [...refs.wpop.querySelectorAll('[role="option"]')];
+  const focusItem = i => { const l = items(); if (!l.length) return; const k = (i + l.length) % l.length; l.forEach((b, j) => b.tabIndex = j === k ? 0 : -1); l[k].focus(); };
+  const ropen = on => {
+    refs.wpop.hidden = !on; refs.wbtn.setAttribute('aria-expanded', String(on));
+    if (on) { wopen(false); refs.wpop.style.left = refs.wbtn.offsetLeft + "px"; refs.wpop.innerHTML = whereList(state, dataRef); const l = items(); focusItem(Math.max(0, l.findIndex(b => b.getAttribute('aria-selected') === 'true'))); }
+  };
+  refs.wbtn.addEventListener('click', () => ropen(refs.wpop.hidden));
+  wbtn.addEventListener('click', () => { if (!refs.wpop.hidden) ropen(false); });
+  refs.wpop.addEventListener('click', e => { const b = e.target.closest('[role="option"]'); if (b) pick(b.dataset.v); });
+  refs.wpop.addEventListener('keydown', e => {
+    const l = items(), i = l.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown') { e.preventDefault(); focusItem(i + 1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); focusItem(i - 1); }
+    else if (e.key === 'Home') { e.preventDefault(); focusItem(0); }
+    else if (e.key === 'End') { e.preventDefault(); focusItem(-1); }
+    else if (e.key === 'Enter' && i >= 0) { e.preventDefault(); pick(l[i].dataset.v); }
+    else if (e.key === 'Tab') ropen(false);
   });
+  document.addEventListener('pointerdown', e => { if (!refs.wpop.hidden && !refs.wpop.contains(e.target) && !refs.wbtn.contains(e.target)) ropen(false); });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && !refs.wpop.hidden) { e.stopImmediatePropagation(); ropen(false); refs.wbtn.focus(); } }, true);
   // Anytime: the best landing day of the year for this place
   root.querySelector('#anytime').addEventListener('click', () => { const d = bestDay(state, dataRef); if (d != null) { setState({ day: d }); wopen(false); } });
   root.querySelector('#prev').addEventListener('click', () => setState({ day: state.day - 1 }));
@@ -95,16 +119,12 @@ export function findHref(st, data, atSite) {
 }
 
 export function render(st, data) {
-  { // the pin can be (re)created from the map: keep the options in step with the index
-    const html = siteOptions(data);
-    if (refs.select.dataset.html !== html) { refs.select.innerHTML = html; refs.select.dataset.html = html; }
-  }
-  refs.select.value = st.site;
+  if (!refs.wpop.hidden) { const html = whereList(st, data), f = document.activeElement?.dataset?.v; if (refs.wpop.dataset.html !== html) { refs.wpop.innerHTML = html; refs.wpop.dataset.html = html; const b = f && refs.wpop.querySelector(`[data-v="${f}"]`); if (b) b.focus(); } }
   refs.adv.querySelectorAll('.crit').forEach(r => r.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(st.crit[r.dataset.c] === Number(b.dataset.v)))));
   refs.advBtn.classList.toggle('changed', !isDefault(st.crit));
   refs.date.textContent = isoDate(st.day);
   refs.when.textContent = `${longDate(st.day)} · ${t('d', st.mission)}`;
-  refs.wn.textContent = refs.select.selectedOptions[0]?.textContent || '';
+  { const s = data.index.byId[st.site]; refs.wn.textContent = s ? siteName(s) : ''; }
   { // Limits and Side by side: in the dock beside the map on the full map, else at the right of the bar
     const dock = isFull(st) && document.getElementById('dock'), adv = refs.advWrap, sb = refs.side;
     const home = dock || root, before = dock ? null : root.querySelector('.seg[data-key="view"]');
@@ -155,7 +175,19 @@ export function render(st, data) {
 }
 
 const ANY = '__any';
-const siteOptions = data => `<option value="${ANY}">${t('anywhere')}</option>` + data.index.sites.map(s => `<option value="${s.id}">${siteName(s)}</option>`).join('');
+// the WHERE list: Anywhere, saved pins (newest map picks), then the example sites; the dot is GO / NO-GO on the chosen date
+function whereList(st, data) {
+  const mode = data.index.modes[st.mission]?.sites || {}, lim = limitsOf(st);
+  const row = s => {
+    const e = mode[s.id], k = e ? status(e, st.day, st.mast, lim).kind : null;
+    const dot = k == null ? '' : k === 'ok' ? 'go' : 'nogo', sel = s.id === st.site;
+    return `<button type="button" role="option" tabindex="-1" data-v="${s.id}" aria-selected="${sel}"><i class="wd ${dot}" aria-label="${k == null ? '' : k === 'ok' ? t('go') : t('nogo')}"></i><span>${esc(siteName(s))}</span></button>`;
+  };
+  const pins = data.index.sites.filter(s => /^pin/.test(s.id)), ex = data.index.sites.filter(s => !/^pin/.test(s.id));
+  return `<button type="button" role="option" tabindex="-1" data-v="${ANY}" aria-selected="false" class="wp-any"><i class="wd any"></i><span>${t('anywhere')}</span></button>`
+    + (pins.length ? `<hr>${pins.map(row).join('')}` : '') + `<hr>${ex.map(row).join('')}`;
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 // best day of the year for the selected place: a GO day with the most room over the Sun and Earth limits (earliest on
 // a tie); with no GO day, the one whose cheapest fix uses the least of its limit
 function bestDay(st, data) {
