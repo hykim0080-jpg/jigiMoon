@@ -1682,11 +1682,23 @@ export function mountLunarMap(container, options = {}) {
   ro.observe(root);
 
   // ---------------------------------------------------------------- loop
+  // the camera never dips under the ground: a floor a little above the terrain under it (and around it, so the near
+  // plane does not cut a slope in front), the clearance growing with the viewing distance. Zoom, drag, tilt and flights
+  // all pass through here; the camera slides along the floor instead of stopping with a jump.
+  const FLOOR_PTS = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]];
+  function keepAbove() {
+    const p = cam3.position, d = p.distanceTo(ctl3.target), m = Math.max(0.003, d * 0.05);
+    let g = -Infinity;
+    for (const [ox, oz] of FLOOR_PTS) { const y = yAt((p.x + ox * m) * 1000, -(p.z + oz * m) * 1000); if (Number.isFinite(y) && y > g) g = y; }
+    if (g === -Infinity || p.y >= g + m) return;
+    p.y = g + m; cam3.lookAt(ctl3.target); dirty = true;
+  }
   function frame(now) {
     if (destroyed) return;
     raf = requestAnimationFrame(frame);
     if (tween) stepTween(now);
     else if (camera === cam3) ctl3.update(); else ctl2.update();
+    if (camera === cam3 && heights) keepAbove();
     if (playing && ds.n > 1) {
       const dtS = lastTs ? Math.min(0.1, (now - lastTs) / 1000) : 0;
       lastTs = now;

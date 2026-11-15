@@ -31,7 +31,7 @@ export function init(host, o = {}) {
 }
 function start() {
   stop();
-  timer = setInterval(() => { const n = state.mission * 24, h = state.hour + 2; setState({ hour: h > n ? 0 : h }); }, 140);   // 2 h a step (the lighting frames are 4 h apart)
+  timer = setInterval(() => { const n = state.mission * 24, h = Math.floor(state.hour / 4) * 4 + 4; setState({ hour: h > n ? 0 : h }); }, 80);   // one lighting frame (4 h) a step: 14 d in about 7 s
 }
 function stop() { if (timer) { clearInterval(timer); timer = 0; } }
 export function show(on) { if (!el) return; el.hidden = !on; if (!on) stop(); }
