@@ -203,7 +203,7 @@ main[data-view="compare"] #expo{display:none}
   #site-select{max-width:180px}
   .verdict{font-size:13px;max-width:300px}
 }
-#lander-card{position:absolute;z-index:5;width:236px;background:rgba(15,19,27,.94);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:0;padding:10px 12px;font-size:12px;line-height:1.45}
+#lander-card{position:absolute;z-index:5;width:236px;background:rgba(15,19,27,.94);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:10px 12px;font-size:12px;line-height:1.45}
 #lander-card b{font-size:13px;display:block;padding-right:16px}
 #lander-card .k{color:#aab;font-size:11px}
 #lander-card p{margin:6px 0}
@@ -260,4 +260,4 @@ header>.verdict{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden}
 header>.verdict .fix{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 @media (max-width:1400px){header .seg[data-key="view"] button,header .seg[data-key="pro"] button{padding:5px 8px}header .slip{display:none}}
 /* square corners: rules kept unchanged above so parallel PRs merge cleanly */
-.adv>button,.api-link{border-radius:0}
+.adv>button,.api-link,#lander-card{border-radius:0}
