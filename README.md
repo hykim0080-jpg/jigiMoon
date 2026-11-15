@@ -1,4 +1,4 @@
-# jigiMoon — Lunar Landing Site Navigator (Team Moon-jigi)
+# Lunar Landing Site Navigator — by Team Moon-jigi
 
 NASA Space Apps Challenge 2026 · Challenge: Lunar Landing Site Navigator
 

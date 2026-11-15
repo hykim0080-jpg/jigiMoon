@@ -21,7 +21,7 @@ export function play() {
   phase = 'playing';
   const box = document.createElement('div');
   box.id = 'intro';
-  box.innerHTML = `<div class="intro-title"><h1>MOON-JIGI</h1><p>${t('introSub')}</p><small>${t('introGo')}</small></div>`;
+  box.innerHTML = `<div class="intro-title"><h1>Lunar Landing Site Navigator</h1><span class="intro-by">by Moon-jigi</span><p>${t('introSub')}</p><small>${t('introGo')}</small></div>`;
   document.body.appendChild(box);
   let done = false, raf = 0, renderer = null;
   const end = (why) => {

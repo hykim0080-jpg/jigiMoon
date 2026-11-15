@@ -73,7 +73,7 @@ const en = {
 const en_months = en.months;
 
 const ko = {
-  app: '달 착륙지 내비게이터',
+  app: 'LUNAR LANDING SITE NAVIGATOR',   // the name stays English in Korean too (현기 11-16)
   go: '가능', nogo: '불가',
   move: '이동', mast: '마스트', wait: '대기', sky: '하늘', map: '지도', year: '연간',
   sun: '태양', earth: '지구', dark: '암흑', noComm: '통신 끊김', slopeL: '경사',
