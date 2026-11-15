@@ -93,7 +93,7 @@ function html(p, st) {
   if (g) {
     const gt = GTX[lang] || GTX.en, go = g.ok[day] === '1';
     return `<div class="v ${go ? 'go' : 'no'}">${go ? TX.go : TX.nogo}<small>${TX.stay(mission)}</small></div>`
-      + `<div class="s">${gt.slope} <b>${g.slope != null ? (+g.slope).toFixed(1) + '°' : '–'}</b></div><div class="s"><small>${gt.note}</small></div>`;
+      + `<div class="s">${gt.slope} <b>${g.slope != null ? (+g.slope).toFixed(1) + '°' : '–'}</b></div>`;
   }
   if (!st) out += `<div class="v wait">…<small>${TX.calc}</small></div>`;
   else {

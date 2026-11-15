@@ -1236,6 +1236,20 @@ export function mountLunarMap(container, options = {}) {
       s.dot.addEventListener('click', () => { if (opt.onSiteClick) { selSite = s; opt.onSiteClick(s.id); } else selSite = selSite === s ? null : s; stripDirty = true; dirty = true; });
     }
   }
+  // hidden behind or under the terrain, seen from the 3D camera: the line from the camera to the map point (a little
+  // above the ground) dips below the terrain somewhere on the way. Labels, markers and marks at such points are hidden
+  const _c = new THREE.Vector3(), _q = new THREE.Vector3();
+  const hiddenAt = (xm, ym, lift = 0) => {
+    if (camera !== cam3 || !heights) return false;
+    const P = worldOf(xm, ym, _q.clone()); P.y += lift;
+    _c.copy(cam3.position);
+    const d = _c.distanceTo(P), tol = Math.max(0.0004, d * 0.004), N = 28;
+    for (let i = 1; i < N; i++) {
+      const f = i / N, x = _c.x + (P.x - _c.x) * f, y = _c.y + (P.y - _c.y) * f, z = _c.z + (P.z - _c.z) * f;
+      if (y < yAt(x * 1000, -z * 1000) - tol) return true;
+    }
+    return false;
+  };
   const project = (out) => {
     out.project(camera);
     const ok = out.z > -1 && out.z < 1;
@@ -1278,7 +1292,7 @@ export function mountLunarMap(container, options = {}) {
         p.el.addEventListener('wheel', passWheel, { passive: false });
         ov.appendChild(p.el);
       }
-      const ok = project(worldOf(p.x, p.y, v3)), vis = ok && v3.x > -6 && v3.x < W + 6 && v3.y > -6 && v3.y < H + 6;
+      const ok = project(worldOf(p.x, p.y, v3)), vis = ok && v3.x > -6 && v3.x < W + 6 && v3.y > -6 && v3.y < H + 6 && !hiddenAt(p.x, p.y);
       p.sx = v3.x; p.sy = v3.y; p.vis = vis;
       place(p.el, v3.x, v3.y - 30, vis);
     }
@@ -1349,7 +1363,7 @@ export function mountLunarMap(container, options = {}) {
     // project everything, reserve the symbols
     for (const m of landmarks) {
       const ok = project(worldOf(m.x_m, m.y_m, v3));
-      m.sx = v3.x; m.sy = v3.y; m.on = ok && inView(v3.x, v3.y);
+      m.sx = v3.x; m.sy = v3.y; m.on = ok && inView(v3.x, v3.y) && !hiddenAt(m.x_m, m.y_m);
       if (m.pt) { place(m.pt, m.sx, m.sy, m.on); if (m.on) boxes.push([m.sx - 6, m.sy - 6, m.sx + 6, m.sy + 6]); }
     }
     if (marksSvg.parentNode !== ov) ov.prepend(marksSvg);
@@ -1400,21 +1414,25 @@ export function mountLunarMap(container, options = {}) {
         mastEl.classList.toggle('is-nogo', !mastPt.h && !!mastPt.label);
       }
       const hh = mastEl.offsetHeight || 30, mw = mastEl.offsetWidth || 40, mx = v3.x - mw / 2, my = v3.y - hh + (rig ? 0 : 6);
-      const on = ok && inView(v3.x, v3.y) && (rig || mastPt.h > 0);
+      const on = ok && inView(v3.x, v3.y) && (rig || mastPt.h > 0) && !hiddenAt(mastPt.x, mastPt.y);
       place(mastEl, mx, my, on);
       if (on) boxes.push([mx, my, mx + mw, v3.y + 4]);
     } else if (mastEl) place(mastEl, 0, 0, false);
     {
       let html = '';
       for (const m of marks) {
-        const pts = [];
+        const pts = [], segs = [];
+        let run = [];
         for (let i = 0; i <= 24; i++) {
-          const f = i / 24, ok = project(worldOf(m.x1 + (m.x2 - m.x1) * f, m.y1 + (m.y2 - m.y1) * f, v3));
-          if (ok) pts.push(`${v3.x.toFixed(1)},${v3.y.toFixed(1)}`);
+          const f = i / 24, xm = m.x1 + (m.x2 - m.x1) * f, ym = m.y1 + (m.y2 - m.y1) * f, ok = project(worldOf(xm, ym, v3));
+          if (ok && !hiddenAt(xm, ym)) { const s = `${v3.x.toFixed(1)},${v3.y.toFixed(1)}`; pts.push(s); run.push(s); }
+          else { if (run.length > 1) segs.push(run); run = []; }
         }
-        if (pts.length < 2) continue;
-        const d = 'M' + pts.join('L'), [ex, ey] = pts[pts.length - 1].split(',').map(Number);
+        if (run.length > 1) segs.push(run);
+        if (!segs.length) continue;
+        const d = segs.map(r => 'M' + r.join('L')).join(''), endHidden = hiddenAt(m.x2, m.y2), [ex, ey] = pts[pts.length - 1].split(',').map(Number);
         html += `<path d="${d}" fill="none" stroke="#000" stroke-opacity=".5" stroke-width="${(m.w || 2) + 2}"/><path d="${d}" fill="none" stroke="${m.color}" stroke-width="${m.w || 2}"${m.dash ? ` stroke-dasharray="${m.dash}"` : ''}/>`;
+        if (endHidden) continue;   // the end (ring, label) behind the terrain
         if (m.end === 'ring') html += `<circle cx="${ex}" cy="${ey}" r="8" fill="none" stroke="#000" stroke-opacity=".5" stroke-width="4"/><circle cx="${ex}" cy="${ey}" r="8" fill="none" stroke="#fff" stroke-width="2"/>`;
         else if (m.end) html += `<circle cx="${ex}" cy="${ey}" r="7" fill="${m.end}" stroke="${m.color}" stroke-width="1.5"/><line x1="${ex - 7}" y1="${ey + 4}" x2="${ex + 7}" y2="${ey - 4}" stroke="${m.color}" stroke-width="1.5"/>`;
         const [sx] = pts[0].split(',').map(Number), lt = ex < sx;
@@ -1432,7 +1450,7 @@ export function mountLunarMap(container, options = {}) {
     for (const s of sites) {
       const ok = project(worldOf(s.x_m, s.y_m, v3));
       s.sx = v3.x; s.sy = v3.y - (glow && !s.lander ? 27 : 0);   // glow: the dot stands on a stem above the spot
-      s.on = ok && inView(v3.x, v3.y);
+      s.on = ok && inView(v3.x, v3.y) && !hiddenAt(s.x_m, s.y_m);
       place(s.dot, s.sx, s.sy, s.on);
       const c = (glow ? CLASS_COLOR_GLOW : CLASS_COLOR)[classOf(sample(ds, t, s.x_m, s.y_m))];
       if (s.c !== c) { if (s.lander) s.dot.style.color = c; else s.dot.style.background = c; s.c = c; }
@@ -1444,7 +1462,7 @@ export function mountLunarMap(container, options = {}) {
     for (const l of landers) {
       if (!l.dot) continue;
       const ok = project(worldOf(l.x_m, l.y_m, v3));
-      l.sx = v3.x; l.sy = v3.y; l.on = ok && inView(v3.x, v3.y);
+      l.sx = v3.x; l.sy = v3.y; l.on = ok && inView(v3.x, v3.y) && !hiddenAt(l.x_m, l.y_m);
       place(l.dot, l.sx, l.sy, l.on);
       if (l.on) boxes.push([l.sx - 7, l.sy - 7, l.sx + 7, l.sy + 7]);
     }
