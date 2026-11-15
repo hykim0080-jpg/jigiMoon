@@ -34,7 +34,7 @@ export function init(node) {
     cards[k] = { c: r, val: r.querySelector('b'), unit: r.querySelector('.val span'), effort: r.querySelector('.effort') };
   }
   // MAST line: click to raise the antenna to the lowest height that works (click again to lower it)
-  cards.mast.c.addEventListener('click', () => { const h = cards.mast.c.dataset.h; if (h) setState({ mast: state.mast === +h ? 0 : +h }); });
+  // MAST: the height only, no switch (the verdict stays on the ground); over 10 m in orange
   root.appendChild(rows);
   // the map below is folded by default. Esc on the 2D centre map (⤢ 2D in the view buttons): back to 3D
   fxbar = document.createElement('div'); fxbar.className = 'fxbar';
@@ -82,7 +82,7 @@ export function render(st, data) {
     card.effort.innerHTML = bar({ frac: avail && lim[k] ? v / lim[k] : 0, color: `var(--${k})`, dashed: !avail });
   }
   cards.mast.c.dataset.h = !e.ok[st.day] && f.mast != null && f.mast <= lim.mast ? f.mast : '';
-  cards.mast.c.classList.toggle('on', !!st.mast);
+  cards.mast.c.classList.toggle('tall', !e.ok[st.day] && f.mast != null && f.mast > 10 && f.mast <= lim.mast);
   const near = data.site && f.move != null && !e.ok[st.day] ? nearestOk(data.site, st.day) : null;
   const go = near && near.d > 0 && f.move <= lim.move;
   cards.move.dir.textContent = go ? ARROW[sector(bearing(near.c.dx, near.c.dy))] : '';

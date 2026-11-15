@@ -579,3 +579,12 @@ main.full #dock #adv-btn.changed{border-color:var(--accent)}
 @media (max-width:700px){#zoom .z-dim{display:none}}
 #space-hint{display:none!important}   /* the Space key still recentres; no hint on the map */
 #vbadge .vfar{align-self:center;font-size:13px;color:#9aa3b2;padding:0 4px}
+/* MAST: a value, not a switch; over 10 m (beyond what a lander carries) orange, 15 m and up marked tall */
+#vbadge .vfx button.ro{cursor:default}
+#vbadge .vfx button.ro[disabled]:not([data-v=""]){opacity:1}
+#vbadge .vfx button.tall b{color:#f0a531}
+#vbadge .vfx button em{font-style:normal;font-size:10px;font-weight:600;color:#f0a531;letter-spacing:.04em;text-transform:uppercase}
+.fixrow[data-k="mast"]:not(.na){cursor:default}
+#fixes .fixrow.tall .val b{color:#f0a531}
+#vbadge .vfx b{font-size:inherit;line-height:inherit;font-weight:700;letter-spacing:0;color:inherit}
+#vbadge .vfx button.tall b{color:#f0a531}

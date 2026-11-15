@@ -51,7 +51,6 @@ export function render(st, data, panel, lim) {
     box.addEventListener('click', ev => {
       const b = ev.target.closest('[data-fx]'); if (!b || b.disabled) return;
       if (b.dataset.fx === 'move') document.querySelector('#zoom [data-z="4"]')?.click();
-      else if (b.dataset.fx === 'mast') setState({ mast: state.mast === +b.dataset.v ? 0 : +b.dataset.v });
       else if (b.dataset.fx === 'wait') setState({ day: state.day + +b.dataset.v });
     });
   }
@@ -79,7 +78,10 @@ function fixRow(st, data, e, lim) {
   const f = fixes(e, st.day), best = bestFix(e, st.day, lim), n = data.site ? nearestOk(data.site, st.day) : null;
   const item = (k, label, v, unit, extra = '') => {
     const ok = v != null && v <= lim[k];
-    return `<button type="button" data-fx="${k}" data-v="${ok ? v : ''}"${ok ? '' : ' disabled'} class="${best && best.kind === k ? 'best' : ''}" style="--fc:var(--${k})"><i>${label}</i> ${ok ? `${v} ${unit}${extra}` : '—'}</button>`;
+    // MAST: the height only (no switch; the verdict stays on the ground). Over 10 m (more than a lander carries) in
+    // orange, from 15 m 'tall': 20 m is the practical limit (lunar/README.md, mast heights)
+    const tall = k === 'mast' && ok && v > 10, cls = [best && best.kind === k ? 'best' : '', k === 'mast' ? 'ro' : '', tall ? 'tall' : ''].join(' ').trim();
+    return `<button type="button" data-fx="${k}" data-v="${ok ? v : ''}"${ok && k !== 'mast' ? '' : ' disabled'}${cls ? ` class="${cls}"` : ''} style="--fc:var(--${k})"><i>${label}</i> ${ok ? `<b>${v}</b> ${unit}${extra}${k === 'mast' && v >= 15 ? ` <em>${t('mastTall')}</em>` : ''}` : '—'}</button>`;
   };
   const arrow = n && n.d > 0 ? ' ' + ARROW[sector(bearing(n.c.dx, n.c.dy))] : '';
   // Nearest GO within the MOVE limit: a fix (a button); farther: grey text at the end, not a fix
