@@ -203,6 +203,22 @@ function wire() {
     else if (hs) { setState({ site: hs.id }, 'site'); flyTo(hs); }
     else if (cell) setState({ pin: cell, autoPin: false }, 'panel');
   });
+  // two fingers (phones): pinch zooms about the fingers, moving them pans
+  let pinch = null;
+  const mid = t => { const r = canvas.getBoundingClientRect(); return { x: (t[0].clientX + t[1].clientX) / 2 - r.left, y: (t[0].clientY + t[1].clientY) / 2 - r.top, d: Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY) || 1 }; };
+  panel.addEventListener('touchstart', e => {
+    if (e.touches.length !== 2) return;
+    e.preventDefault(); drag = null; painting = null; panel.classList.remove('grab'); cancelAnimationFrame(anim);
+    pinch = mid(e.touches);
+  }, { passive: false });
+  panel.addEventListener('touchmove', e => {
+    if (!pinch || e.touches.length !== 2) return;
+    e.preventDefault();
+    const m = mid(e.touches), s = scale(), v = state.view;
+    setState({ view: clampView({ k: v.k, cx: v.cx - (m.x - pinch.x) / s, cy: v.cy - (m.y - pinch.y) / s }) }, 'view');
+    zoomAt(m.x, m.y, m.d / pinch.d); pinch = m;
+  }, { passive: false });
+  panel.addEventListener('touchend', e => { if (e.touches.length < 2) pinch = null; });
   panel.addEventListener('pointerleave', () => { tip.hidden = true; if (!drag) setState({ hover: null, hoverSite: null, hoverLander: null }, 'hover'); });
 }
 function showTip(e, cell) {

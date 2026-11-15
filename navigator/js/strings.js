@@ -4,7 +4,7 @@ const en = {
   move: 'MOVE', mast: 'MAST', wait: 'WAIT', sky: 'SKY', map: 'MAP', year: 'YEAR',
   sun: 'Sun', earth: 'Earth', dark: 'Dark', noComm: 'No-comm',
   focus: 'Detail', compare: 'Side by side', basic: 'Basic', expert: 'Expert',
-  why: { sun: 'solar power', earth: 'radio to Earth', dark: 'battery', noComm: 'longest radio gap' },
+  why: { sun: 'power', earth: 'radio', dark: 'battery', noComm: 'radio gap' },
   whyLong: {
     sun: 'The lander runs on solar panels, so its power comes only when the Sun clears the surrounding hills. Best south-pole spots reach about 92 % (Gläser et al. 2014).',
     earth: 'The lander can only talk to mission control while Earth is above its horizon. With no relay satellite, a hidden Earth means silence (Bryant 2009).',

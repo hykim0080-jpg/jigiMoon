@@ -293,3 +293,18 @@ header>.verdict .fix{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;m
   .card .val b{font-size:32px}
   .card .vis svg{height:128px}
 }
+/* phones: side by side becomes one card per site */
+.cmp-list{display:flex;flex-direction:column;gap:14px}
+.cmp-m{grid-template-columns:64px minmax(0,1fr);gap:6px 10px;height:auto;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.cmp-m .head,.cmp-m .head+.cell{grid-column:1/-1}
+.cmp-m .vl .n{width:56px}
+/* narrower desktops: room for the verdict, which may take two lines instead of being cut */
+@media (min-width:701px) and (max-width:1799px){header>.app-name{display:none}}
+@media (min-width:701px){
+  header>.verdict{flex:1 1 200px;min-width:200px;max-width:420px;white-space:normal;line-height:1.15}
+  header>.verdict .fix{white-space:normal;overflow:visible}
+}
+@media (min-width:701px) and (max-width:1440px){
+  .card .left{width:150px}.card .effort{width:140px}.card .val b{font-size:34px}.card .vis svg{max-height:140px}
+  header{gap:10px}
+}

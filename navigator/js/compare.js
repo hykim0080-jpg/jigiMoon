@@ -54,23 +54,30 @@ export function render(st, d) {
     return `${dot('block')}${t('nogo')}${s.kind === 'none' ? '' : ` → <span style="color:var(--${s.kind})">${fixText(s)}</span>`}`;
   };
 
-  const fixRow = kind => cells(t(kind), s => {
+  const fixCell = kind => s => {
     const e = mode[s.id], v = fixes(e, st.day)[kind], ok = v != null && v <= lim[kind];
     const best = !e.ok[st.day] && bestFix(e, st.day, lim)?.kind === kind;
     const txt = ok ? (kind === 'move' ? t('km', v) : kind === 'mast' ? t('m', v) : t('d', v)) : '—';
     return `<div class="vl" style="color:var(--${best ? 'ink' : 'muted'})"><span class="n" style="width:72px">${txt}</span>${bar({ frac: ok ? v / lim[kind] : 0, color: `var(--${kind})`, dashed: !ok })}</div>`;
-  });
-
+  };
   const pct = (v, tick, color, fail) => valBar(t('pct', Math.round(v)), { frac: v / 100, tick, color }, fail);
-  root.innerHTML = `<div class="cmp" style="grid-template-columns:88px repeat(${sites.length},minmax(0,1fr))">
-    <div></div>${sites.map(s => `<div class="cell head" data-pick="${s.id}" style="position:relative"><b>${siteName(data.index.byId[s.id])}</b><span class="where">${where(data.index.byId[s.id])}</span><span>${verdict(s.id)}</span>${st.pinned.includes(s.id) ? `<button class="x" data-unpin="${s.id}" aria-label="${t('unpin')}">×</button>` : ''}</div>`).join('')}
-    <div class="lab">${t('sky')}</div>${sites.map(() => `<div class="cell"><div class="skyc" data-theme="dark"><svg class="csky" style="height:${SKY_H}px"></svg><svg class="cstrip" style="height:${STRIP_H}px"></svg></div></div>`).join('')}
-    ${cells(t('sun'), s => pct(mv(s, 'sun'), THRESHOLDS.sun / 100, 'var(--sun)', mv(s, 'sun') < THRESHOLDS.sun))}
-    ${cells(t('earth'), s => pct(mv(s, 'earth'), THRESHOLDS.earth / 100, 'var(--earth)', mv(s, 'earth') < THRESHOLDS.earth))}
-    ${cells(t('dark'), s => valBar(t('h', Math.round(mv(s, 'dark'))), { frac: mv(s, 'dark') / 100, tick: THRESHOLDS.dark / 100 }, mv(s, 'dark') > THRESHOLDS.dark))}
+  const head = s => `<div class="cell head" data-pick="${s.id}" style="position:relative"><b>${siteName(data.index.byId[s.id])}</b><span class="where">${where(data.index.byId[s.id])}</span><span>${verdict(s.id)}</span>${st.pinned.includes(s.id) ? `<button class="x" data-unpin="${s.id}" aria-label="${t('unpin')}">×</button>` : ''}</div>`;
+  const sky = () => `<div class="cell"><div class="skyc" data-theme="dark"><svg class="csky" style="height:${SKY_H}px"></svg><svg class="cstrip" style="height:${STRIP_H}px"></svg></div></div>`;
+  const nums = [
+    [t('sun'), s => pct(mv(s, 'sun'), THRESHOLDS.sun / 100, 'var(--sun)', mv(s, 'sun') < THRESHOLDS.sun)],
+    [t('earth'), s => pct(mv(s, 'earth'), THRESHOLDS.earth / 100, 'var(--earth)', mv(s, 'earth') < THRESHOLDS.earth)],
+    [t('dark'), s => valBar(t('h', Math.round(mv(s, 'dark'))), { frac: mv(s, 'dark') / 100, tick: THRESHOLDS.dark / 100 }, mv(s, 'dark') > THRESHOLDS.dark)],
+  ], fixRows = ['move', 'mast', 'wait'].map(k => [t(k), fixCell(k)]), year = [t('year'), s => `<div class="yearc"><canvas data-site="${s.id}"></canvas><span class="n">${yearPct(mode[s.id], st, lim)}</span></div>`];
+  if (innerWidth <= 700) {   // phones: one site after another, each with its own rows
+    const row = ([l, fn], s) => `<div class="lab">${l}</div><div class="cell">${fn(s)}</div>`;
+    root.innerHTML = `<div class="cmp-list">${sites.map(s => `<div class="cmp cmp-m">${head(s)}${sky()}${nums.map(r => row(r, s)).join('')}<div class="rule"></div>${fixRows.map(r => row(r, s)).join('')}${row(year, s)}</div>`).join('')}</div>`;
+  } else root.innerHTML = `<div class="cmp" style="grid-template-columns:88px repeat(${sites.length},minmax(0,1fr))">
+    <div></div>${sites.map(head).join('')}
+    <div class="lab">${t('sky')}</div>${sites.map(sky).join('')}
+    ${nums.map(([l, fn]) => cells(l, fn)).join('')}
     <div class="rule"></div>
-    ${fixRow('move')}${fixRow('mast')}${fixRow('wait')}
-    ${cells(t('year'), s => `<div class="yearc"><canvas data-site="${s.id}"></canvas><span class="n">${yearPct(mode[s.id], st, lim)}</span></div>`)}
+    ${fixRows.map(([l, fn]) => cells(l, fn)).join('')}
+    ${cells(...year)}
   </div>`;
 
   const skies = root.querySelectorAll('.csky'), strips = root.querySelectorAll('.cstrip');

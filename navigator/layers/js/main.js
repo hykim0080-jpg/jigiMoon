@@ -64,7 +64,7 @@ export async function mount(root, opts = {}) {
   advBtn.onclick = () => setAdv(!state.adv);
 
   const setS = () => {
-    const band = main.clientHeight || 800, S = innerWidth <= 700 ? main.clientWidth : band >= 802 && band < 962 ? 802 : Math.max(500, band);
+    const band = main.clientHeight || 800, S = innerWidth <= 700 ? main.clientWidth : Math.min(band >= 802 && band < 962 ? 802 : Math.max(500, band), Math.max(500, main.clientWidth - 300 - 250 - 24));
     main.style.setProperty('--S', S + 'px');
   };
   let passPx = 0;

@@ -151,6 +151,26 @@ export function init(node, d, openPin) {
     nextDur = 120;
     setState(z <= 1.001 ? { zoom: 1, pan: '' } : { zoom: z, pan: `${(w.x - w.u * h).toFixed(2)},${(w.y + w.v * h).toFixed(2)}` });
   }, { passive: false });
+  // two fingers (phones): pinch zooms about the fingers, moving them pans; cancels the one-finger drag and hold
+  // touch pointers are captured on the svg: its children are rebuilt while the fingers move
+  let pinch = null; const touches = new Map();
+  const mid = () => { const [a, b] = [...touches.values()]; return { clientX: (a.x + b.x) / 2, clientY: (a.y + b.y) / 2, d: Math.hypot(a.x - b.x, a.y - b.y) || 1 }; };
+  svg.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'touch' || state.view === 'compare') return;
+    touches.set(e.pointerId, { x: e.clientX, y: e.clientY }); try { svg.setPointerCapture(e.pointerId); } catch (_) { /* gone */ }
+    if (touches.size === 2) { clearTimeout(holdTimer); holdRing(null); clearTimeout(clickTimer); drag = null; svg.classList.remove('grabbing'); const m = mid(); pinch = { d: m.d, z: state.zoom, w: world(m) }; }
+  });
+  svg.addEventListener('pointermove', e => {
+    if (!touches.has(e.pointerId)) return;
+    touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (!pinch || touches.size !== 2) return;
+    const m = mid(), z = clamp(pinch.z * m.d / pinch.d, 1, ZOOM.spot), h = R_KM / z, r = svg.getBoundingClientRect();
+    const u = (m.clientX - r.left) / r.width * 2 - 1, v = (m.clientY - r.top) / r.height * 2 - 1;
+    instant = true;
+    setState(z <= 1.001 ? { zoom: 1, pan: '' } : { zoom: z, pan: `${(pinch.w.x - u * h).toFixed(2)},${(pinch.w.y + v * h).toFixed(2)}` });
+  });
+  const lift = e => { touches.delete(e.pointerId); if (touches.size < 2) pinch = null; };
+  svg.addEventListener('pointerup', lift); svg.addEventListener('pointercancel', lift);
   document.querySelectorAll('#zoom button').forEach(b => b.addEventListener('click', () => setState(b.dataset.z === '1' ? { zoom: 1, pan: '' } : { zoom: b.dataset.z === 'spot' ? ZOOM.spot : Number(b.dataset.z) })));
   onHover(() => render(state, data));
 }
