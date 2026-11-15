@@ -126,7 +126,7 @@ async function boot() {
   }
   if (!data.index.byId[state.site]) state.site = data.index.sites[0].id;
   await loadSite(state.site, state.mission);
-  header.init($('header'), data);
+  header.init($('header'), data, { openPin });
   calendar.init($('cal-panel'), data);
   map.init($('map'), data, openPin);
   view3d.init($('map-panel'), data, openPin);

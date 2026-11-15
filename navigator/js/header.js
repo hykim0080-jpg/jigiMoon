@@ -1,6 +1,8 @@
 // Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 import { state, setState, limitsOf } from './state.js';
-import { MAST_SLIDER, BUDGET } from './config.js';
+import { MAST_SLIDER, BUDGET, THRESHOLDS } from './config.js';
+import { ranked } from './rank3d.js';
+import { bestFix } from './logic.js';
 import { t, siteName } from './strings.js';
 import { status, fixText, isoDate, nearestOk, goRuns, shortDate, dateOf } from './logic.js';
 import { moveShort } from './orient.js';
@@ -12,20 +14,21 @@ let root, refs;
 
 const seg = (items, key) => `<div class="seg" data-key="${key}">${items.map(([v, label]) => `<button data-v="${v}">${label}</button>`).join('')}</div>`;
 
-export function init(el, data) {
-  root = el;
+let opts = {}, dataRef = null;
+export function init(el, data, o = {}) {
+  root = el; opts = o; dataRef = data;
   root.innerHTML = `
     <span class="app-name">${t('app')}</span>
     <div class="hb-trip">
       <button type="button" class="hb-tb" id="when-btn" aria-expanded="false"><span>${t('hbWhen')}</span><b class="hb-when"></b></button>
-      <label class="hb-tb hb-where"><span>${t('hbWhere')}</span><b class="hb-wn"></b><select id="site-select">${data.index.sites.map(s => `<option value="${s.id}">${siteName(s)}</option>`).join('')}</select></label>
+      <label class="hb-tb hb-where"><span>${t('hbWhere')}</span><b class="hb-wn"></b><select id="site-select">${siteOptions(data)}</select></label>
       <div id="when-pop" hidden>
         <div class="stepper">
           <button id="prev" aria-label="${t('prev')}">◀</button><span class="date n"></span><button id="next" aria-label="${t('next')}">▶</button>
           <span class="slip n"></span>
         </div>
         ${seg([[14, t('d', 14)], [6, t('d', 6)]], 'mission')}
-        ${seg([['date', t('modeDate')], ['site', t('modeSite')]], 'mode')}
+        <button type="button" class="hb-any" id="anytime">${t('anytime')}</button>
         <div class="chips" hidden></div>
       </div>
     </div>
@@ -66,7 +69,14 @@ export function init(el, data) {
   refs.chips.addEventListener('click', e => { const b = e.target.closest('button'); if (b) setState({ day: Number(b.dataset.day) }); });
   // Side by side lives inside Detail: a toggle beside the tabs, Detail stays the pressed tab
   root.querySelector('#side-btn').addEventListener('click', () => setState({ view: state.view === 'compare' ? 'focus' : 'compare' }));
-  refs.select.addEventListener('change', e => setState({ site: e.target.value }));
+  refs.select.addEventListener('change', e => {
+    if (e.target.value !== ANY) { setState({ site: e.target.value }); return; }
+    // Anywhere: the best spot for the date and stay (the same ranking as Find a site), opened as the pin
+    e.target.value = state.site; refs.wn.textContent = t('anywhereBusy');
+    ranked(state.day, state.mission, state.crit).then(l => { if (l[0] && opts.openPin) opts.openPin(Math.round(l[0].x), Math.round(l[0].y)); else render(state, dataRef); }).catch(err => { console.error(err); render(state, dataRef); });
+  });
+  // Anytime: the best landing day of the year for this place
+  root.querySelector('#anytime').addEventListener('click', () => { const d = bestDay(state, dataRef); if (d != null) { setState({ day: d }); wopen(false); } });
   root.querySelector('#prev').addEventListener('click', () => setState({ day: state.day - 1 }));
   root.querySelector('#next').addEventListener('click', () => setState({ day: state.day + 1 }));
   root.querySelectorAll('.seg').forEach(g => g.addEventListener('click', e => {
@@ -86,7 +96,7 @@ export function findHref(st, data, atSite) {
 
 export function render(st, data) {
   { // the pin can be (re)created from the map: keep the options in step with the index
-    const html = data.index.sites.map(s => `<option value="${s.id}">${siteName(s)}</option>`).join('');
+    const html = siteOptions(data);
     if (refs.select.dataset.html !== html) { refs.select.innerHTML = html; refs.select.dataset.html = html; }
   }
   refs.select.value = st.site;
@@ -144,6 +154,24 @@ export function render(st, data) {
   apiLink(st);
 }
 
+const ANY = '__any';
+const siteOptions = data => `<option value="${ANY}">${t('anywhere')}</option>` + data.index.sites.map(s => `<option value="${s.id}">${siteName(s)}</option>`).join('');
+// best day of the year for the selected place: a GO day with the most room over the Sun and Earth limits (earliest on
+// a tie); with no GO day, the one whose cheapest fix uses the least of its limit
+function bestDay(st, data) {
+  const e = data.index.modes[st.mission]?.sites[st.site], cal = data.site && data.site.cal, c = st.crit || THRESHOLDS;
+  if (!e) return null;
+  let best = null, bs = -Infinity;
+  for (let d = 0; d < e.ok.length; d++) {
+    if (!e.ok[d]) continue;
+    const s = cal ? Math.min(cal.sun[d] - c.sun, cal.earth[d] - c.earth, c.dark - cal.dark[d]) : 0;
+    if (s > bs) { bs = s; best = d; }
+  }
+  if (best != null) return best;
+  const lim = limitsOf(st); let bf = Infinity;
+  for (let d = 0; d < e.ok.length; d++) { const f = bestFix(e, d, lim); if (f && f.frac < bf) { bf = f.frac; best = d; } }
+  return best;
+}
 const longDate = d => dateOf(d).toLocaleDateString(document.documentElement.lang === 'ko' ? 'ko-KR' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 // one sentence, like Find a site's: where, when, how long, the verdict, what misses, and the fix
 function answer(st, data, lim, s, slip) {
