@@ -104,6 +104,8 @@ export function whyNoFix(col, row, day, crit, mission) {
 
 // ---- candidate spots of a region: flat cells with the most GO landing days in the year, spaced out ----
 let D = null; const pools = new Map();
+// the 3D map's terrain is a rounded square (map3d.js: |x|^4 + |y|^4 norm, relief fades out from 190 km): spots stay 15 km inside it
+const PATCH = 185, inPatch = (x, y) => ((Math.abs(x / 1000) ** 4) + (Math.abs(y / 1000) ** 4)) ** 0.25;
 function poolCells(rid, mission) {
   const reg = REGIONS.find(r => r.id === rid) || REGIONS[5], slopeM = D.layers.find(m => m.id === 'slope'), sb = D.bytes.slope;
   const days = D.bytes['days' + mission] || D.bytes.days14, thr = state.threshold.slope ?? 8;
@@ -114,7 +116,9 @@ function poolCells(rid, mission) {
     const i = r * N + c, v = days[i]; if (!(v > 0 && v <= 250)) continue;
     if (useMask) { if (failBase[i] !== 0 && failYear[i] !== 0) continue; }
     else if (sb && slopeM && (sb[i] > 250 || decode(slopeM, sb[i]) > thr)) continue;
-    if (reg.r) { const { x, y } = cellToXY(c, r); if (Math.hypot(x / 1000 - reg.x, y / 1000 - reg.y) > reg.r) continue; }
+    { const { x, y } = cellToXY(c, r);
+      if (inPatch(x, y) > PATCH) continue;   // only inside the 3D map's terrain (its rounded-square edge), not on the grey globe
+      if (reg.r && Math.hypot(x / 1000 - reg.x, y / 1000 - reg.y) > reg.r) continue; }
     cand.push(i);
   }
   cand.sort((a, b) => useMask && (failBase[a] === 0) !== (failBase[b] === 0) ? (failBase[a] === 0 ? -1 : 1) : days[b] - days[a]);   // judged GO for this trip first

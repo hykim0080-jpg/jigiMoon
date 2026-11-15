@@ -115,8 +115,8 @@ const CSS = `
 .lmap-card .lmap-st{color:var(--ink)}.lmap-card .lmap-st.is-off{color:var(--muted)}
 .lmap-read .lmap-rel{font:12px/1 Inter,"Apple SD Gothic Neo",system-ui,sans-serif;color:var(--ink);overflow:hidden;text-overflow:ellipsis}
 .lmap[data-lang=en] .lmap-lm{letter-spacing:.06em}
-.lmap[data-lang=en] .lmap-compass{font-size:9.5px}
-.lmap-compass{all:unset;position:absolute;right:12px;top:62px;z-index:2;width:50px;height:50px;border-radius:50%;background:rgba(24,29,40,.86);border:1px solid var(--line);cursor:pointer;backdrop-filter:blur(6px);display:grid;place-items:center;font-size:10px;font-weight:500;color:var(--earth)}
+.lmap[data-lang=en] .lmap-compass{font-size:11px}
+.lmap-compass{all:unset;position:absolute;right:12px;top:62px;z-index:2;width:50px;height:50px;border-radius:50%;background:rgba(24,29,40,.86);border:1px solid var(--line);cursor:pointer;backdrop-filter:blur(6px);display:grid;place-items:center;font-size:11px;font-weight:500;color:var(--earth)}
 .lmap-compass:focus-visible{outline:1px solid var(--muted);outline-offset:1px}
 .lmap-compass i{position:absolute;inset:0;border-radius:50%}
 .lmap-compass i::before{content:"";position:absolute;left:50%;top:9px;width:1.5px;height:8px;margin-left:-.75px;background:var(--earth);opacity:.7}
