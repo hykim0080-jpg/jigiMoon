@@ -18,7 +18,7 @@ export function init(host, o = {}) {
   el = document.createElement('div'); el.className = 'tbar'; el.hidden = true;
   el.innerHTML = `<button class="tb-pole">${TX.pole}</button><span class="tb-l">${TX.land}</span><button class="tb-p" aria-label="${TX.prev}">◀</button><b class="tb-d"></b><button class="tb-n" aria-label="${TX.next}">▶</button>
     <div class="seg tb-m"><button data-m="14">14 d</button><button data-m="6">6 d</button></div>
-    <button class="tb-play" aria-label="${TX.play}" aria-pressed="false">▶</button><span class="tb-l">${TX.stay}</span><input class="tb-h" type="range" min="0" step="1" aria-label="${TX.stay}"><b class="tb-t"></b>`;
+    <button class="tb-play" aria-label="${TX.play}" aria-pressed="false">▶</button><input class="tb-h" type="range" min="0" step="1" aria-label="${TX.stay}"><b class="tb-t"></b>`;
   host.append(el);
   r = { d: el.querySelector('.tb-d'), h: el.querySelector('.tb-h'), t: el.querySelector('.tb-t'), play: el.querySelector('.tb-play') };
   for (const ev of ['pointerdown', 'pointermove', 'wheel', 'dblclick', 'click']) el.addEventListener(ev, e => e.stopPropagation(), { passive: ev !== 'wheel' && ev !== 'click' ? true : undefined });

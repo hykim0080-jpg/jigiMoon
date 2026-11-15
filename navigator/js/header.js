@@ -133,9 +133,10 @@ export function render(st, data) {
   refs.when.textContent = `${longDate(st.day)} · ${t('d', st.mission)}`;
   { const s = data.index.byId[st.site]; refs.wn.textContent = s ? siteName(s) : ''; }
   { // Limits and Side by side: in the dock beside the map on the full map, else at the right of the bar
+    // Side by side stays in the header beside Detail | Find a site on every Detail layout (full map, panels, side by side)
     const dock = isFull(st) && document.getElementById('dock'), adv = refs.advWrap, sb = refs.side;
-    const home = dock || root, before = dock ? null : root.querySelector('.seg[data-key="view"]');
-    if (adv.parentNode !== home) { home.insertBefore(adv, before); home.insertBefore(sb, before); }
+    const home = dock || root, before = dock ? null : sb;
+    if (adv.parentNode !== home) home.insertBefore(adv, before);
     adv.classList.toggle('in-dock', !!dock); adv.firstElementChild.textContent = dock ? t('advanced') : '⋯';
   }
   const slip = st.day - st.baseline;

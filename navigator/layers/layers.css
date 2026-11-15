@@ -762,3 +762,5 @@ html.panels,html.panels body,.panels .lyr-app,.panels .lyr-main{background:trans
 .panels .lyr-pinp .lyr-mvl .lyr-mvh{flex:none}
 @media (min-width:701px){.panels .lyr-pinp .lyr-sky{height:178px}}
 @media (min-width:701px) and (max-height:800px){.panels .lyr-pinp .lyr-sky{height:140px}}
+/* the main page shows the site name (112 px + 16 px gap) at the left of its header row from 1180 px: start after it */
+@media (min-width:1180px){.panels .lyr-app header{margin-left:128px}}
