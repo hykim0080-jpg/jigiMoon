@@ -143,7 +143,7 @@ export function compose(st) {
         const o = i * 4, a = fa[o + 3], L = light[h];
         if (!nd && f === 0) passPx++;
         let br, bg, bb;
-        if (a === 255) { br = h * .18 + fa[o] * L * .82; bg = h * .18 + fa[o + 1] * L * .82; bb = h * .18 + fa[o + 2] * L * .82; }
+        if (a === 255) { br = h * .08 + fa[o] * L * .92; bg = h * .08 + fa[o + 1] * L * .92; bb = h * .08 + fa[o + 2] * L * .92; }
         else if (a) { br = (h * .3 + fa[o] * L * .7) * .6; bg = (h * .3 + fa[o + 1] * L * .7) * .6; bb = (h * .3 + fa[o + 2] * L * .7) * .6; }
         else { br = bg = bb = h * .4; }
         out[i] = pack(br | 0, bg | 0, bb | 0);

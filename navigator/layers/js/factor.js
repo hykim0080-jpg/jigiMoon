@@ -10,10 +10,10 @@ import { winVals } from './window.js';
 
 // lo..hi = the slider's value range (the track maps value linearly, the colour runs along it)
 export const FX = {
-  sun:   { lo: 0, hi: 100, dir: '>=', ramp: ['#2b1a04', '#6e4200', '#b96f00', '#f0a531', '#ffe7a6'] },
-  earth: { lo: 0, hi: 100, dir: '>=', ramp: ['#0b1833', '#173873', '#2459b8', '#74a2f2', '#dce8ff'] },
-  dark:  { lo: 0, hi: 150, dir: '<=', ramp: ['#1b1430', '#3b2a6b', '#6a4fb0', '#a58ce6', '#e6dcff'] },
-  slope: { lo: 0, hi: 20, dir: '<=', ramp: ['#1a2206', '#44580f', '#7c9a1e', '#b7d353', '#eef7c4'] },
+  sun:   { lo: 0, hi: 100, dir: '>=', ramp: ['#070400', '#5a3300', '#b56a00', '#ffab2e', '#fff6d6'] },
+  earth: { lo: 0, hi: 100, dir: '>=', ramp: ['#02050d', '#122c63', '#2462d1', '#7fb0ff', '#f2f7ff'] },
+  dark:  { lo: 0, hi: 150, dir: '<=', ramp: ['#05030b', '#2e1f5c', '#6a4cc0', '#ad94ff', '#f5f0ff'] },
+  slope: { lo: 0, hi: 20, dir: '<=', ramp: ['#040600', '#344708', '#7aa012', '#c2e650', '#f9ffe0'] },
   ice:   { lo: 0, hi: 10, dir: '<=', gamma: 2, ramp: ['#03080c', '#0a2433', '#145a7a', '#4fb8e3', '#f2fbff'] },   // permanent shadow (ice may be there) brightest; 10 km and beyond darkest
 };
 const NPX = N * N;
@@ -22,7 +22,7 @@ export const initFactor = data => { D = data; };
 const metaOf = id => D.layers.find(m => m.id === id);
 
 // continuous colour along the slider's value range (t = 0 at lo .. 1 at hi), brighter = better
-const colorT = (k, t) => { const f = FX[k], g = Math.pow(f.dir === '<=' ? 1 - t : t, f.gamma || 1); return colorAt(f.ramp, f.gamma ? g : .12 + .88 * g); };
+const colorT = (k, t) => { const f = FX[k], g = Math.pow(f.dir === '<=' ? 1 - t : t, f.gamma || 1); return colorAt(f.ramp, f.gamma ? g : .02 + .98 * g); };
 const tOf = (k, v) => { const f = FX[k]; return Math.max(0, Math.min(1, (v - f.lo) / (f.hi - f.lo))); };
 
 // the limit of factor k now (null = no limit, e.g. ice switched off)
@@ -71,7 +71,7 @@ function iceColor(T) {   // T in K (255 = no data)
   if (T > 250) return null;
   if (T > ICE_T.stable) return [6, 9, 14];
   const g = Math.min(1, (ICE_T.stable - T) / (ICE_T.stable - ICE_T.coldest));
-  return colorAt(FX.ice.ramp, .35 + .65 * Math.pow(g, .7));
+  return colorAt(FX.ice.ramp, .15 + .85 * Math.pow(g, .7));
 }
 
 // 800 x 800 RGBA: rgb = band colour, a = 255 meets the limit (or no limit), 128 misses it, 0 no data
