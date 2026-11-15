@@ -18,12 +18,21 @@ const clampView = v => { const h = N / (2 * v.k); return { k: v.k, cx: Math.max(
 const scale = () => W * state.view.k / N;
 const toScr = (cf, rf) => { const { k, cx, cy } = state.view, s = scale(), w = N / k; return [(cf - (cx - w / 2)) * s, (rf - (cy - w / 2)) * s]; };
 const mToCf = (x, y) => [(x + HALF) / PX, (HALF - y) / PX];
+let holdTimer = 0, ring = null;
+function holdRing(pt) {
+  if (!pt) { if (ring) { ring.remove(); ring = null; } return; }
+  if (ring) ring.remove();
+  ring = Object.assign(document.createElement('div'), { className: 'lyr-hold' });
+  ring.style.left = pt[0] + 'px'; ring.style.top = pt[1] + 'px'; panel.append(ring);
+}
 export function cellFromEvent(e) {
   const r = canvas.getBoundingClientRect(), { k, cx, cy } = state.view, s = scale(), w = N / k;
   const col = Math.floor(cx - w / 2 + (e.clientX - r.left) / s), row = Math.floor(cy - w / 2 + (e.clientY - r.top) / s);
   return col >= 0 && row >= 0 && col < N && row < N ? { col, row } : null;
 }
 export const setPick = fn => { pickFn = fn; };
+let badgeSrc = null; export const setBadges = fn => { badgeSrc = fn; };
+const tripBadges = () => !!badgeSrc && !state.adv;
 export function initMap(el, d, compCanvas) {
   panel = el; data = d; comp = compCanvas;
   if (shade && data.hill) data.hill.fill(255);
@@ -134,7 +143,7 @@ function hitSite(mx, my) {
 // numbered badges of zones 1..simpleTop: stem from the best pixel, flipped below when two would touch
 function badges(s) {
   const out = [];
-  for (const z of getZones().slice(0, ZONE.simpleTop)) {
+  for (const z of tripBadges() ? badgeSrc() : getZones().slice(0, ZONE.simpleTop)) {
     const [x, y] = toScr(z.col + .5, z.row + .5);
     if (x < -20 || y < -40 || x > W + 20 || y > W + 40) continue;
     const flip = out.some(b => Math.hypot(b.x - x, b.cy - (y - 21)) < 24) || (state.pin && state.pin.col === z.col && state.pin.row === z.row);
@@ -171,26 +180,36 @@ function wire() {
   panel.addEventListener('pointerdown', e => {
     if (e.button !== 0) return;
     if (state.edit && !e.shiftKey) { const c = cellFromEvent(e); painting = { last: null, val: state.edit === 'add' ? 1 : -1 }; panel.setPointerCapture(e.pointerId); if (c) stroke(c); return; }
-    drag = { x: e.clientX, y: e.clientY, v: { ...state.view }, moved: false }; cancelAnimationFrame(anim);
+    drag = { x: e.clientX, y: e.clientY, v: { ...state.view }, moved: false, held: false }; cancelAnimationFrame(anim);
     panel.setPointerCapture(e.pointerId);
+    // press and hold (as in Compare): zoom out x2 about the point after 500 ms, then every 400 ms down to the whole map
+    const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top, dg = drag;
+    const out = () => {
+      if (drag !== dg || state.view.k <= 1.001) { holdRing(null); return; }
+      dg.held = true; zoomAt(mx, my, 0.5); dg.v = { ...state.view };
+      if (state.view.k > 1.001) holdTimer = setTimeout(out, 400); else holdRing(null);
+    };
+    clearTimeout(holdTimer); holdRing(state.view.k > 1.001 ? [mx, my] : null); holdTimer = setTimeout(out, 500);
   });
   panel.addEventListener('pointermove', e => {
     const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
     if (painting) { const c = cellFromEvent(e); if (c) stroke(c); }
     if (drag) {
       const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-      if (!drag.moved && Math.hypot(dx, dy) > 3) { drag.moved = true; panel.classList.add('grab'); }
+      if (!drag.moved && Math.hypot(dx, dy) > 3) { clearTimeout(holdTimer); holdRing(null); if (drag.held) return; drag.moved = true; panel.classList.add('grab'); }
+      if (drag.held) return;
       if (drag.moved) { const s = W * drag.v.k / N; setState({ view: clampView({ k: drag.v.k, cx: drag.v.cx - dx / s, cy: drag.v.cy - dy / s }) }, 'view'); }
     }
     const cell = cellFromEvent(e), hs = state.adv ? hitSite(mx, my) : null, hl = hitLander(mx, my), hb = hitBadge(mx, my);
-    if ((hb ? hb.id : null) !== (badgeHot ?? null)) { badgeHot = hb ? hb.id : null; setState({ hoverZone: badgeHot }, 'hover'); }
+    if ((hb ? hb.id : null) !== (badgeHot ?? null)) { badgeHot = hb ? hb.id : null; setState(tripBadges() ? { hoverTrip: badgeHot } : { hoverZone: badgeHot }, 'hover'); }
     const same = state.hover && cell && state.hover.col === cell.col && state.hover.row === cell.row;
     if (!same || (hs?.id ?? null) !== state.hoverSite || (hl?.id ?? null) !== state.hoverLander) setState({ hover: cell, hoverSite: hs ? hs.id : null, hoverLander: hl ? hl.id : null }, 'hover');
     showTip(e, cell);
   });
   panel.addEventListener('pointerup', e => {
     if (painting) { painting = null; saveOverride(state.ov); return; }
-    if (!drag) return; const moved = drag.moved; drag = null; panel.classList.remove('grab');
+    clearTimeout(holdTimer); holdRing(null);
+    if (!drag) return; const moved = drag.moved || drag.held; drag = null; panel.classList.remove('grab');
     if (moved) return;
     const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top, hb = hitBadge(mx, my), hs = state.adv ? hitSite(mx, my) : null, cell = cellFromEvent(e);
     const hr = hitRing(mx, my);
@@ -202,6 +221,23 @@ function wire() {
     else if (hs) { setState({ site: hs.id }, 'site'); flyTo(hs); }
     else if (cell) setState({ pin: cell, autoPin: false }, 'panel');
   });
+  // two fingers (phones): pinch zooms about the fingers, moving them pans
+  let pinch = null;
+  const mid = t => { const r = canvas.getBoundingClientRect(); return { x: (t[0].clientX + t[1].clientX) / 2 - r.left, y: (t[0].clientY + t[1].clientY) / 2 - r.top, d: Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY) || 1 }; };
+  panel.addEventListener('touchstart', e => {
+    if (e.touches.length !== 2) return;
+    e.preventDefault(); drag = null; painting = null; panel.classList.remove('grab'); cancelAnimationFrame(anim); clearTimeout(holdTimer); holdRing(null);
+    pinch = mid(e.touches);
+  }, { passive: false });
+  panel.addEventListener('touchmove', e => {
+    if (!pinch || e.touches.length !== 2) return;
+    e.preventDefault();
+    const m = mid(e.touches), s = scale(), v = state.view;
+    setState({ view: clampView({ k: v.k, cx: v.cx - (m.x - pinch.x) / s, cy: v.cy - (m.y - pinch.y) / s }) }, 'view');
+    zoomAt(m.x, m.y, m.d / pinch.d); pinch = m;
+  }, { passive: false });
+  panel.addEventListener('touchend', e => { if (e.touches.length < 2) pinch = null; });
+  panel.addEventListener('contextmenu', e => { if (drag) e.preventDefault(); });
   panel.addEventListener('pointerleave', () => { tip.hidden = true; if (!drag) setState({ hover: null, hoverSite: null, hoverLander: null }, 'hover'); });
 }
 function showTip(e, cell) {
@@ -291,7 +327,7 @@ export function drawOverlay(st, siteFill) {
   }
   h += `<line x1="0" x2="${W}" y1="${py}" y2="${py}" class="g"/><line y1="0" y2="${W}" x1="${px}" x2="${px}" class="g"/>`;
   const hot = id => id === st.site || id === st.hoverSite;
-  const pi = st.pin ? pinInfo(st) : null, Zs = st.mode === 'layers' ? [] : getZones(), hotZ = hotZoneId(st);
+  const pi = st.pin ? pinInfo(st) : null, Zs = st.mode === 'layers' || tripBadges() ? [] : getZones(), hotZ = tripBadges() ? st.hoverTrip : hotZoneId(st);
   const boxOf = si => { const [x0, y0] = toScr(...mToCf(si.box_m[0], si.box_m[3])), [x1, y1] = toScr(...mToCf(si.box_m[2], si.box_m[1])); return [x0, y0, x1, y1]; };
   for (const si of data.sites) {
     if (!si.box_m) continue;

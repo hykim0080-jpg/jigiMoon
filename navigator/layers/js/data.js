@@ -8,7 +8,7 @@ export function fmt(meta, val) {
   const s = (meta.max - meta.min <= 30) ? val.toFixed(1) : String(Math.round(val));
   return s;
 }
-export const withUnit = (meta, val) => val == null ? '–' : fmt(meta, val) + (meta.unit ? ' ' + meta.unit : '');
+export const withUnit = (meta, val) => val == null ? '–' : fmt(meta, val) + (meta.unit ? ' ' + unitOf(meta) : '');
 export const valueOf = (meta, v) => v === 255 ? (FAIL_AT_255.includes(meta.id) ? Infinity : null) : v > 250 ? null : decode(meta, v);
 
 async function bytes(url, id) {

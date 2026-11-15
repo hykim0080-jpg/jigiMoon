@@ -10,6 +10,16 @@ export const dirText = (dx_m, dy_m) => { const d = Math.hypot(dx_m, dy_m) / 1000
 const SEC_EN_PY = ['Earth side', 'Earth-right side', 'right side', 'back-right side', 'back side', 'back-left side', 'left side', 'Earth-left side'];
 const reach = L => { const r = L.radius_km || 0; return L.kind === 'crater' ? r : (L.kind === 'massif' || L.kind === 'ridge') ? 0.5 * r : 0; };
 // port of lunar/orientation/orientation.py describe() (rule revised 11-14: rim / massif core / point reach)
+// the landmark describe() names for a point (language independent)
+export function anchorOf(x, y, lms, maxTier = 2) {
+  let best = null;
+  for (const L of lms) {
+    if (L.tier > maxTier) continue;
+    const d = Math.hypot(x - L.x_m, y - L.y_m) / 1000, r = reach(L), k0 = Math.max(d - r, 0), k1 = r ? d / r : d;
+    if (!best || k0 < best.k0 || (k0 === best.k0 && k1 < best.k1)) best = { k0, k1, L };
+  }
+  return best ? best.L : null;
+}
 export function describe(x, y, lms, maxTier = 2) {
   let best = null;
   for (const L of lms) {

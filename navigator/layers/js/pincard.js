@@ -7,6 +7,7 @@ import { fmt } from './data.js';
 import { t, lang, unitOf, layerName } from './strings.js';
 import { skyAt, skyCached, drawPinSky } from './time.js';
 import { critName, critValue } from './criteria.js';
+import { statsCached, statsFor, whyNoFix, tt } from './trip.js';
 
 let el, data, key = '', drag = false;
 const KIND = { go: 'ok', wait: 'wait', move: 'move', mast: 'mast', none: 'block' };
@@ -20,17 +21,17 @@ export function initPinCard(root, d) {
   el.addEventListener('pointerup', () => { drag = false; });
   el.addEventListener('click', e => { const b = e.target.closest('[data-step]'); if (b) setDay(state.tDay + +b.dataset.step); });
 }
-function verdictHtml(v) {
+function verdictHtml(v, inf, st) {
   if (v.pending) return `<i class="lyr-dot" style="background:var(--muted)"></i><span style="color:var(--muted)">…</span>`;
   const dot = `<i class="lyr-dot" style="background:var(--${v.kind === 'go' ? 'ok' : 'block'})"></i>`;
   if (v.kind === 'go') return `${dot}<span style="color:var(--ok)">${t('go_run', v.run)}</span>`;
   const head = t('nogo') + (v.steep ? ' · ' + t('slope_fail', v.slopeV.toFixed(0)) : '');
-  const tail = v.kind === 'wait' ? t('avail_wait', v.wait) : v.kind === 'move' ? t('avail_move_dir', v.move.km.toFixed(1), lang === 'en' ? v.move.dir.toUpperCase() : v.move.dir) : v.kind === 'mast' ? t('avail_mast', 20) : t('noFix', 10, 20, 365 - v.d);
+  const tail = v.kind === 'wait' ? t('avail_wait', v.wait) : v.kind === 'move' ? t('avail_move_dir', v.move.km.toFixed(1), lang === 'en' ? v.move.dir.toUpperCase() : v.move.dir) : v.kind === 'mast' ? t('avail_mast', 20) : (whyNoFix(inf.col, inf.row, v.d, st.crit, st.mission) || t('noFix', 3, 20, 60));
   return `${dot}<span>${head} → <span style="color:var(--${KIND[v.kind]})">${tail}</span></span>`;
 }
 export function renderPinCard(st) {
   const inf = pinInfo(st);
-  const k = inf ? `${inf.col},${inf.row},${st.tDay},${st.adv},${inf.pending},${inf.go ? inf.go.count : ''},${JSON.stringify(st.crit)},${JSON.stringify(st.threshold)},${JSON.stringify(st.on.mask)}` : '';
+  const k = inf ? `${inf.col},${inf.row},${st.tDay},${st.mission},${!!statsCached(inf.col, inf.row, st.mission)},${st.adv},${inf.pending},${inf.go ? inf.go.count : ''},${JSON.stringify(st.crit)},${JSON.stringify(st.threshold)},${JSON.stringify(st.on.mask)}` : '';
   if (k === key) return; key = k;
   if (!inf) { el.innerHTML = ''; return; }
   const v = inf.v, f = (kind, label, val, title = '') => `<div class="lyr-fx${v.kind === kind ? ' pick' : ''}${val == null ? ' na' : ''}" style="--c:var(--${kind})" title="${title}"><span>${label}</span><span class="n">${val ?? '—'}</span></div>`;
@@ -43,14 +44,21 @@ export function renderPinCard(st) {
   const adv = st.adv ? `<div class="lyr-tbl">${data.layers.map(m => { const val = inf.values[m.id]; return `<span>${layerName(m)}</span><span class="n">${val == null ? '–' : (val === Infinity ? '>' : '') + fmt(m, val) + unitOf(m)}</span>`; }).join('')}<span>${t('lat')}</span><span class="n">${Math.abs(inf.ll.lat).toFixed(2)}°${inf.ll.lat < 0 ? 'S' : 'N'} ${Math.abs(inf.ll.lon).toFixed(1)}°${inf.ll.lon < 0 ? 'W' : 'E'}</span></div>` : '';
   el.innerHTML = `<div class="lyr-pt">${inf.title}</div>
 <div class="lyr-dt"><button data-step="-1">◀</button><span class="n">${isoOfDay(st.tDay)}</span><button data-step="1">▶</button></div>
-<div class="lyr-vd">${verdictHtml(v)}</div>
-<div class="lyr-fxs">${f('move', t('move'), mv)}${f('mast', t('mast'), v.mast ? t('mast_gain', v.mast.gain) : null, v.mast ? t('mast_title', v.mast.from, v.mast.to) : '')}${f('wait', t('wait'), v.goNow ? t('days', 0) : v.wait != null ? t('days', v.wait) : null)}</div>
+<div class="lyr-vd">${verdictHtml(v, inf, st)}</div>${winRow(inf, st)}
+<div class="lyr-fxs">${f('move', t('move'), mv)}${f('mast', t('mast'), v.goNow ? t('not_needed') : v.mast ? t('mast_gain', v.mast.gain) : null, v.mast && !v.goNow ? t('mast_title', v.mast.from, v.mast.to) : '')}${f('wait', t('wait'), v.goNow ? t('days', 0) : v.wait != null ? t('days', v.wait) : null)}</div>
 <div class="lyr-cks">${checks}</div>${adv}
 <svg class="lyr-sky"></svg>
 ${inf.go ? `<div class="lyr-cal"><canvas class="lyr-pcal"></canvas><span class="n lyr-go-n">${t('go')} ${t('days', inf.go.count)}</span></div>` : ''}
 <a class="lyr-link" href="${inf.link}">${t('open_cmp')}</a>`;
   drawCal(inf, st);
   renderPinSky(st);
+}
+// the stay's own numbers for this landing day (same as the ranked list)
+function winRow(inf, st) {
+  const w = statsCached(inf.col, inf.row, st.mission), c = st.crit;
+  if (!w) { statsFor(inf.col, inf.row, st.mission).then(() => { key = ''; renderPinCard(state); }); return '<div class="lyr-win n">…</div>'; }
+  const d = st.tDay, s = Math.floor(w.sun[d]), e = Math.floor(w.earth[d]), k = Math.ceil(w.dark[d]);
+  return `<div class="lyr-win n"><span>${tt('stayD', st.mission)}</span><span class="${s < c.sun ? 'bad' : ''}">☀ ${s} %</span><span class="${e < c.earth ? 'bad' : ''}">⊕ ${e} %</span><span class="${k > c.dark ? 'bad' : ''}">☾ ${k} h</span></div>`;
 }
 function drawCal(inf, st) {
   const cv = el.querySelector('.lyr-pcal'); if (!cv) return;

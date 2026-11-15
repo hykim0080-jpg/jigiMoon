@@ -138,6 +138,11 @@ export function render(st, d) {
   }
   ctx.textAlign = 'right';
   ctx.fillText(t('okPct'), W - 6, 8);
+  // colour key in the empty corner above the site names: GO and no-fix; the fix colours match the fix card titles
+  let key = document.getElementById('cal-key');
+  if (!key) { key = document.createElement('div'); key.id = 'cal-key'; canvas.parentNode.appendChild(key); }
+  const keyHtml = `<span><i style="background:var(--ok)"></i>${t('legendGo')}</span><span><i style="background:var(--none)"></i>${t('legendNone')}</span>`;
+  if (key.innerHTML !== keyHtml) key.innerHTML = keyHtml;
 
   // overlay: selection line, bracket on selected row, baseline marker
   const x = GUT_L + (st.day + 0.5) * cw, r = order.indexOf(st.site);

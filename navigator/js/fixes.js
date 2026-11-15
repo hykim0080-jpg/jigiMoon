@@ -5,12 +5,14 @@ import { t } from './strings.js';
 import { el, text, clear, bar, showTip, hideTip } from './svg.js';
 import { fixes, bestFix, shortDate, nearestOk } from './logic.js';
 import { movePhrase } from './orient.js';
+import { failStats, failReason } from './failreason.js';
 
 const KINDS = ['move', 'mast', 'wait'];
-let root, cards = {};
+let root, cards = {}, why;
 
 export function init(node) {
   root = node;
+  why = document.createElement('div'); why.id = 'why'; why.hidden = true; root.appendChild(why);
   for (const k of KINDS) {
     const c = document.createElement('div');
     c.className = 'card';
@@ -43,6 +45,17 @@ export function render(st, data) {
   const near = data.site && f.move != null && !e.ok[st.day] ? nearestOk(data.site, st.day) : null;
   cards.move.dir.textContent = near && near.d > 0 && f.move <= lim.move ? movePhrase(near.c.dx, near.c.dy) : '';
   if (!data.site) return;
+  // no fix within the limits: say why in one sentence, above the three empty cards
+  const none = !e.ok[st.day] && !best;
+  why.hidden = !none;
+  if (none) {
+    const key = [st.site, st.day, st.mission, lim.move, lim.mast, lim.wait, st.crit && `${st.crit.sun}/${st.crit.earth}/${st.crit.dark}`, document.documentElement.lang].join('|');
+    if (why.dataset.key !== key) {
+      why.dataset.key = key;
+      try { why.textContent = failReason(failStats(data.site, st.day, st.crit, lim, st.mission), (document.documentElement.lang || 'en').startsWith('ko') ? 'ko' : 'en').text; }
+      catch (err) { console.error(err); why.hidden = true; }
+    }
+  }
   drawMove(cards.move.svg, st, data);
   drawMast(cards.mast.svg, st, e, lim, data);
   drawWait(cards.wait.svg, st, e);
@@ -91,14 +104,16 @@ function drawMove(svg, st, data) {
 
 function drawMast(svg, st, e, lim, data) {
   clear(svg);
-  const base = 150, top = 12, lx = 40, n = MAST_HEIGHTS.length;
+  // basic mode: the practical rungs only (up to 20 m)
+  const HS = MAST_HEIGHTS.filter(h => st.pro || h <= 20);
+  const base = 150, top = 12, lx = 40, n = HS.length;
   const Y = i => base - (i + 1) / n * (base - top);   // rungs evenly spaced
   el('line', { x1: lx, x2: lx, y1: base, y2: Y(n - 1), stroke: 'var(--muted)', 'stroke-width': 1.5 }, svg);
   el('rect', { x: lx - 10, y: base, width: 20, height: 10, fill: 'var(--muted)' }, svg);
-  const lowest = MAST_HEIGHTS.find(h => e.mastOk[h][st.day] && h <= lim.mast);
+  const lowest = HS.find(h => e.mastOk[h][st.day] && h <= lim.mast);
   const rec = data.index.optimal[st.site];
-  const best = rec == null ? null : MAST_HEIGHTS.reduce((a, h) => Math.abs(h - rec) < Math.abs(a - rec) ? h : a);
-  MAST_HEIGHTS.forEach((h, i) => {
+  const best = rec == null ? null : HS.reduce((a, h) => Math.abs(h - rec) < Math.abs(a - rec) ? h : a);
+  HS.forEach((h, i) => {
     const y = Y(i), ok = e.mastOk[h][st.day], off = h > lim.mast;
     const g = el('g', { opacity: off ? .3 : 1, style: off ? '' : 'cursor:pointer' }, svg);
     el('circle', { cx: lx, cy: y, r: 4, fill: ok ? 'var(--mast)' : 'var(--surface)', stroke: 'var(--mast)', 'stroke-width': 1.5 }, g);

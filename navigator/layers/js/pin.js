@@ -8,6 +8,7 @@ import { skyAt, calendarFrom } from './time.js';
 import { isDefault, critHash } from './crit.js';
 import { decode } from './data.js';
 import { lang } from './strings.js';
+import { goNear } from './trip.js';
 
 const NPX = N * N, DAYS = 365, T0 = Date.UTC(2027, 0, 1);
 let D, key = '', info = null, onCal = null; const cal = new Map(), asked = new Set();
@@ -41,6 +42,10 @@ function verdict(st, p, go, slopeV, nd) {
   let wait = null; if (!steep && go && !goNow) for (let d2 = d + 1; d2 < DAYS; d2++) if (go.go[d2]) { wait = d2 - d; break; }
   let move = null;
   if (goNow) move = { here: true };
+  else if (st.mission !== 14) {
+    const g = goNear(p.col, p.row, d, st.crit, st.mission, BUDGET.moveCells);
+    if (g) { move = { col: g.col, row: g.row }; const dx = (g.col - p.col) * PX, dy = -(g.row - p.row) * PX; move.km = Math.sqrt(g.d2) * PX / 1000; move.dir = sectorOf(dx, dy); }
+  }
   else if (nd ? st.mode === 'mask' && critIds(st).length : D.ok14) {
     let bd = BUDGET.moveCells ** 2 + 1;
     for (let r = Math.max(0, p.row - BUDGET.moveCells); r <= Math.min(N - 1, p.row + BUDGET.moveCells); r++) for (let c = Math.max(0, p.col - BUDGET.moveCells); c <= Math.min(N - 1, p.col + BUDGET.moveCells); c++) {
@@ -65,16 +70,16 @@ function verdict(st, p, go, slopeV, nd) {
 
 export function pinInfo(st) {
   const p = st.pin; if (!p) { key = ''; return info = null; }
-  const nd = !isDefault(D.meta, st.crit), ck = `${p.row * N + p.col}|${JSON.stringify(st.crit)}`;
+  const nd = !isDefault(D.meta, st.crit) || st.mission !== 14, ck = `${p.row * N + p.col}|${JSON.stringify(st.crit)}|${st.mission}`;
   const k = `${p.col},${p.row},${st.tDay},${JSON.stringify(st.threshold)},${JSON.stringify(st.on.mask)},${ck},${cal.has(ck)},${st.mode}`;
   if (k === key) return info; key = k;
   const i = p.row * N + p.col, { x, y } = cellToXY(p.col, p.row), ll = cellToLatLon(p.col, p.row);
   let go = nd ? cal.get(ck) || null : goDays(i); const sv = slopeVal(i);
-  if (nd && !go && !asked.has(ck)) { asked.add(ck); skyAt(p.col, p.row).then(sky => { cal.set(ck, calendarFrom(sky, st.crit)); asked.delete(ck); onCal && onCal(); }); }
+  if (nd && !go && !asked.has(ck)) { asked.add(ck); skyAt(p.col, p.row).then(sky => { cal.set(ck, calendarFrom(sky, st.crit, st.mission)); asked.delete(ck); onCal && onCal(); }); }
   const site = D.sites.find(s => s.box_m && x >= s.box_m[0] && x <= s.box_m[2] && y >= s.box_m[1] && y <= s.box_m[3]);
   const lq = new URLSearchParams(location.search).get('lang') || new URLSearchParams(location.hash.slice(1)).get('lang');
   const ch = critHash(D.meta, st.crit), q = lq ? '?lang=' + lq : '', l2 = (lq ? '&lang=' + lq : '') + (ch ? '&' + ch : '');
-  const link = site ? `../index.html${q}#s=${site.id}&day=${st.tDay}${l2}` : `../index.html${q}#pin=${Math.round(x)},${Math.round(y)}&d=${isoOfDay(st.tDay)}${l2}`;
+  const link = site ? `../index.html${q}#s=${site.id}&day=${st.tDay}&m=${st.mission}&fv=${go && go.go[st.tDay] ? 1 : 0}${l2}` : `../index.html${q}#pin=${Math.round(x)},${Math.round(y)}&d=${isoOfDay(st.tDay)}${l2}`;
   return info = {
     col: p.col, row: p.row, x, y, ll, go, siteId: site ? site.id : null, site,
     title: describe(x, y, D.landmarks) || `${Math.abs(ll.lat).toFixed(2)}°S`,

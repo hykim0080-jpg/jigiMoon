@@ -16,6 +16,7 @@ import * as globe from './globe.js';
 import * as chain from './chain.js';
 import * as orient from './orient.js';
 import * as pin from './pin.js';
+import * as view3d from './view3d.js';
 
 const $ = id => document.getElementById(id);
 const data = { index: null, site: null };
@@ -39,24 +40,44 @@ function render(st) {
   }
   document.documentElement.lang = new URLSearchParams(location.search).get('lang') || 'en';
   $('main').dataset.view = st.view;
+  document.body.dataset.view = st.view;
+  document.body.dataset.pro = st.pro ? '1' : '';
+  if (st.view === 'search' || (!st.pro && st.view === 'sites')) { setState({ view: 'focus' }); return; }
+  if (!st.pro && st.expo) { setState({ expo: 0 }); return; }
   $('main').dataset.zoomed = st.zoom > 1.01 ? '1' : '';
   // map side = height of the middle band
   const main = $('main');
-  if (st.view === 'focus') { const cal = parseFloat(getComputedStyle(main).gridTemplateRows.split(' ').pop()) || 216, gap = parseFloat(getComputedStyle(main).rowGap) || 12; main.style.setProperty('--S', Math.max(300, main.clientHeight - cal - gap) + 'px'); }
+  if (st.view === 'focus') { const cal = parseFloat(getComputedStyle(main).gridTemplateRows.split(' ').pop()) || 216, gap = parseFloat(getComputedStyle(main).rowGap) || 12; main.style.setProperty('--S', (innerWidth <= 700 ? main.clientWidth : Math.max(300, main.clientHeight - cal - gap)) + 'px'); }
   header.render(st, data);
   calendar.render(st, data);
   if (st.view === 'compare') compare.render(st, data);
   if (st.view === 'sites' && !$('sites').firstChild) $('sites').innerHTML = '<iframe src="selection.html" title="selection"></iframe>';
   map.render(st, data);
+  view3d.render(st);
   globe.render(st, data);
+  // while the site's file loads, keep the last numbers in place (dimmed) instead of emptying the panels
+  main.dataset.loading = data.site || st.view === 'compare' ? '' : '1';
+  if (!data.site && st.view !== 'compare') return;
   metrics.render(st, data);
   fixes.render(st, data);
+  detailNote(st);
   if (st.view === 'focus') { sky.render(st, data); timeline.render(st, data); chain.render(); }
+}
+
+// a site opened from Find a site whose verdict there (500 m grid) differs from the detailed one here
+const fromFind = (() => { const h = new URLSearchParams(location.hash.slice(1)), fv = h.get('fv'); return fv === '0' || fv === '1' ? { site: h.get('s'), day: Number(h.get('day')), m: Number(h.get('m') || 14), go: fv === '1' } : null; })();
+function detailNote(st) {
+  let n = document.getElementById('detail-note');
+  const e = fromFind && st.site === fromFind.site && st.day === fromFind.day && st.mission === fromFind.m ? data.index.modes[st.mission].sites[st.site] : null;
+  const show = e && !!e.ok[st.day] !== fromFind.go;
+  if (!show) { if (n) n.remove(); return; }
+  if (!n) { n = document.createElement('div'); n.id = 'detail-note'; $('fixes').prepend(n); }
+  n.textContent = t('detailDiff', fromFind.go ? t('detailGo') : t('detailNogo'));
 }
 
 // open any point as the pin without reloading (map click)
 async function openPin(x, y) {
-  $('busy').hidden = false;
+  // no full-screen wait: the map shows a ring at the point until this resolves
   await new Promise(r => requestAnimationFrame(() => setTimeout(r, 30)));
   try {
     const i = data.index.sites.findIndex(s => s.id === 'pin');
@@ -66,7 +87,6 @@ async function openPin(x, y) {
     for (const k in applied) delete applied[k];
     setState({ site: 'pin', pinXY: `${x},${y}`, pinned: state.pinned.filter(id => id !== 'pin'), zoom: Math.max(state.zoom, ZOOM.site) });
   } catch (e) { console.error(e); }
-  $('busy').hidden = true;
 }
 
 async function boot() {
@@ -85,6 +105,7 @@ async function boot() {
   header.init($('header'), data);
   calendar.init($('cal-panel'), data);
   map.init($('map'), data, openPin);
+  view3d.init($('map-panel'), data);
   globe.init($('globe'), data);
   metrics.init($('metrics-panel'));
   sky.init($('sky'), $('countdowns'));
