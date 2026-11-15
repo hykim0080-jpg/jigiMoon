@@ -13,6 +13,7 @@ import { failStats, failReason } from '../../js/failreason.js';
 import { failBase, failYear, critIds } from './compose.js';
 import { winToken, pending } from './window.js';
 import { inCart, toggleCart, ct } from './cart.js';
+import { bestMast, marginOf } from './score.js';
 
 const T0 = Date.UTC(2027, 0, 1), DAYS = 365, LIM = { move: 3, mast: 20, wait: 60 };
 export const REGIONS = [
@@ -29,7 +30,7 @@ const TX = {
     calNote: 'GO spots per landing day', spots: n => `${n} GO ${n === 1 ? 'spot' : 'spots'}`, noneDay: 'no GO spot',
     nextGo: n => `next GO in ${n} d`, best: 'Best spots', loading: 'Computing…', go: 'GO', nogo: 'NO-GO',
     wait: n => `GO in ${n} d`, noFix: 'NO FIX',
-    whySun: (v, c) => `Sun ${v} % of the stay (need ${c})`, whyEarth: (v, c) => `Earth in view ${v} % (need ${c})`, whyDark: (v, c) => `Longest dark ${v} h (max ${c})`, whyIce: v => `Ice-likely shade ${v} km away (may hold ice, not proven)`, lIce: 'Ice', lSlope: 'Slope', iceNote: '(may hold ice, not proven)',
+    whySun: (v, c) => `Sun ${v} % of the stay (need ${c})`, whyEarth: (v, c) => `Earth in view ${v} % (need ${c})`, whyDark: (v, c) => `Longest dark ${v} h (max ${c})`, whyIce: v => `Ice-likely shade ${v} km away (may hold ice, not proven)`, lIce: 'Ice', lSlope: 'Slope', mastM: m => `${m} m mast`, iceNote: '(may hold ice, not proven)',
     stayD: n => `${n} d`, wd: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
     ans: (day, n, km2, where) => `If you land on <b>${day}</b> and stay <b>${n} days</b>, <b>${km2} km²</b>${where ? ` of ${where}` : ''} keeps power and Earth contact.`,
     ansNone: (day, n, where) => `If you land on <b>${day}</b> and stay <b>${n} days</b>, no ground${where ? ` in ${where}` : ''} keeps power and Earth contact.`,
@@ -41,7 +42,7 @@ const TX = {
     calNote: '착륙일별 가능한 지점 수', spots: n => `가능 지점 ${n}곳`, noneDay: '가능 지점 없음',
     nextGo: n => `${n}일 뒤 가능`, best: '추천 지점', loading: '계산 중…', go: '가능', nogo: '불가',
     wait: n => `${n}일 후`, noFix: '해법 없음',
-    whySun: (v, c) => `햇빛 ${v} % (기준 ${c})`, whyEarth: (v, c) => `지구 보임 ${v} % (기준 ${c})`, whyDark: (v, c) => `가장 긴 어둠 ${v}시간 (최대 ${c})`, whyIce: v => `얼음이 있을 수 있는 영구 그늘까지 ${v} km (확정 아님)`, lIce: '얼음', lSlope: '경사', iceNote: '(얼음 가능성, 확정 아님)',
+    whySun: (v, c) => `햇빛 ${v} % (기준 ${c})`, whyEarth: (v, c) => `지구 보임 ${v} % (기준 ${c})`, whyDark: (v, c) => `가장 긴 어둠 ${v}시간 (최대 ${c})`, whyIce: v => `얼음이 있을 수 있는 영구 그늘까지 ${v} km (확정 아님)`, lIce: '얼음', lSlope: '경사', mastM: m => `마스트 ${m} m`, iceNote: '(얼음 가능성, 확정 아님)',
     stayD: n => `${n}일`, wd: ['일', '월', '화', '수', '목', '금', '토'],
     ans: (day, n, km2, where) => `<b>${day}</b>에 착륙해 <b>${n}일</b> 머물면 ${where ? `${where}에서 ` : ''}<b>${km2} km²</b>가 전력과 지구 교신을 유지해요.`,
     ansNone: (day, n, where) => `<b>${day}</b>에 착륙해 <b>${n}일</b> 머물면 ${where ? `${where}에는 ` : ''}전력과 지구 교신을 유지하는 땅이 없어요.`,
@@ -73,6 +74,11 @@ function windowStats(sky, mission) {
 async function statsAsync(col, row, mission) {
   const k = `${row * N + col}|${mission}`; if (stats.has(k)) return stats.get(k);
   const sky = await skyAt(col, row), w = windowStats(sky, mission); w.sky = sky; stats.set(k, w); return w;
+}
+const mastStats = new Map();
+async function mastAsync(col, row, mission, mast) {   // the same with a 10 m / 20 m mast (null if that set is missing)
+  const k = `${row * N + col}|${mission}|${mast}`; if (mastStats.has(k)) return mastStats.get(k);
+  const sky = await skyAt(col, row, mast), w = sky ? windowStats(sky, mission) : null; mastStats.set(k, w); return w;
 }
 export const statsFor = statsAsync;
 export const statsCached = (col, row, mission) => stats.get(`${row * N + col}|${mission}`) || null;
@@ -125,7 +131,10 @@ export function poolOf(rid, mission) {
   const k = `${rid}|${mission}|${maskKey()}`; if (pools.has(k)) return pools.get(k);
   if (pools.size > 40) pools.clear();
   const p = { cells: poolCells(rid, mission), ready: false };
-  p.promise = (async () => { await ensure(); let n = 0; for (const c of p.cells) { c.w = await statsAsync(c.col, c.row, mission); if (++n % 12 === 0) await new Promise(r => setTimeout(r, 0)); } p.ready = true; })();
+  p.promise = (async () => { await ensure(); let n = 0; for (const c of p.cells) { c.w = await statsAsync(c.col, c.row, mission); if (++n % 12 === 0) await new Promise(r => setTimeout(r, 0)); } p.ready = true;
+    // then the mast heights, for the ranking (a spot that needs a mast ranks below ground spots); the list redraws when done
+    n = 0; for (const c of p.cells) { c.w10 = await mastAsync(c.col, c.row, mission, 10); c.w20 = await mastAsync(c.col, c.row, mission, 20); if (++n % 8 === 0) await new Promise(r => setTimeout(r, 0)); }
+    p.mready = true; setState({}, 'panel'); })();
   pools.set(k, p); return p;
 }
 const maskKey = () => JSON.stringify([state.crit, state.threshold, state.on.mask, state.mode, winToken(state)]);
@@ -134,13 +143,15 @@ export function goCount(p, d, crit) { let n = 0; for (const c of p.cells) if (c.
 // ranked spots of a pool for a landing day: GO first (largest margin), then the soonest to become GO
 export function rank(p, d, crit) {
   const rows = p.cells.filter(c => c.w).map(c => {
-    const w = c.w, go = isGo(w, d, crit);
-    let wait = null; if (!go) for (let k = d + 1; k < DAYS; k++) if (isGo(w, k, crit)) { wait = k - d; break; }
+    const go0 = isGo(c.w, d, crit);
     // ice nearby is a preference: among spots that pass, a permanently shadowed region within ~10 km lifts a spot a little
     const iv = D.bytes.ice ? D.bytes.ice[c.row * N + c.col] : 255, iceKm = iv <= 250 ? iv / 10 : null;
-    const margin = (w.sun[d] - crit.sun) / crit.sun + (w.earth[d] - crit.earth) / crit.earth + (crit.dark - w.dark[d]) / crit.dark + (iceKm == null ? 0 : 0.25 * Math.max(0, 1 - iceKm / 10));
+    // judged from the ground, then with a 10 m and a 20 m mast (layers/js/score.js): the lowest that passes counts
+    const bm = bestMast({ 2: c.w, 10: c.w10, 20: c.w20 }, d, crit, iceKm), go = !!bm, w = bm ? bm.w : c.w, mast = bm ? bm.mast : 2;
+    let wait = null; if (!go) for (let k = d + 1; k < DAYS; k++) if (isGo(c.w, k, crit)) { wait = k - d; break; }
+    const margin = bm ? bm.score : marginOf(w, d, crit, iceKm);
     const sm = D.layers.find(m => m.id === 'slope'), sv = sm && D.bytes.slope ? D.bytes.slope[c.row * N + c.col] : 255, slope = sv <= 250 ? decode(sm, sv) : null;   // the 500 m slope layer
-    return { col: c.col, row: c.row, go, wait, margin, iceKm, slope, sun: w.sun[d], earth: w.earth[d], dark: w.dark[d] };
+    return { col: c.col, row: c.row, go, go0, mast, wait, margin, iceKm, slope, sun: w.sun[d], earth: w.earth[d], dark: w.dark[d] };
   });
   rows.sort((a, b) => (b.go - a.go) || (a.go ? b.margin - a.margin : (a.wait ?? 999) - (b.wait ?? 999) || b.margin - a.margin));
   const nGo = rows.filter(r => r.go).length;
@@ -233,7 +244,7 @@ export function renderTrip(st) {
   bar.querySelector('.lyr-tbd').textContent = `${dayText(st.tDay)} · ${tt('stayD', st.mission)}`;
   bar.querySelector('.lyr-tbr').textContent = st.region ? regionName(st.region) : regionName('all');
   bar.querySelector('[data-pop="region"]').classList.toggle('unset', !st.region);
-  const rid = currentRegion(), p = poolOf(rid, st.mission), k = `${rid}|${st.mission}|${st.tDay}|${maskKey()}|${p.ready}|${JSON.stringify(st.cart)}`;
+  const rid = currentRegion(), p = poolOf(rid, st.mission), k = `${rid}|${st.mission}|${st.tDay}|${maskKey()}|${p.ready}|${!!p.mready}|${JSON.stringify(st.cart)}`;
   if (!p.ready) p.promise.then(() => setState({}, 'panel'));
   if (k !== rkey) { rkey = k; ranked = p.ready ? rank(p, st.tDay, st.crit) : []; drawList(st, p); if (p.ready) opts.ranked && opts.ranked(ranked); }
   else for (const r of list.querySelectorAll('[data-rank]')) r.classList.toggle('hot', +r.dataset.rank === st.hoverTrip || (st.pin && ranked[+r.dataset.rank - 1] && ranked[+r.dataset.rank - 1].col === st.pin.col && ranked[+r.dataset.rank - 1].row === st.pin.row));
@@ -268,7 +279,7 @@ function drawAnswer(st, rid, p) {
 function drawList(st, p) {
   const c = st.crit, sm = D.layers.find(m => m.id === 'slope'), slim = sm ? Math.round(st.threshold[sm.id] ?? sm.threshold) : 8;
   const iceOn = !!st.on.mask.ice, ilim = st.threshold.ice;
-  const head = `<div class="lyr-trh"><div><b>${regionName(currentRegion())}</b><span class="n">${dayText(st.tDay)} · ${tt('stayD', st.mission)}</span></div><span class="lyr-trgo n">${ranked.filter(r => r.go).length} GO</span></div>`;
+  const head = `<div class="lyr-trh"><div><b>${regionName(currentRegion())}</b><span class="n">${dayText(st.tDay)} · ${tt('stayD', st.mission)}</span></div><span class="lyr-trgo n">${ranked.filter(r => r.go0).length} GO</span></div>`;
   if (!p.ready) { list.innerHTML = head + `<p class="lyr-tri">${tt('loading')}</p>`; return; }
   const top5 = ranked.slice(0, 5);
   // one row of numbers per spot, the same columns for all; a value that misses its limit in red
@@ -278,7 +289,7 @@ function drawList(st, p) {
   ].map(([v, bad, k]) => `<b class="${bad ? 'bad' : ''}${k ? ' ' + k : ''}">${v}</b>`).join('');
   const labels = `<div class="lyr-trc lab">${[tt('lSun') + ' %', tt('lEarth') + ' %', tt('lDark') + ' h', tt('lSlope') + ' °', tt('lIce') + ' km'].map(x => `<span>${x}</span>`).join('')}</div>`;
   list.innerHTML = head + top5.map((r, i) => {
-    const added = inCart(r.col, r.row) >= 0, st8 = r.go ? '' : ` <em>${r.wait != null && r.wait <= LIM.wait ? tt('wait', r.wait) : tt('nogo')}</em>`;
+    const added = inCart(r.col, r.row) >= 0, st8 = r.go ? (r.mast > 2 ? ` <small class="lyr-trm">${tt('mastM', r.mast)}</small>` : '') : ` <em>${r.wait != null && r.wait <= LIM.wait ? tt('wait', r.wait) : tt('nogo')}</em>`;
     return `<div class="lyr-tr${i === 0 ? ' top' : ''}${r.go ? '' : ' no'}" data-rank="${r.id}" tabindex="0"><span class="lyr-trn n">${r.id}</span><div class="lyr-trt">${r.title}${st8}</div><button class="lyr-tradd${added ? ' in' : ''}" data-addr="${r.id}" title="${ct(added ? 'added' : 'add')}">${added ? '✓' : '+'}</button>${i === 0 ? labels : ''}<div class="lyr-trc n">${cells(r)}</div></div>`;
   }).join('');
 }

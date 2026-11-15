@@ -647,3 +647,4 @@ html.panels,html.panels body,.panels .lyr-app,.panels .lyr-main{background:trans
 .lyr-left .lyr-trh{padding:10px 16px 8px}.lyr-left .lyr-tr.top{padding:10px 16px 10px 14px;row-gap:4px}
 .lyr-left .lyr-tr:not(.top){padding:5px 16px 5px 14px;row-gap:2px}
 .lyr-left .lyr-trc{column-gap:8px}
+.lyr-left .lyr-trt .lyr-trm{font-size:12px;font-weight:400;color:#a3abbb;white-space:nowrap}

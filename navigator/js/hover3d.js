@@ -50,11 +50,12 @@ function iceKm(psr) {
 // per landing day Sun %, Earth %, longest dark (h) of a stay, for one spot (cached by cell and stay length)
 let B = null, Bl = null, ex = null;
 const stays = new Map();
-export async function stayOf(col, row, mission) {
-  const key = `${row * N + col}|${mission}`; if (stays.has(key)) return stays.get(key);
+export async function stayOf(col, row, mission, mast = 2) {   // mast 10 / 20: seen from a mast of that height (null if missing)
+  const key = `${row * N + col}|${mission}${mast === 2 ? '' : '|' + mast}`; if (stays.has(key)) return stays.get(key);
   if (!Bl) Bl = Promise.all([shadow.load(), shadow.loadExtra(), pinBodies()]).then(([, e, b]) => { ex = e; B = b; });
   await Bl;
-  const [x, y] = shadow.pixelXY(col, row), p = shadow.pixelOf(x, y), h = shadow.profile(p.i, ex.sets[2]), ser = pinSeries(x, y, h, B);
+  if (!ex.sets[mast]) return null;
+  const [x, y] = shadow.pixelXY(col, row), p = shadow.pixelOf(x, y), h = shadow.profile(p.i, ex.sets[mast]), ser = pinSeries(x, y, h, B);
   const n = mission * 24, H = B.n, cs = new Float64Array(H + 1), ce = new Float64Array(H + 1);
   for (let i = 0; i < H; i++) { cs[i + 1] = cs[i] + ser.frac[i]; ce[i + 1] = ce[i] + ser.vis[i]; }
   const sun = new Float32Array(365), earth = new Float32Array(365), dark = new Float32Array(365);
