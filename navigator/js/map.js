@@ -445,7 +445,7 @@ function draw(st) {
     const fillC = k === 'none' ? 'none' : `var(--${k})`;
     if (s.isPin) {   // custom point: teardrop pin, tip at the position (grey when there is no fix)
       el('path', { d: `M${x},${y}C${x - 3},${y - 6} ${x - 9},${y - 9} ${x - 9},${y - 15}A9,9 0 1 1 ${x + 9},${y - 15}C${x + 9},${y - 9} ${x + 3},${y - 6} ${x},${y}Z`, fill: k === 'none' ? 'var(--none)' : fillC, stroke: '#fff', 'stroke-width': 1.5 }, svg);
-      el('circle', { cx: x, cy: y - 15, r: 3, fill: '#fff' }, svg);
+      { const no = (/^pin(\d+)$/.exec(s.id) || [])[1]; if (no) text(svg, no, { x, y: y - 11.5, 'text-anchor': 'middle', style: 'fill:#0f131b;font-size:10px;font-weight:700;pointer-events:none' }); else el('circle', { cx: x, cy: y - 15, r: 3, fill: '#fff' }, svg); }
     } else el('circle', { cx: x, cy: y, r: selected ? 7 : 6, fill: fillC, stroke: '#fff', 'stroke-width': 1.5 }, svg);
     el('circle', { cx: x, cy: y, r: 12, fill: 'transparent', 'data-id': s.id, style: 'cursor:pointer' }, svg);
   }
