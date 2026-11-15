@@ -25,7 +25,8 @@ export const DEFAULT = {
   playing: false,
   expo: 0,
   pan: '',
-  d3: 0
+  d3: 0,
+  pro: 0
 };
 // zoom factor: 1 = +-200 km; presets Region 1, Site 4, Spot (+-3.5 km)
 export const ZOOM = { site: 4, spot: 200 / 3.5, slideMs: 250 };

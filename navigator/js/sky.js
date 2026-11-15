@@ -154,7 +154,7 @@ export function drawSky(svg, S, st, opts = {}) {
       let ly = Math.max(y0 + 10, top - 6);
       while (used.some(u => Math.abs(u - ly) < 14)) ly += 14;
       used.push(ly);
-      text(svg, t('ridge', Math.round(bb.az), bb.short.toFixed(1)), { x: end ? bx - 6 : bx + 6, y: ly, 'text-anchor': end ? 'end' : 'start', class: 'lbl red' });
+      text(svg, t('ridge', Math.round(bb.az), bb.short.toFixed(1)), { x: end ? bx - 6 : bx + 6, y: ly, 'text-anchor': end ? 'end' : 'start', class: 'lbl red pro-only' });
     }
   }
 

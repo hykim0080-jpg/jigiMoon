@@ -290,3 +290,9 @@ main[data-view="search"]{grid-template-columns:1fr;grid-template-rows:1fr;grid-t
 .s-bar{position:sticky;top:-20px;z-index:2}
 .s-grid{margin-left:0}
 body[data-view="search"] header>:is(#site-select,.stepper,.chips,.verdict,.adv,.seg[data-key="mode"],.seg[data-key="mission"]){display:none}
+/* basic mode (default): detail for experts only */
+body:not([data-pro="1"]) :is(.pro-only,#expo,.adv,.seg[data-key="view"] button[data-v="sites"]){display:none!important}
+.seg[data-key="pro"] button{font-size:12px}
+header>.verdict{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden}
+header>.verdict .fix{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+@media (max-width:1400px){header .seg[data-key="view"] button,header .seg[data-key="pro"] button{padding:5px 8px}header .slip{display:none}}
