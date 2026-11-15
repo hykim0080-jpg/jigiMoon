@@ -439,8 +439,9 @@ function draw(st) {
   for (const { s, x, y } of dots) {
     const k = status(mode[s.id], st.day, st.mast, lim).kind, selected = s.id === st.site;
     const pinned = marked.has(s.id) && !selected;
-    if (selected) el('circle', { cx: x, cy: y, r: ringR(), fill: 'none', stroke: '#fff', 'stroke-width': 1.5 }, svg);
-    else if (pinned) el('circle', { cx: x, cy: y, r: 12, fill: 'none', stroke: '#fff', 'stroke-width': 1, 'stroke-opacity': compare ? .4 : 1, 'stroke-dasharray': compare ? '' : '3 2' }, svg);   // Side by side: the other columns' rings faint, the selected one bright
+    const even = compare && data.cmpNoSel;   // Side by side with no column selected: every compared site's ring alike
+    if (selected && !even) el('circle', { cx: x, cy: y, r: ringR(), fill: 'none', stroke: '#fff', 'stroke-width': 1.5 }, svg);
+    else if (pinned || (selected && even)) el('circle', { cx: x, cy: y, r: 12, fill: 'none', stroke: '#fff', 'stroke-width': 1, 'stroke-opacity': compare && !even ? .4 : 1, 'stroke-dasharray': compare ? '' : '3 2' }, svg);   // Side by side: the other columns' rings faint, the selected one bright
     const fillC = k === 'none' ? 'none' : `var(--${k})`;
     if (s.isPin) {   // custom point: teardrop pin, tip at the position (grey when there is no fix)
       el('path', { d: `M${x},${y}C${x - 3},${y - 6} ${x - 9},${y - 9} ${x - 9},${y - 15}A9,9 0 1 1 ${x + 9},${y - 15}C${x + 9},${y - 9} ${x + 3},${y - 6} ${x},${y}Z`, fill: k === 'none' ? 'var(--none)' : fillC, stroke: '#fff', 'stroke-width': 1.5 }, svg);

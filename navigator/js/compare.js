@@ -9,7 +9,7 @@ import { where } from './orient.js';
 import { drawSky } from './sky.js';
 import { drawStrips } from './timeline.js';
 
-let root, data;
+let root, data, noSel = false;   // noSel: the selected column clicked again, all columns alike (WHERE keeps the site)
 const STRIP_H = 30, SKY_LW = 3.5;
 let SKY_H = 225;
 
@@ -21,7 +21,9 @@ export function init(node) {
     if (x) { setState({ pinned: state.pinned.filter(id => id !== x.dataset.unpin), ...(x.dataset.unpin === state.site && data.compared ? { site: data.compared.find(id => id !== state.site) || state.site } : {}) }); return; }
     // a click anywhere in a column selects that site (WHERE, the map and the fixes follow); the columns keep their order
     const h = e.target.closest('[data-pick]');
-    if (h && h.dataset.pick !== state.site) setState({ site: h.dataset.pick, pinned: [...(data.compared || [])] });
+    if (!h) return;
+    if (h.dataset.pick === state.site) { noSel = !noSel; data.cmpNoSel = noSel; setState({}); return; }
+    noSel = false; data.cmpNoSel = false; setState({ site: h.dataset.pick, pinned: [...(data.compared || [])] });
   });
   // ▾ next to a column's name: change that column's site only
   root.addEventListener('change', e => {
@@ -57,7 +59,7 @@ export function render(st, d) {
 
   const mv = (s, k) => (st.mast && s.mast ? s.mast[k][st.mast][st.day] : s.cal[k][st.day]);
   const lim = limitsOf(st), mode = data.index.modes[st.mission].sites;
-  const sel = s => s.id === st.site ? ' sel' : '';
+  const sel = s => !noSel && s.id === st.site ? ' sel' : '';
   const cells = (label, fn) => `<div class="lab">${label}</div>` + sites.map(s => `<div class="cell${sel(s)}" data-pick="${s.id}">${fn(s)}</div>`).join('');
   const opts = cur => data.index.sites.map(o => `<option value="${o.id}"${o.id === cur ? ' selected' : ''}>${siteName(o)}</option>`).join('');
 
@@ -97,7 +99,7 @@ export function render(st, d) {
   } else {
     // the sky chart takes whatever height the compact rows leave
     SKY_H = Math.max(200, Math.min(340, (root.clientHeight || 520) - 210));
-    root.innerHTML = `<div class="cmp sbs" style="grid-template-columns:44px repeat(${sites.length},minmax(0,1fr))">
+    root.innerHTML = `<div class="cmp sbs${noSel ? '' : ' has-sel'}" style="grid-template-columns:44px repeat(${sites.length},minmax(0,1fr))">
     <div></div>${sites.map(head).join('')}
     <div class="lab">${t('sky')}</div>${sites.map(sky).join('')}
     ${rows.map(([l, fn]) => cells(l, fn)).join('')}
