@@ -50,6 +50,9 @@ const CSS = `
 .lmap canvas.lmap-gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
 .lmap-ov{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .lmap-ov>*{position:absolute;left:0;top:0;will-change:transform;white-space:nowrap}
+.lmap-ov>svg.lmap-marks{width:100%;height:100%;overflow:visible}
+.lmap-scale{font:11px/1 Inter,system-ui,sans-serif;color:#e8eaf0;text-shadow:0 0 3px #0f131b;display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+.lmap-scale i{display:block;height:5px;border:1.5px solid #e8eaf0;border-top:0}
 .lmap-site{width:11px;height:11px;margin:-5.5px 0 0 -5.5px;border-radius:50%;border:1.5px solid var(--ink);background:var(--line);
   pointer-events:auto;cursor:pointer;box-shadow:0 0 0 1px rgba(15,19,27,.85)}
 .lmap-site::after{content:"";position:absolute;inset:-7px;border-radius:50%}
@@ -299,6 +302,8 @@ export function mountLunarMap(container, options = {}) {
   root.dataset.lang = ko ? 'ko' : 'en';
   const canvas = el('canvas', 'lmap-gl');
   const ov = el('div', 'lmap-ov');
+  const marksSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  marksSvg.setAttribute('class', 'lmap-marks');
   const msg = el('div', 'lmap-msg');
 
   const segMode = el('div', 'lmap-seg');
@@ -386,7 +391,7 @@ export function mountLunarMap(container, options = {}) {
   let hMin = 0, hMax = 0;
   let sites = [];
   let landmarks = [], landers = [];
-  let mastPt = null, mastEl = null;   // MAST fix: a pole of h metres at a map point, drawn on the overlay
+  let scaleEl = null, mastPt = null, mastEl = null, marks = [];   // marks: lines on the ground from the host (MOVE, blocked Sun/Earth)   // MAST fix: a pole of h metres at a map point, drawn on the overlay
   let hoverSite = null, selSite = null, hoverPt = null, hoverLander = null, hoverLm = null;
   let pointer = null;                 // last pointer position over the canvas (client px)
   let tween = null;
@@ -1106,6 +1111,36 @@ export function mountLunarMap(container, options = {}) {
       m.sx = v3.x; m.sy = v3.y; m.on = ok && inView(v3.x, v3.y);
       if (m.pt) { place(m.pt, m.sx, m.sy, m.on); if (m.on) boxes.push([m.sx - 6, m.sy - 6, m.sx + 6, m.sy + 6]); }
     }
+    if (marksSvg.parentNode !== ov) ov.prepend(marksSvg);
+    { // scale bar for the ground at the view centre (perspective: true there only)
+      if (!scaleEl) { scaleEl = el('div', 'lmap-scale', '<span></span><i></i>'); ov.appendChild(scaleEl); }
+      const c = camera === cam3 ? ctl3.target : ctl2.target, a = v3.copy(c); project(a); const ax = a.x, ay = a.y;
+      const b2 = v3.set(c.x + 1, c.y, c.z); project(b2);
+      const ppk = Math.hypot(b2.x - ax, b2.y - ay);
+      if (ppk > 0 && Number.isFinite(ppk)) {
+        const want = 110 / ppk, p10 = Math.pow(10, Math.floor(Math.log10(want))), km = [1, 2, 5, 10].map(m => m * p10).filter(v => v <= want).pop() || p10;
+        const w = Math.round(km * ppk), txt = km >= 1 ? `${km} km` : `${Math.round(km * 1000)} m`;
+        if (scaleEl._t !== txt + w) { scaleEl.firstChild.textContent = txt; scaleEl.lastChild.style.width = w + 'px'; scaleEl._t = txt + w; }
+        place(scaleEl, 14, limitB - 44, true);
+      } else place(scaleEl, 0, 0, false);
+    }
+    {
+      let html = '';
+      for (const m of marks) {
+        const pts = [];
+        for (let i = 0; i <= 24; i++) {
+          const f = i / 24, ok = project(worldOf(m.x1 + (m.x2 - m.x1) * f, m.y1 + (m.y2 - m.y1) * f, v3));
+          if (ok) pts.push(`${v3.x.toFixed(1)},${v3.y.toFixed(1)}`);
+        }
+        if (pts.length < 2) continue;
+        const d = 'M' + pts.join('L'), [ex, ey] = pts[pts.length - 1].split(',').map(Number);
+        html += `<path d="${d}" fill="none" stroke="#000" stroke-opacity=".5" stroke-width="${(m.w || 2) + 2}"/><path d="${d}" fill="none" stroke="${m.color}" stroke-width="${m.w || 2}"${m.dash ? ` stroke-dasharray="${m.dash}"` : ''}/>`;
+        if (m.end === 'ring') html += `<circle cx="${ex}" cy="${ey}" r="8" fill="none" stroke="#000" stroke-opacity=".5" stroke-width="4"/><circle cx="${ex}" cy="${ey}" r="8" fill="none" stroke="#fff" stroke-width="2"/>`;
+        else if (m.end) html += `<circle cx="${ex}" cy="${ey}" r="7" fill="${m.end}" stroke="${m.color}" stroke-width="1.5"/><line x1="${ex - 7}" y1="${ey + 4}" x2="${ex + 7}" y2="${ey - 4}" stroke="${m.color}" stroke-width="1.5"/>`;
+        if (m.label) html += `<text x="${ex + 11}" y="${ey + 4}" font-size="12" font-weight="600" fill="#fff" paint-order="stroke" stroke="#0f131b" stroke-width="3">${m.label}</text>`;
+      }
+      if (marksSvg._h !== html) { marksSvg.innerHTML = html; marksSvg._h = html; }
+    }
     if (mastPt) {
       if (!mastEl) { mastEl = el('div', 'lmap-mast', '<span></span><b></b><i></i>'); ov.appendChild(mastEl); }
       const ok = project(worldOf(mastPt.x, mastPt.y, v3));
@@ -1511,6 +1546,7 @@ export function mountLunarMap(container, options = {}) {
     setDataset,
     setExaggeration: setExag,
     focus: focusOn,
+    setMarks(list) { marks = list || []; dirty = true; },
     setMast(h, x_m, y_m, label) { mastPt = h > 0 ? { h, x: x_m, y: y_m, label: label || `${h} m` } : null; if (mastEl) mastEl._h = null; dirty = true; },
     selectSite(id) { selSite = sites.find((s) => s.id === id) ?? null; stripDirty = true; dirty = true; },
     loaded: () => ({ loaded: ds.loaded, total: ds.n }),
