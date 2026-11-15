@@ -593,3 +593,5 @@ main.full #dock #adv-btn.changed{border-color:var(--accent)}
 main[data-view="find"] #map-panel>#zoom:not(#map3d):not(#note3d){display:flex!important;z-index:45;top:118px;right:70px}
 main[data-view="find"] .tbar .tb-pole{display:none}
 main[data-view="find"] #zoom .z-dim{display:none}
+#when-pop .hb-any{font:inherit;font-size:13px;padding:5px 10px;border:1px solid var(--ink);background:transparent;color:var(--ink);border-radius:0;cursor:pointer}
+#when-pop .hb-any:hover{background:var(--ink);color:var(--bg)}
