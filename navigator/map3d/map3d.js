@@ -42,6 +42,10 @@ const CSS = `
   --bg:#0f131b;--surface:#181d28;--ink:#e8eaf0;--muted:#98a1b4;--line:#2b3242;--sun:#f0a531;--earth:#74a2f2;--ok:#4cbf82;
   font:12px/1.3 Inter,"Apple SD Gothic Neo",system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;user-select:none;-webkit-user-select:none;outline:none;
   --lmap-mono:Inter,system-ui,sans-serif}
+.lmap-mast{position:absolute;left:0;top:0;pointer-events:none;z-index:3;display:flex;flex-direction:column;align-items:center;transform-origin:50% 100%}
+.lmap-mast i{display:block;width:3px;background:var(--mast,#4fc0c9);box-shadow:0 0 0 1px #0f131b}
+.lmap-mast b{display:block;width:12px;height:12px;border:2px solid var(--mast,#4fc0c9);border-radius:50%;border-bottom-color:transparent;transform:rotate(45deg);margin-bottom:-2px}
+.lmap-mast span{font:600 11px/1 Inter,system-ui,sans-serif;color:#fff;background:rgba(15,19,27,.85);border:1px solid var(--mast,#4fc0c9);padding:2px 5px;margin-bottom:3px;white-space:nowrap}
 .lmap *,.lmap *::before,.lmap *::after{box-sizing:border-box;font-variant-numeric:tabular-nums!important}
 .lmap canvas.lmap-gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
 .lmap-ov{position:absolute;inset:0;pointer-events:none;overflow:hidden}
@@ -382,6 +386,7 @@ export function mountLunarMap(container, options = {}) {
   let hMin = 0, hMax = 0;
   let sites = [];
   let landmarks = [], landers = [];
+  let mastPt = null, mastEl = null;   // MAST fix: a pole of h metres at a map point, drawn on the overlay
   let hoverSite = null, selSite = null, hoverPt = null, hoverLander = null, hoverLm = null;
   let pointer = null;                 // last pointer position over the canvas (client px)
   let tween = null;
@@ -402,6 +407,63 @@ export function mountLunarMap(container, options = {}) {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setClearColor(0x0f131b, 1);
   const scene = new THREE.Scene();
+
+  // ---------------------------------------------------------------- the whole Moon and the sky
+  // The terrain patch (±200 km around the south pole) sits on a Moon globe (R = 1737.4 km), south pole up,
+  // lon 0 (Earth side) toward -z like the map. Sun and Earth are drawn in the background in their real
+  // directions from the pole (azimuth, elevation from the frame metadata); sizes are enlarged to be seen.
+  const R_MOON = 1737.4;
+  const moonGroup = new THREE.Group();
+  const moonMat = new THREE.MeshBasicMaterial({ color: 0x8a8f99 });
+  if (opt.moonUrl) new THREE.TextureLoader().load(opt.moonUrl, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; moonMat.map = tx; moonMat.color.set(0x9aa0aa); moonMat.needsUpdate = true; dirty = true; });
+  const moonGeo = new THREE.SphereGeometry(R_MOON, 160, 80);
+  const moonMesh = new THREE.Mesh(moonGeo, moonMat);
+  moonMesh.rotation.x = Math.PI;          // south pole to +y
+  moonGroup.rotation.y = Math.PI / 2;     // lon 0 to -z, lon 90E to +x
+  moonGroup.add(moonMesh);
+  moonGroup.visible = false;
+  scene.add(moonGroup);
+  const glowTex = (inner, outer, disc) => {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d'), gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gr.addColorStop(0, inner); gr.addColorStop(disc, inner); gr.addColorStop(disc + 0.04, outer); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+    const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace; return tx;
+  };
+  const earthTex = () => {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d');
+    const halo = g.createRadialGradient(64, 64, 34, 64, 64, 64); halo.addColorStop(0, 'rgba(116,162,242,.55)'); halo.addColorStop(1, 'rgba(116,162,242,0)');
+    g.fillStyle = halo; g.fillRect(0, 0, 128, 128);
+    const d = g.createRadialGradient(52, 50, 4, 64, 64, 36); d.addColorStop(0, '#9cc3ff'); d.addColorStop(.6, '#2f6fd6'); d.addColorStop(1, '#173d82');
+    g.fillStyle = d; g.beginPath(); g.arc(64, 64, 36, 0, 7); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.55)';   // a few cloud bands
+    for (const [x, y, w, h] of [[44, 50, 30, 5], [60, 68, 34, 6], [40, 80, 22, 4]]) { g.beginPath(); g.ellipse(x + w / 2, y, w / 2, h / 2, -.3, 0, 7); g.fill(); }
+    const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace; return tx;
+  };
+  const sky = {
+    sun: new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex('#fff8e0', 'rgba(255,190,80,.35)', 0.22), sizeAttenuation: false, depthWrite: false, transparent: true })),
+    earth: new THREE.Sprite(new THREE.SpriteMaterial({ map: earthTex(), sizeAttenuation: false, depthWrite: false, transparent: true })),
+  };
+  sky.sun.scale.set(0.16, 0.16, 1); sky.earth.scale.set(0.11, 0.11, 1);
+  for (const k in sky) { sky[k].visible = false; sky[k].renderOrder = -1; scene.add(sky[k]); }
+  const SKY_D = 3400;
+  function placeSky(tt) {
+    for (const k of ['sun', 'earth']) {
+      const b = bodyAt(`${k}_az_el_at_pole`, tt), sp = sky[k];
+      if (!b) { sp.visible = false; continue; }
+      const a = b.az * DEG, e = b.el * DEG;
+      sp.position.set(Math.sin(a) * Math.cos(e) * SKY_D, Math.sin(e) * SKY_D, -Math.cos(a) * Math.cos(e) * SKY_D);
+      sp.visible = true;
+    }
+  }
+  function placeMoon() {
+    if (!Number.isFinite(hMin)) return;
+    // globe top just under the lowest terrain, so the patch sits on it and nothing pokes through
+    const top = (hMin / 1000 - 1.5) * exagV + 4;
+    moonGroup.position.set(0, top - R_MOON, 0);
+    moonGroup.visible = true;
+  }
 
   const FOV = 30;
   const cam3 = new THREE.PerspectiveCamera(FOV, 1, 5, 6000);
@@ -532,6 +594,7 @@ export function mountLunarMap(container, options = {}) {
     scene.add(skirt);
     disposables.push(sgeo);
     uniforms.uBase.value = hMin / 1000 - 1.5;
+    placeMoon();
 
     // slope texture (dh/dx, dh/dy in map axes) for per-pixel relief shading at full resolution
     const gr = new Uint16Array(nx * ny * 2);
@@ -658,7 +721,7 @@ export function mountLunarMap(container, options = {}) {
     const e = k * k * (3 - 2 * k);
     const { from: a, to: b } = tween;
     const L = (p) => a[p] + (b[p] - a[p]) * e;
-    ctl3.target.set(L('tx'), tween.keepY ? tween.ty : tween.ty * (1 - e), L('tz'));
+    ctl3.target.set(L('tx'), tween.toY != null ? tween.ty + (tween.toY - tween.ty) * e : tween.keepY ? tween.ty : tween.ty * (1 - e), L('tz'));
     sph(ctl3.target, L('r'), L('polar'), a.az + (((b.az - a.az + 3 * Math.PI) % (2 * Math.PI)) - Math.PI) * e, cam3.position);
     cam3.up.set(0, 1, 0);
     cam3.lookAt(ctl3.target);
@@ -825,6 +888,7 @@ export function mountLunarMap(container, options = {}) {
     uniforms.uB.value = sb.tex;
     uniforms.uMix.value = p.f;
     uniforms.uHasFrame.value = 1;
+    placeSky(t);
     const sun = bodyAt('sun_az_el_at_pole', t);
     if (sun) {
       // direction only: relief is lit from the Sun's azimuth at a fixed, readable elevation
@@ -962,7 +1026,7 @@ export function mountLunarMap(container, options = {}) {
       s.dot.addEventListener('pointerenter', () => { hoverSite = s; dirty = true; });
       s.dot.addEventListener('pointerleave', () => { if (hoverSite === s) hoverSite = null; dirty = true; });
       s.dot.addEventListener('wheel', passWheel, { passive: false });
-      s.dot.addEventListener('click', () => { selSite = selSite === s ? null : s; stripDirty = true; dirty = true; });
+      s.dot.addEventListener('click', () => { if (opt.onSiteClick) { selSite = s; opt.onSiteClick(s.id); } else selSite = selSite === s ? null : s; stripDirty = true; dirty = true; });
     }
   }
   const project = (out) => {
@@ -1042,6 +1106,14 @@ export function mountLunarMap(container, options = {}) {
       m.sx = v3.x; m.sy = v3.y; m.on = ok && inView(v3.x, v3.y);
       if (m.pt) { place(m.pt, m.sx, m.sy, m.on); if (m.on) boxes.push([m.sx - 6, m.sy - 6, m.sx + 6, m.sy + 6]); }
     }
+    if (mastPt) {
+      if (!mastEl) { mastEl = el('div', 'lmap-mast', '<span></span><b></b><i></i>'); ov.appendChild(mastEl); }
+      const ok = project(worldOf(mastPt.x, mastPt.y, v3));
+      const px = Math.round(10 + Math.min(mastPt.h, 20) * 3);   // drawn tall enough to see: 3 px per metre
+      if (mastEl._h !== mastPt.h) { mastEl.firstChild.textContent = mastPt.label; mastEl.lastChild.style.height = px + 'px'; mastEl._h = mastPt.h; }
+      const hh = mastEl.offsetHeight || px + 30;
+      place(mastEl, v3.x - (mastEl.offsetWidth || 40) / 2, v3.y - hh, ok && inView(v3.x, v3.y));
+    } else if (mastEl) place(mastEl, 0, 0, false);
     const vis = [];
     for (const s of sites) {
       const ok = project(worldOf(s.x_m, s.y_m, v3));
@@ -1220,6 +1292,7 @@ export function mountLunarMap(container, options = {}) {
   function setExag(v) {
     exagV = clamp(+v || 1, 1, 8);
     uniforms.uExag.value = exagV;
+    placeMoon();
     exagIn.value = exagV;
     exagOut.textContent = `×${exagV % 1 ? exagV.toFixed(1) : exagV}`;
     dirty = true;
@@ -1274,7 +1347,7 @@ export function mountLunarMap(container, options = {}) {
   on(exagIn, 'input', () => setExag(exagIn.value));
   on(root, 'keydown', (e) => {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
-    if (e.code === 'Space') { setPlaying(!playing); }
+    if (e.code === 'Space') { if (options.onSpace) options.onSpace(); else setPlaying(!playing); }
     else if (e.key === 'ArrowLeft') step(-1);
     else if (e.key === 'ArrowRight') step(1);
     else if (e.key === 'Home') step(-1e9);
@@ -1286,7 +1359,12 @@ export function mountLunarMap(container, options = {}) {
   let down = null;
   on(canvas, 'pointerdown', (e) => { down = { x: e.clientX, y: e.clientY }; });
   on(canvas, 'pointerup', (e) => {
-    if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 4 && selSite) { selSite = null; stripDirty = true; dirty = true; }
+    if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 4) {
+      // a click (not a drag): the host picks that ground point (navigator: a pin there); otherwise clear the selection
+      const pt = opt.onMapClick ? pick(e.clientX, e.clientY) : null;
+      if (pt) opt.onMapClick(pt.x, pt.y);
+      else if (selSite) { selSite = null; stripDirty = true; dirty = true; }
+    }
     down = null;
   });
   on(canvas, 'pointermove', (e) => { pointer = e.buttons ? null : { x: e.clientX, y: e.clientY }; pickDirty = true; dirty = true; });
@@ -1415,7 +1493,7 @@ export function mountLunarMap(container, options = {}) {
     const s = new THREE.Spherical().setFromVector3(cam3.position.clone().sub(ctl3.target));
     const r = clamp(halfKm / Math.tan(FOV * DEG / 2) * 1.4, ctl3.minDistance, ctl3.maxDistance);
     ctl3.enabled = false;
-    tween = { t0: performance.now(), dur: 700, from: { r: s.radius, polar: s.phi, az: s.theta, tx: ctl3.target.x, tz: ctl3.target.z }, to: { r, polar: home.polar, az: 0, tx, tz }, ty: ctl3.target.y, keepY: true,
+    tween = { t0: performance.now(), dur: 700, from: { r: s.radius, polar: s.phi, az: s.theta, tx: ctl3.target.x, tz: ctl3.target.z }, to: { r, polar: home.polar, az: 0, tx, tz }, ty: ctl3.target.y, toY: (() => { try { const y = heightAt(x_m, y_m) / 1000 * exagV; return Number.isFinite(y) ? y : null; } catch { return null; } })(),   // the site itself at the screen centre
       done: () => { ctl3.enabled = true; ctl3.update(); dirty = true; } };
     dirty = true;
   }
@@ -1433,6 +1511,7 @@ export function mountLunarMap(container, options = {}) {
     setDataset,
     setExaggeration: setExag,
     focus: focusOn,
+    setMast(h, x_m, y_m, label) { mastPt = h > 0 ? { h, x: x_m, y: y_m, label: label || `${h} m` } : null; if (mastEl) mastEl._h = null; dirty = true; },
     selectSite(id) { selSite = sites.find((s) => s.id === id) ?? null; stripDirty = true; dirty = true; },
     loaded: () => ({ loaded: ds.loaded, total: ds.n }),
     destroy() {

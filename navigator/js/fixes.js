@@ -131,11 +131,16 @@ function drawLocal(svg, st, data, e, near) {
   const s = data.index.byId[st.site], sx = s.x_m / 1000, sy = s.y_m / 1000, R = HALF[zk];
   // view window (km): the whole pole, or centred on the spot
   const x0 = zk === 'region' ? 0 : sx, y0 = zk === 'region' ? 0 : sy, k = VB / (2 * R);
-  const X = x => (x - (x0 - R)) * k, Y = y => ((y0 + R) - y) * k, dark = relief;
+  const themeDark = document.documentElement.dataset.theme === 'dark';
+  const X = x => (x - (x0 - R)) * k, Y = y => ((y0 + R) - y) * k, dark = relief || themeDark;
   el('rect', { x: 0, y: 0, width: VB, height: VB, fill: dark ? '#222' : '#fff' }, svg);
   if (!relief) {   // contour lines; gamma 2.5 darkens the thin lines and keeps the white paper white
     const f = el('filter', { id: 'lmdark' }, el('defs', {}, svg)), ct = el('feComponentTransfer', {}, f);
     for (const ch of ['R', 'G', 'B']) el('feFunc' + ch, { type: 'gamma', amplitude: 1, exponent: 2.5, offset: 0 }, ct);
+    if (themeDark) {   // dark theme: dark paper, light lines
+      const iv = el('feComponentTransfer', {}, f);
+      for (const ch of ['R', 'G', 'B']) el('feFunc' + ch, { type: 'linear', slope: -0.72, intercept: 0.8 }, iv);
+    }
     el('image', { href: 'data/linemap_4000.webp', x: X(-200), y: Y(200), width: 400 * k, height: 400 * k, preserveAspectRatio: 'none', filter: 'url(#lmdark)' }, svg);
   } else {
     el('image', { href: zk === 'region' ? 'data/hillshade_2800.jpg' : 'data/hillshade_4000.jpg', x: X(-200), y: Y(200), width: 400 * k, height: 400 * k, preserveAspectRatio: 'none' }, svg);

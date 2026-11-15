@@ -92,6 +92,13 @@ function baseFor(id) {
   im.onload = () => { if (data && data.hill) data.hill.fill(255); setState({}, 'pixels'); };
   im.src = BASES[id]; return null;
 }
+let inv = null;
+function invLine(img) {   // white lines on black, made once from the paper line map
+  if (inv && inv.src === img) return inv.c;
+  const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+  const g = c.getContext('2d'); g.filter = 'invert(1)'; g.drawImage(img, 0, 0);
+  inv = { src: img, c }; return c;
+}
 export function blit() {
   const { k, cx, cy } = state.view, w = N / k, cw = canvas.width, ch = canvas.height;
   ctx.imageSmoothingEnabled = (M() * dpr * k / N) < 1.5;
@@ -100,8 +107,14 @@ export function blit() {
   shade = baseFor(state.basemap === 'shade' ? 'shade' : 'line');
   if (shade) {
     const f = shade.naturalWidth / N;
-    ctx.save(); ctx.imageSmoothingEnabled = true; ctx.globalCompositeOperation = 'multiply';
-    blitImg(ctx, shade, cw, ch); ctx.restore();
+    ctx.save(); ctx.imageSmoothingEnabled = true;
+    if (state.basemap !== 'shade' && document.documentElement.dataset.theme === 'dark') {
+      // dark theme, line map: darken the ground, then light contour lines on top (the paper map inverted)
+      ctx.fillStyle = 'rgba(8,11,17,.55)'; ctx.fillRect(0, 0, cw, ch);
+      ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = .5;
+      blitImg(ctx, invLine(shade), cw, ch);
+    } else { ctx.globalCompositeOperation = 'multiply'; blitImg(ctx, shade, cw, ch); }
+    ctx.restore();
   }
   if (state.mode === 'mask' && SHOW_HATCH) drawHatch(k, cx, cy, w);
   if (!state.adv && state.mode === 'mask') {

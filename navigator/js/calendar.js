@@ -37,7 +37,7 @@ export function init(panel, d) {
   setBig(false);
   big.onclick = e => { e.stopPropagation(); setBig(!panel.classList.contains('big')); };
   if (back) back.onclick = () => setBig(false);
-  addEventListener('keydown', e => { if (e.key === 'Escape' && panel.classList.contains('big')) setBig(false); });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && panel.classList.contains('big')) { setBig(false); e.stopImmediatePropagation(); } });
 }
 
 function hit(e) {

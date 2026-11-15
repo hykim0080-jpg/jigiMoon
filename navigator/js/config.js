@@ -28,6 +28,7 @@ export const DEFAULT = {
   expo: 0,
   pan: '',
   d3: typeof innerWidth === 'number' && innerWidth <= 700 ? 0 : 1,   // the centre map opens in 3D on desktops (2D on phones: the 3D frames are ~18 MB)
+  full: 1,   // Detail: the centre map fills the screen, the other panels open as pop-ups (0 = the old grid)
   lmap: 'line',
   lzoom: 'region',   // right map zoom (Relief): 'region' +-200 km, 'site' +-50 km, 'spot' +-3.5 km   // right map: 'line' = whole pole contour map, 'relief' = the spot up close
 };

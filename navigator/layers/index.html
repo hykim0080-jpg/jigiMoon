@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team. -->
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -13,6 +13,8 @@
 <div id="layers-root"></div>
 <script type="module">
 import { mount } from './js/main.js';
+// inside the Compare page (Find a site view): no own page switch; links open in the whole page
+if (new URLSearchParams(location.search).has('embed')) { document.documentElement.classList.add('embed'); const b = document.createElement('base'); b.target = '_top'; document.head.appendChild(b); }
 mount(document.getElementById('layers-root'));
 </script>
 </body>

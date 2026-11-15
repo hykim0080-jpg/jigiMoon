@@ -17,6 +17,7 @@ import * as chain from './chain.js';
 import * as orient from './orient.js';
 import * as pin from './pin.js';
 import * as view3d from './view3d.js';
+import * as full from './full.js';
 
 const $ = id => document.getElementById(id);
 const data = { index: null, site: null };
@@ -32,6 +33,7 @@ function criteriaReady(st) {
   return false;
 }
 
+let findAtSite = false;   // first open of Find a site from another view: start at the selected site
 function render(st) {
   if (!criteriaReady(st)) return;
   data.site = getSite(st.site, st.mission);
@@ -45,10 +47,14 @@ function render(st) {
   $('main').dataset.zoomed = st.zoom > 1.01 ? '1' : '';
   // map side = height of the middle band
   const main = $('main');
-  if (st.view === 'focus') { const cal = parseFloat(getComputedStyle(main).gridTemplateRows.split(' ').pop()) || 216, gap = parseFloat(getComputedStyle(main).rowGap) || 12; main.style.setProperty('--S', (innerWidth <= 700 ? main.clientWidth : Math.max(300, Math.min(main.clientHeight, (main.clientWidth - 320 - 2 * (parseFloat(getComputedStyle(main).columnGap) || 12)) / 2))) + 'px'); }
+  full.render(st);
+  if (full.isFull(st)) main.style.setProperty('--S', Math.max(300, Math.min(main.clientHeight, main.clientWidth)) + 'px');
+  else if (st.view === 'focus') { const cal = parseFloat(getComputedStyle(main).gridTemplateRows.split(' ').pop()) || 216, gap = parseFloat(getComputedStyle(main).rowGap) || 12; main.style.setProperty('--S', (innerWidth <= 700 ? main.clientWidth : Math.max(300, Math.min(main.clientHeight, (main.clientWidth - 320 - 2 * (parseFloat(getComputedStyle(main).columnGap) || 12)) / 2))) + 'px'); }
   header.render(st, data);
   calendar.render(st, data);
   if (st.view === 'compare') compare.render(st, data);
+  if (st.view === 'find' && !$('find').firstChild) $('find').innerHTML = `<iframe src="${header.findHref(st, data, findAtSite)}" title="Find a site"></iframe>`;
+  if (st.view !== 'find') findAtSite = true;
   if (st.view === 'sites' && !$('sites').firstChild) $('sites').innerHTML = '<iframe src="selection.html" title="selection"></iframe>';
   map.render(st, data);
   view3d.render(st);
@@ -113,18 +119,31 @@ async function boot() {
   header.init($('header'), data);
   calendar.init($('cal-panel'), data);
   map.init($('map'), data, openPin);
-  view3d.init($('map-panel'), data);
+  view3d.init($('map-panel'), data, openPin);
   globe.init($('globe'), data);
   metrics.init($('metrics-panel'));
   sky.init($('sky'), $('countdowns'));
   timeline.init($('timeline'));
   fixes.init($('fixes'));
   compare.init($('compare'));
+  full.init($('main'));
   subscribe(render);
   render(state);
   addEventListener('resize', () => render(state));
+  addEventListener('hashchange', () => location.reload());   // a link from Find a site (in its frame) into this page
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => render(state));
   addEventListener('keydown', onKey);
+  // Space with the 3D map on: back to the selected site, whatever has focus (a slider, a button, the 3D view);
+  // caught first on the way down so a focused button or the 3D player does not take it. Text fields keep it.
+  const spaceTo3d = e => {
+    if (e.code !== 'Space' || e.ctrlKey || e.metaKey || e.altKey || !view3d.isOn()) return false;
+    const a = e.target;
+    if (a.matches && a.matches('textarea,select,input:not([type=range]):not([type=button]):not([type=checkbox])')) return false;
+    e.preventDefault(); e.stopPropagation();
+    return true;
+  };
+  addEventListener('keydown', e => { if (spaceTo3d(e)) { if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur(); if (!e.repeat) view3d.recenter(); } }, true);
+  addEventListener('keyup', spaceTo3d, true);
   document.addEventListener('mapframe', () => { if (state.view === 'focus') chain.render(); });
   const ids = data.index.sites.map(s => s.id);
   preloadCals(ids, state.mission).then(() => render(state));
@@ -140,7 +159,8 @@ function onKey(e) {
     e.preventDefault();
     const i = ids.indexOf(state.site) + (e.key === 'ArrowUp' ? -1 : 1);
     setState({ site: ids[(i + ids.length) % ids.length] });
-  } else if (e.key === ' ') { e.preventDefault(); setState({ playing: !state.playing }); }
+  } else if (e.key === ' ') { e.preventDefault(); if (!view3d.isOn()) setState({ playing: !state.playing }); }
+  else if (e.key === '0') setState({ view: 'find' });
   else if (e.key === '1') setState({ view: 'focus' });
   else if (e.key === '2') setState({ view: 'compare' });
   else if (e.key === '3') setState({ view: 'sites' });

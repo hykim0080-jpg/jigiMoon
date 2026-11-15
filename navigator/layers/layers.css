@@ -532,3 +532,6 @@ input[type=range]{accent-color:var(--accent)}
 @media (min-width:701px){.lyr-hint{top:64%}}
 /* digits keep the same width so changing numbers do not shake the layout (font shorthand would reset this, hence !important) */
 *{font-variant-numeric:tabular-nums!important}
+
+/* embedded in the Compare page: that page has the title and the view switch */
+.embed .lyr-sw,.embed .app-id{display:none}

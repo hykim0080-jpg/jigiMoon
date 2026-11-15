@@ -2,16 +2,17 @@
 // Loaded on first use only (module ~2 MB, one month of frames ~18 MB). Lighting frames exist for
 // June and December 2027 (4 h steps); other dates show the same day-of-month and hour of the nearer
 // computed month, and say so.
-import { state, setState } from './state.js';
+import { state, setState, limitsOf } from './state.js';
+import { mastShown } from './logic.js';
 import { FIRST_DAY } from './config.js';
 import { t } from './strings.js';
 
 const SETS = [{ label: '2027-06', url: 'data/3d/frames/', y: 2027, m: 5 }, { label: '2027-12', url: 'data/3d/frames_dec/', y: 2027, m: 11 }];
 const STEP_H = 4;
-let box, note, btns, map = null, loading = null, order = null, lastKey = '', lastSite = '', data = null;
+let onPin = null, hint, box, note, btns, map = null, loading = null, order = null, lastKey = '', lastSite = '', data = null;
 
-export function init(panel, d) {
-  data = d;
+export function init(panel, d, pinAt) {
+  data = d; onPin = pinAt;
   const seg = document.createElement('div');
   seg.className = 'seg'; seg.id = 'dim';
   seg.innerHTML = '<button data-d="0">2D</button><button data-d="1">3D</button>';
@@ -19,6 +20,7 @@ export function init(panel, d) {
   btns = [...seg.children];
   btns.forEach(b => b.addEventListener('click', () => setState({ d3: Number(b.dataset.d) })));
   box = document.createElement('div'); box.id = 'map3d'; box.hidden = true;
+  hint = document.createElement('div'); hint.id = 'space-hint'; hint.hidden = true; hint.textContent = t('spaceHint'); panel.appendChild(hint);
   note = document.createElement('div'); note.id = 'note3d'; note.hidden = true;
   panel.append(box, note);
   addEventListener('resize', place);
@@ -40,6 +42,7 @@ function place() {
   const svg = document.getElementById('map'), zoom = document.getElementById('zoom'), seg = document.getElementById('dim');
   if (seg && zoom) seg.style.right = (8 + zoom.offsetWidth + 6) + 'px';
   if (!box || box.hidden) return;
+  if (document.getElementById('main').classList.contains('full')) { Object.assign(box.style, { left: '0px', top: '0px', width: '100%', height: '100%' }); return; }
   const r = svg.getBoundingClientRect(), b = box.parentNode.getBoundingClientRect();   // an <svg> has no offsetLeft
   // down to the bottom of the panel: in Detail the map column is taller than the square 2D map
   Object.assign(box.style, { left: r.left - b.left + 'px', top: r.top - b.top + 'px', width: r.width + 'px', height: Math.max(r.height, b.bottom - r.top - 1) + 'px' });
@@ -56,6 +59,11 @@ async function mount() {
       datasets: order.map(j => ({ label: SETS[j].label, url: SETS[j].url })),
       sitesUrl: 'data/3d/sites.json', landmarksUrl: 'data/orientation/landmarks.json', landersUrl: 'data/orientation/landers.json',
       lang, frame: f.i,
+      onSpace: recenter,   // Space: back to the selected site, Earth side up
+      // clicks pick like the 2D map: a marker selects that site, the ground drops a pin there
+      onSiteClick: id => { if (data.index.byId[id]) setState({ site: id }); },
+      onMapClick: (x, y) => { if (onPin) onPin(Math.round(x), Math.round(y)); },
+      moonUrl: 'data/moon.jpg',   // NASA SVS CGI Moon Kit, the globe under the terrain patch
     });
     return map.ready;
   }).then(() => { box.classList.remove('loading'); lastKey = ''; lastSite = ''; sync(state); })
@@ -76,6 +84,9 @@ function sync(st) {
     const s = data.index.byId[st.site];
     if (s) { map.selectSite(st.site); map.focus(s.x_m, s.y_m, 22); }
   }
+  const s = data.index.byId[st.site], e = data.index.modes[st.mission]?.sites[st.site];
+  const h = s && e ? mastShown(e, st.day, st.mast, limitsOf(st)) : 0;
+  if (map.setMast) map.setMast(h, s?.x_m, s?.y_m, h ? t('mastPole', h) : '');
   note.hidden = f.exact;
   if (!f.exact) {
     const d = new Date(f.shown);
@@ -83,12 +94,20 @@ function sync(st) {
   }
 }
 
+// Space: centre the 3D camera on the selected site again
+export function recenter() {
+  const s = data && data.index && data.index.byId[state.site];
+  if (map && s) map.focus(s.x_m, s.y_m, 22);
+}
+export const isOn = () => !!box && !box.hidden;
+
 export function render(st) {
   if (!box) return;
   const on = !!st.d3 && st.view === 'focus';
   btns.forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.d) === (on ? 1 : 0))));
   document.getElementById('main').dataset.d3 = on ? '1' : '';
   box.hidden = !on;
+  hint.hidden = !on;
   if (!on) { note.hidden = true; place(); return; }
   place();
   if (!map) mount(); else sync(st);

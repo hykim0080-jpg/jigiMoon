@@ -19,6 +19,13 @@ export function bestFix(e, d, lim) {
   return best;
 }
 
+// mast to draw on the maps (m): the applied one, else the MAST fix of a NO-GO day within the limit; 0 = none
+export function mastShown(e, d, mast, lim) {
+  if (mast) return mast;
+  const m = e.ok[d] ? null : e.mast[d];
+  return m != null && m <= lim.mast ? m : 0;
+}
+
 // 'ok' | 'move' | 'mast' | 'wait' | 'none' (+ capped when OK only through the applied mast)
 export function status(e, d, mast, lim) {
   if (e.ok[d]) return { kind: 'ok' };
