@@ -52,7 +52,7 @@ select{border:1px solid var(--line);background:var(--surface);border-radius:0;pa
 main{flex:1;min-height:0;position:relative;display:grid;gap:12px;
   grid-template-columns:minmax(280px,1fr) var(--S,588px) minmax(0,var(--S,588px));
   grid-template-rows:minmax(0,1fr) 48px var(--cal,216px);
-  grid-template-areas:"sky map fixes" "metrics map fixes" "cal cal cal"}
+  grid-template-areas:"sky map fixes" "metrics map fixes" "cal map fixes"}
 .panel{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:0;padding:12px;min-width:0;min-height:0;position:relative}
 .map-panel{grid-area:map;padding:0;overflow:hidden;background:#222;display:flex;flex-direction:column}
 .map-panel h2{position:absolute;left:12px;top:10px;color:#fff;text-shadow:0 0 3px #000;z-index:2;max-width:calc(50% - 76px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
@@ -369,3 +369,6 @@ main[data-view="compare"] #basemap,main[data-d3="1"] #basemap{display:none}
 .card.local .locl.dk,.card.local .tick.dk{fill:#fff;paint-order:stroke;stroke:#000;stroke-width:3px}
 .card.local .lname{fill:var(--ink);font-weight:600;paint-order:stroke;stroke:#fff;stroke-width:3px}
 .card.local .tick{paint-order:stroke;stroke:#fff;stroke-width:3px}
+.card.local .lzsw{position:absolute;right:8px;top:8px;z-index:3;background:#fff}
+.card.local .lzsw[hidden]{display:none}
+.card.local .lzsw button{font-size:12px;padding:3px 9px}
