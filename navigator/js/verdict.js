@@ -65,7 +65,7 @@ export function render(st, data, panel, lim) {
   box.className = v.go ? 'go' : 'nogo';
   box.innerHTML = `<b>${v.go ? t('go') : t('nogo')}</b>`
     + (v.go && v.capped ? `<span class="vfix" style="color:var(--mast)">${t('mast')} ${t('m', st.mast)}</span>` : '')
-    + v.fails.map(f => `<span class="vfail">${f.text}</span>`).join('')
+    + (v.fails.length ? `<span class="vfail">${v.fails.map(f => f.text).join(' · ')}</span>` : '')   // the reasons on the verdict's line
     + (v.fix && !row ? `<span class="vfix" style="color:var(--${v.fixKind})">→ ${v.fix}</span>` : '')   // the row below carries the fix
     + (v.why ? `<span class="vwhy">${v.why}</span>` : '')
     + row;
