@@ -848,7 +848,7 @@ Examples (computed from the site file and catalogue coordinates; re-derive once 
 lands):
 
 1. Nobile Rim 1 → `26 km beyond Mons Mouton`
-2. Shackleton rim → `on Shackleton's rim, left side`
+2. Shackleton Rim → `on Shackleton's rim, left side`
 3. de Gerlache Rim 2 → `on de Gerlache's rim, Earthward side`
 4. Slater Plain → `73 km beyond-right of Shackleton`
 5. Prescription, Nobile Rim 1 on 2027-02-15 (nearest GO cell dx −0.25, dy +0.5) →

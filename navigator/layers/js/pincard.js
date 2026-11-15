@@ -12,7 +12,8 @@ import { statsCached, statsFor, whyNoFix, tt } from './trip.js';
 import { WIN_IDS, useWin } from './window.js';
 import { inCart, toggleCart, ct, MAX } from './cart.js';
 import { zoomSvg } from './zoom.js';
-import { hue } from './config.js';
+import { hue, N } from './config.js';
+import { failCount } from './compose.js';
 // the checks use the Criteria panel's own short words, so nothing is cut off in the card
 const SHORT = { en: { sun: 'Sun', earth: 'Earth', dark: 'Dark', slope: 'Slope', ice: 'Ice' }, ko: { sun: '햇빛', earth: '지구', dark: '어둠', slope: '경사', ice: '얼음' } }[lang === 'ko' ? 'ko' : 'en'];
 const shortName = m => SHORT[hue(m.id)] || critName(m);
@@ -36,13 +37,46 @@ export function initPinCard(root, d) {
   el.addEventListener('keydown', e => { const fx = e.target.closest('[data-fix]'); if (fx && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); applyFix(fx.dataset.fix); } });
   el.addEventListener('click', e => { const fx = e.target.closest('[data-fix]'); if (fx) { applyFix(fx.dataset.fix); return; } const b = e.target.closest('[data-step]'); if (b) setDay(state.tDay + +b.dataset.step); if (e.target.closest('[data-cart]') && state.pin) toggleCart(state.pin.col, state.pin.row); });
 }
+const ARROW = ['↑', '↗', '→', '↘', '↓', '↙', '←', '↖'];
+const arrowOf = (dc, dr) => ARROW[((Math.round(Math.atan2(dc, -dr) / (Math.PI / 4)) % 8) + 8) % 8];   // up = Earth side
+const W2 = { en: { near: 'Nearest GO', here: 'GO here', earth: 'Earth', mast: 'MAST', wait: 'WAIT', sun: 'Sun', earthV: 'Earth', dark: 'Dark' }, ko: { near: '가장 가까운 GO', here: '여기서 GO', earth: '지구', mast: '마스트', wait: '대기', sun: '햇빛', earthV: '지구', dark: '어둠' } }[lang === 'ko' ? 'ko' : 'en'];
+// the first criterion this stay misses, as on Detail's verdict: "Sun 55 % < 70 %"
+function missOf(inf, st) {
+  const w = statsCached(inf.col, inf.row, st.mission), d = st.tDay, c = st.crit; if (!w) return '';
+  const s = Math.floor(w.sun[d]), e = Math.floor(w.earth[d]), k = Math.ceil(w.dark[d]);
+  return s < c.sun ? `${W2.sun} ${s} % < ${c.sun} %` : e < c.earth ? `${W2.earthV} ${e} % < ${c.earth} %` : k > c.dark ? `${W2.dark} ${k} h > ${c.dark} h` : '';
+}
+// the fixes in one line under the verdict, as on Detail: Nearest GO · MAST · WAIT (a fix that does not work is left out)
+function fixLine(v, inf) {
+  if (v.pending || v.goNow) return '';
+  const b = [];
+  if (fixOf.move) b.push(`<button type="button" class="lyr-vb" data-fix="move" style="--c:var(--move)"><i>${W2.near}</i> <b>${v.move.km.toFixed(1)}</b> km ${arrowOf(v.move.col - inf.col, v.move.row - inf.row)}</button>`);
+  if (fixOf.mast) b.push(`<button type="button" class="lyr-vb" data-fix="mast" style="--c:var(--mast)"><i>${W2.mast}</i> <b>20</b> m</button>`);
+  if (fixOf.wait != null) b.push(`<button type="button" class="lyr-vb" data-fix="wait" style="--c:var(--wait)"><i>${W2.wait}</i> <b>${fixOf.wait}</b> d</button>`);
+  return b.length ? `<div class="lyr-vfx">${b.join('')}</div>` : '';
+}
+// the ground around the spot, 3 km each way on the 500 m map: GO cells in blue, the spot in the middle, Earth up
+function moveGrid(inf, v) {
+  const R = 6, S = 10, n = 2 * R + 1, cells = [];
+  for (let dr = -R; dr <= R; dr++) for (let dc = -R; dc <= R; dc++) {
+    if (dc * dc + dr * dr > R * R + R) continue;
+    const c = inf.col + dc, r = inf.row + dr; if (c < 0 || r < 0 || c >= N || r >= N) continue;
+    const go = failCount && failCount[r * N + c] === 0;
+    cells.push(`<rect x="${(dc + R) * S}" y="${(dr + R) * S}" width="${S - .6}" height="${S - .6}" fill="${go ? 'rgba(116,162,242,.8)' : 'rgba(255,255,255,.06)'}"/>`);
+  }
+  const mv = v.move && !v.move.here && v.move.col != null && Math.abs(v.move.col - inf.col) <= R && Math.abs(v.move.row - inf.row) <= R ? v.move : null;
+  const ring = mv ? `<rect x="${(mv.col - inf.col + R) * S - 1}" y="${(mv.row - inf.row + R) * S - 1}" width="${S + 1.4}" height="${S + 1.4}" fill="none" stroke="#fff" stroke-width="1.2"/>` : '';
+  const head = v.goNow ? `<b style="color:var(--ok)">${W2.here}</b>` : v.move && !v.move.here && v.move.km != null ? `<i>${W2.near}</i> <b>${v.move.km.toFixed(1)}</b> km ${arrowOf(v.move.col - inf.col, v.move.row - inf.row)}` : `<i>${W2.near}</i> —`;
+  const C = R * S + S / 2;
+  return `<div class="lyr-mv"><div class="lyr-mvh">${head}</div><svg viewBox="-4 -4 ${n * S + 8} ${n * S + 8}" class="lyr-mvg">${cells.join('')}<circle cx="${C}" cy="${C}" r="${R * S + 3}" fill="none" stroke="rgba(255,255,255,.25)" stroke-dasharray="2 3"/>${ring}<circle cx="${C}" cy="${C}" r="4.2" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="${C}" cy="${C}" r="1.4" fill="#fff"/><text x="0" y="7" class="lyr-mvt">↑ ${W2.earth}</text><text x="${n * S}" y="${n * S}" text-anchor="end" class="lyr-mvt">3 km</text></svg></div>`;
+}
 function verdictHtml(v, inf, st) {
   if (v.pending) return `<i class="lyr-dot" style="background:var(--muted)"></i><span style="color:var(--muted)">…</span>`;
   const dot = `<i class="lyr-dot" style="background:var(--${v.kind === 'go' ? 'ok' : 'block'})"></i>`;
   if (v.kind === 'go') return `${dot}<span style="color:var(--ok)">${t('go_run', v.run)}</span>`;
-  const head = t('nogo') + (v.steep ? ' · ' + t('slope_fail', v.slopeV.toFixed(0)) : '');
-  const tail = v.kind === 'wait' ? t('avail_wait', v.wait) : v.kind === 'move' ? t('avail_move_dir', v.move.km.toFixed(1), lang === 'en' ? v.move.dir.toUpperCase() : v.move.dir) : v.kind === 'mast' ? t('avail_mast', 20) : (whyNoFix(inf.col, inf.row, v.d, st.crit, st.mission) || t('noFix', 3, 20, 60));
-  return `${dot}<span>${head} → <span style="color:var(--${KIND[v.kind]})">${tail}</span></span>`;
+  // short, as on Detail: NO-GO, then the one criterion it misses
+  const why = v.steep ? t('slope_fail', v.slopeV.toFixed(0)) : missOf(inf, st);
+  return `${dot}<span><span style="color:var(--block)">${t('nogo')}</span>${why ? `<small class="lyr-vwhy">${why}</small>` : ''}</span>`;
 }
 export function renderPinCard(st) {
   const inf = pinInfo(st);
@@ -67,11 +101,10 @@ export function renderPinCard(st) {
   const adv = st.adv ? `<div class="lyr-tbl">${data.layers.map(m => { const val = inf.values[m.id]; return `<span>${layerName(m)}</span><span class="n">${val == null ? '–' : (val === Infinity ? '>' : '') + fmt(m, val) + unitOf(m)}</span>`; }).join('')}<span>${t('lat')}</span><span class="n">${Math.abs(inf.ll.lat).toFixed(2)}°${inf.ll.lat < 0 ? 'S' : 'N'} ${Math.abs(inf.ll.lon).toFixed(1)}°${inf.ll.lon < 0 ? 'W' : 'E'}</span></div>` : '';
   el.innerHTML = `<div class="lyr-pt">${inf.title}</div>
 <div class="lyr-dt"><button data-step="-1">◀</button><span class="n">${isoOfDay(st.tDay)}</span><button data-step="1">▶</button></div>
-<div class="lyr-vd">${verdictHtml(v, inf, st)}</div>${winRow(inf, st)}
-<div class="lyr-fxs">${f('move', t('move'), mv, '', !!fixOf.move)}${f('mast', t('mast'), v.goNow ? t('not_needed') : v.mast ? t('mast_gain', v.mast.gain) : null, v.mast && !v.goNow ? t('mast_title', v.mast.from, v.mast.to) : '', !!fixOf.mast)}${f('wait', t('wait'), v.goNow ? t('days', 0) : v.wait != null && v.wait <= BUDGET.wait ? t('days', v.wait) : null, v.wait != null && v.wait > BUDGET.wait ? t('days', v.wait) : '', fixOf.wait != null)}</div>
-<div class="lyr-cks">${checks}</div>${adv}
-${zoomSvg(inf, v, data, st.threshold.slope)}
+<div class="lyr-vd">${verdictHtml(v, inf, st)}</div>${fixLine(v, inf)}${winRow(inf, st)}
 <svg class="lyr-sky"></svg>
+<div class="lyr-cks">${checks}</div>${adv}
+${moveGrid(inf, v)}
 ${inf.go ? `<div class="lyr-cal"><canvas class="lyr-pcal"></canvas><span class="n lyr-go-n">${t('go')} ${t('days', inf.go.count)}</span></div>` : ''}
 ${cartBtn(inf, st)}<a class="lyr-link" href="${inf.link}">${t('open_cmp')}</a>`;
   drawCal(inf, st);

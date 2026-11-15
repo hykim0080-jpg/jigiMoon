@@ -559,7 +559,7 @@
   },
   {
    "id": "shackleton-rim",
-   "name": "Shackleton rim",
+   "name": "Shackleton Rim",
    "near_layer": "PGDA LOLA 5 m Site04",
    "coarser_layer": "PGDA LOLA LDEM_80S_20MPP_ADJ",
    "prescriptions": 14,
