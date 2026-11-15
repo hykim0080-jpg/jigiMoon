@@ -61,7 +61,8 @@ const en = {
   play: 'Play', pause: 'Pause', prev: 'Previous day', next: 'Next day', unpin: 'Unpin',
   months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
   dayMonth: (d, m) => `${d} ${en_months[m]}`,
-  dayN: (n, label) => `+${n} d · ${label}`
+  dayN: (n, label) => `+${n} d · ${label}`,
+  apiLabel: '{ }<span class="api-txt">API</span>', apiTip: 'Open this verdict as JSON (Cloudflare Pages Functions API)'
 };
 const en_months = en.months;
 
@@ -127,7 +128,8 @@ const ko = {
   play: '재생', pause: '일시정지', prev: '이전 날', next: '다음 날', unpin: '고정 해제',
   months: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
   dayMonth: (d, m) => `${m + 1}월 ${d}일`,
-  dayN: (n, label) => `+${n}일 · ${label}`
+  dayN: (n, label) => `+${n}일 · ${label}`,
+  apiLabel: '{ }<span class="api-txt">API</span>', apiTip: '이 판정을 JSON으로 보기 (Cloudflare Pages Functions API)'
 };
 
 const STRINGS = { en, ko };
