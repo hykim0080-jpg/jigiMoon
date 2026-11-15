@@ -328,7 +328,7 @@ function showTip(e, cell) {
 const thin = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 export function renderBadge(passPx, readoutScore) {
   const sc = state.mode === 'score', km2 = thin(passPx * PX * PX / 1e6);
-  legend.hidden = state.adv || state.mode !== 'mask';
+  legend.hidden = state.adv || state.mode !== 'mask' || !!state.factor;   // a factor on the map: its slider track is the legend
   legend.querySelector('.lt').textContent = useWin(state) ? t('legStay', state.mission || 14, km2) : t('legYear', km2);   // the legend in words
   legend.querySelector('.bt').textContent = (t('legBase') || {})[state.base] || '';
   shadowLegend();

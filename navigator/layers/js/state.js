@@ -5,7 +5,7 @@ export const state = {
   opacity: {}, threshold: {}, weight: {}, lastWeight: {},
   view: { k: 1, cx: 400, cy: 400 },
   hover: null, pin: null, site: null, hoverSite: null,
-  month: null, monthThr: 1, cutoff: 70, minArea: 1, edit: null, sortBy: 'auto', hoverZone: null, ov: null, crit: {}, expo: false, base: 'sun', tDay: 45, plan: null, adv: false, autoPin: true, focusCrit: null, tHour: 12, shadow: false, eshadow: false, tTouched: false, mission: 14, region: null, hoverTrip: null, basis: 'trip', cart: [],
+  month: null, monthThr: 1, cutoff: 70, minArea: 1, edit: null, sortBy: 'auto', hoverZone: null, ov: null, crit: {}, expo: false, base: 'sun', tDay: 45, plan: null, adv: false, autoPin: true, focusCrit: null, tHour: 12, shadow: false, eshadow: false, tTouched: false, mission: 14, region: null, hoverTrip: null, basis: 'trip', cart: [], factor: null, fxLimit: true,
 };
 state.basemap = 'line';   // base map: 'line' (contour lines, default) or 'shade' (hillshade)
 const subs = [];
