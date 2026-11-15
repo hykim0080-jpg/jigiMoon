@@ -21,6 +21,7 @@ import * as g3 from './find3d.js';
 import * as pn from './panels.js';
 import { initCritPanel, render as renderCritPanel, LAYER_KEYS } from './critpanel.js';
 import { initLayerTitle, renderLayerTitle } from './layertitle.js';
+import { onFactorData } from './factor.js';
 
 export async function mount(root, opts = {}) {
   const { dataUrl = './data/', header = true } = opts;
@@ -80,7 +81,7 @@ export async function mount(root, opts = {}) {
     if (!(await applyLevels(data, next, dataUrl))) { await applyLevels(data, state.crit, dataUrl); return false; }
     saveCrit(next); setState({ crit: next }, 'pixels'); return true;
   };
-  initCart(app, data, lang, lq); initCriteria(pCrit, data, setCrit); initCritPanel(main.querySelector('.lyr-left'), data, setCrit); initLayerTitle(main); initZones(pZones, data, { pick }); initPinCard(pPin.querySelector('.lyr-pcard'), data); initMap(pMap, data, comp); g3.init(pMap, data); setPick(pick);
+  initCart(app, data, lang, lq); initCriteria(pCrit, data, setCrit); initCritPanel(main.querySelector('.lyr-left'), data, setCrit); initLayerTitle(main); onFactorData(() => setState({}, 'pixels')); initZones(pZones, data, { pick }); initPinCard(pPin.querySelector('.lyr-pcard'), data); initMap(pMap, data, comp); g3.init(pMap, data); setPick(pick);
   { const hd = root.querySelector('.lyr-app header'), tl = main.querySelector('.lyr-tripl');
     initTrip(hd || main, tl, data, { pick, fly: bb => flyToCells(bb, 8), home: () => mapHome(), ranked: rk => { if (state.autoPin && rk[0] && !(state.pin && state.pin.col === rk[0].col && state.pin.row === rk[0].row)) setState({ pin: { col: rk[0].col, row: rk[0].row } }, 'panel'); } });
     setBadges(() => { const r = tripRanked(), g = r.filter(z => z.go).length; return r.slice(0, g ? Math.min(g, 15) : 3); }); }

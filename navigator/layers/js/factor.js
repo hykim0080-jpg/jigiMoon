@@ -53,19 +53,41 @@ function valuesOf(st, k) {
   vCache = { key, v }; return v;
 }
 
+// Ice: where water ice can last, from LRO Diviner's south polar resource product (Paige et al. 2010; PDS
+// LRO-L-DLRE-5-PRP-V2.0): the highest surface temperature over the year, averaged into our 500 m cells. At or below
+// 110 K surface ice is stable; the colder, the brighter. Warmer ground is darkened. (The limit stays the distance to
+// permanent shadow, layers 'ice'.)
+export const ICE_T = { stable: 110, coldest: 40 };
+let tmax = null, tmaxLoad = null;
+function tmaxBytes() {
+  if (tmax || tmaxLoad) return tmax;
+  tmaxLoad = fetch(new URL('../data/ice_tmax.wasm', import.meta.url)).then(r => r.ok ? r.arrayBuffer() : null)
+    .then(b => { if (b && b.byteLength === NPX) { tmax = new Uint8Array(b); setStateLater(); } }).catch(() => {});
+  return null;
+}
+let redraw = null; export const onFactorData = fn => { redraw = fn; };
+const setStateLater = () => { out.key = ''; if (redraw) redraw(); };
+function iceColor(T) {   // T in K (255 = no data)
+  if (T > 250) return null;
+  if (T > ICE_T.stable) return [6, 9, 14];
+  const g = Math.min(1, (ICE_T.stable - T) / (ICE_T.stable - ICE_T.coldest));
+  return colorAt(FX.ice.ramp, .35 + .65 * Math.pow(g, .7));
+}
+
 // 800 x 800 RGBA: rgb = band colour, a = 255 meets the limit (or no limit), 128 misses it, 0 no data
 let cv = null, out = { key: '', cv: null, rgba: null };
 export function fxImage(st) {
   const k = st.factor; if (!k || !FX[k] || !D) return null;
   const v = valuesOf(st, k); if (!v) return null;
+  const tb = k === 'ice' ? tmaxBytes() : null; if (k === 'ice' && !tb) return null;
   const thr = limitOf(st, k), key = `${k}|${thr}|${vCache.key}`;
   if (out.key === key) return out;
   if (!cv) { cv = document.createElement('canvas'); cv.width = cv.height = N; }
   const g = cv.getContext('2d'), im = g.createImageData(N, N), d = im.data, f = FX[k];
-  const lut = Array.from({ length: 256 }, (_, j) => colorT(k, j / 255));
+  const lut = tb ? Array.from({ length: 256 }, (_, T) => iceColor(T)) : Array.from({ length: 256 }, (_, j) => colorT(k, j / 255));
   for (let i = 0; i < NPX; i++) {
     const x = v[i]; if (x !== x) continue;
-    const c = lut[Math.round(tOf(k, x) * 255)], o = i * 4;
+    const c = tb ? lut[tb[i]] : lut[Math.round(tOf(k, x) * 255)], o = i * 4; if (!c) continue;
     d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = thr == null || passes(k, x, thr) ? 255 : 128;
   }
   g.putImageData(im, 0, 0);
@@ -76,6 +98,7 @@ export function fxImage(st) {
 // the slider track of factor k: the same gradient, the side that misses the limit dimmed
 export function trackCss(st, k) {
   const f = FX[k], parts = [];
+  if (k === 'ice') return `linear-gradient(to right,${f.ramp[4]},${f.ramp[1]})`;   // its slider is the distance to permanent shadow; the map is temperature
   for (let j = 0; j <= 20; j++) parts.push(`rgb(${colorT(k, j / 20)}) ${j * 5}%`);
   const thr = limitOf(st, k), bands = `linear-gradient(to right,${parts.join(',')})`;
   if (thr == null) return bands;
