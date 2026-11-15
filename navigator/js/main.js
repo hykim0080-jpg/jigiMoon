@@ -59,7 +59,19 @@ function render(st) {
   if (!data.site && st.view !== 'compare') return;
   metrics.render(st, data);
   fixes.render(st, data);
+  detailNote(st);
   if (st.view === 'focus') { sky.render(st, data); timeline.render(st, data); chain.render(); }
+}
+
+// a site opened from Find a site whose verdict there (500 m grid) differs from the detailed one here
+const fromFind = (() => { const h = new URLSearchParams(location.hash.slice(1)), fv = h.get('fv'); return fv === '0' || fv === '1' ? { site: h.get('s'), day: Number(h.get('day')), m: Number(h.get('m') || 14), go: fv === '1' } : null; })();
+function detailNote(st) {
+  let n = document.getElementById('detail-note');
+  const e = fromFind && st.site === fromFind.site && st.day === fromFind.day && st.mission === fromFind.m ? data.index.modes[st.mission].sites[st.site] : null;
+  const show = e && !!e.ok[st.day] !== fromFind.go;
+  if (!show) { if (n) n.remove(); return; }
+  if (!n) { n = document.createElement('div'); n.id = 'detail-note'; $('fixes').prepend(n); }
+  n.textContent = t('detailDiff', fromFind.go ? t('detailGo') : t('detailNogo'));
 }
 
 // open any point as the pin without reloading (map click)

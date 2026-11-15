@@ -2,14 +2,17 @@ const en = {
   app: 'LUNAR LANDING SITE NAVIGATOR',
   go: 'GO', nogo: 'NO-GO',
   move: 'MOVE', mast: 'MAST', wait: 'WAIT', sky: 'SKY', map: 'MAP', year: 'YEAR',
-  sun: 'Sun', earth: 'Earth', dark: 'Dark', noComm: 'No-comm',
+  sun: 'Sun', earth: 'Earth', dark: 'Dark', noComm: 'No-comm', slopeL: 'Slope',
+  detailDiff: v => `Find a site said ${v} here. Its map is a 500 m grid; this page uses the site's detailed terrain, so this verdict is the precise one.`,
+  detailGo: 'GO', detailNogo: 'NO-GO',
   focus: 'Detail', compare: 'Side by side', basic: 'Basic', expert: 'Expert',
-  why: { sun: 'power', earth: 'radio', dark: 'battery', noComm: 'radio gap' },
+  why: { sun: 'power', earth: 'radio', dark: 'battery', noComm: 'radio gap', slope: 'tipping' },
   whyLong: {
     sun: 'The lander runs on solar panels, so its power comes only when the Sun clears the surrounding hills. Best south-pole spots reach about 92 % (Gläser et al. 2014).',
     earth: 'The lander can only talk to mission control while Earth is above its horizon. With no relay satellite, a hidden Earth means silence (Bryant 2009).',
     dark: 'In darkness the lander lives on its batteries and heaters. VIPER survives 50 h; NASA calls a site with ≤ 50 h of darkness a Safe Haven.',
-    noComm: 'Longest unbroken stretch with Earth below the skyline, meaning no radio contact.'
+    noComm: 'Longest unbroken stretch with Earth below the skyline, meaning no radio contact.',
+    slope: 'A lander touching down on a steep slope can tip over, as IM-1 and IM-2 did. 8° is a conservative limit (Apollo LM: 12°). LOLA slope at 15 m scale.'
   },
   legendGo: 'GO', legendNone: 'no fix',
   okPct: 'OK %', planMark: 'plan', planAxisTip: 'Click to move the planned landing date',
@@ -65,14 +68,17 @@ const ko = {
   app: '달 착륙지 내비게이터',
   go: '가능', nogo: '불가',
   move: '이동', mast: '마스트', wait: '대기', sky: '하늘', map: '지도', year: '연간',
-  sun: '태양', earth: '지구', dark: '암흑', noComm: '통신 끊김',
+  sun: '태양', earth: '지구', dark: '암흑', noComm: '통신 끊김', slopeL: '경사',
+  detailDiff: v => `입지 분석(500 m 격자)에서는 '${v}' 판정이었어요. 이 화면은 이 지점의 세밀한 지형으로 계산해서 이쪽 판정이 더 정확해요.`,
+  detailGo: '가능', detailNogo: '불가',
   focus: '자세히', compare: '나란히', basic: '기본', expert: '전문가',
-  why: { sun: '태양광 전력', earth: '지구와 교신', dark: '배터리 한계', noComm: '가장 긴 교신 두절' },
+  why: { sun: '태양광 전력', earth: '지구와 교신', dark: '배터리 한계', noComm: '가장 긴 교신 두절', slope: '전복 위험' },
   whyLong: {
     sun: '착륙선은 태양광으로 움직여요. 주변 언덕 위로 해가 보일 때만 전기가 생겨요. 남극 최고 지점은 약 92 % (Gläser et al. 2014).',
     earth: '지구가 지평선 위에 있을 때만 관제센터와 통신할 수 있어요. 중계 위성이 없으면 지구가 가려지는 순간 연락이 끊겨요 (Bryant 2009).',
     dark: '어둠 속에서는 배터리로 버텨야 해요. VIPER는 50시간을 버티고, NASA는 어둠 50시간 이하를 Safe Haven이라 불러요.',
-    noComm: '지구가 지형선 아래에 있어 통신이 끊기는 시간이 가장 길게 이어진 길이.'
+    noComm: '지구가 지형선 아래에 있어 통신이 끊기는 시간이 가장 길게 이어진 길이.',
+    slope: '경사가 가파르면 착륙선이 넘어질 수 있어요 (IM-1·IM-2 사례). 8°는 보수적인 기준이에요 (Apollo LM 12°). LOLA 15 m 경사.'
   },
   legendGo: '가능', legendNone: '해법 없음',
   okPct: '가능 %', planMark: '계획', planAxisTip: '클릭하면 계획한 착륙일을 옮겨요',

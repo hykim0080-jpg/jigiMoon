@@ -78,7 +78,7 @@ export function pinInfo(st) {
   const site = D.sites.find(s => s.box_m && x >= s.box_m[0] && x <= s.box_m[2] && y >= s.box_m[1] && y <= s.box_m[3]);
   const lq = new URLSearchParams(location.search).get('lang') || new URLSearchParams(location.hash.slice(1)).get('lang');
   const ch = critHash(D.meta, st.crit), q = lq ? '?lang=' + lq : '', l2 = (lq ? '&lang=' + lq : '') + (ch ? '&' + ch : '');
-  const link = site ? `../index.html${q}#s=${site.id}&day=${st.tDay}${l2}` : `../index.html${q}#pin=${Math.round(x)},${Math.round(y)}&d=${isoOfDay(st.tDay)}${l2}`;
+  const link = site ? `../index.html${q}#s=${site.id}&day=${st.tDay}&m=${st.mission}&fv=${go && go.go[st.tDay] ? 1 : 0}${l2}` : `../index.html${q}#pin=${Math.round(x)},${Math.round(y)}&d=${isoOfDay(st.tDay)}${l2}`;
   return info = {
     col: p.col, row: p.row, x, y, ll, go, siteId: site ? site.id : null, site,
     title: describe(x, y, D.landmarks) || `${Math.abs(ll.lat).toFixed(2)}°S`,
