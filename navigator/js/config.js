@@ -27,8 +27,9 @@ export const DEFAULT = {
   playing: false,
   expo: 0,
   pan: '',
-  d3: 0,
-  lmap: 'line',   // right map: 'line' = whole pole contour map, 'relief' = the spot up close
+  d3: typeof innerWidth === 'number' && innerWidth <= 700 ? 0 : 1,   // the centre map opens in 3D on desktops (2D on phones: the 3D frames are ~18 MB)
+  lmap: 'line',
+  lzoom: 'region',   // right map zoom (Relief): 'region' +-200 km, 'site' +-50 km, 'spot' +-3.5 km   // right map: 'line' = whole pole contour map, 'relief' = the spot up close
 };
 // zoom factor: 1 = +-200 km; presets Region 1, Site 4, Spot (+-3.5 km)
 export const ZOOM = { site: 4, spot: 200 / 3.5, slideMs: 250 };

@@ -31,8 +31,9 @@ export function init(node) {
   cards.mast.c.addEventListener('click', () => { const h = cards.mast.c.dataset.h; if (h) setState({ mast: state.mast === +h ? 0 : +h }); });
   root.appendChild(rows);
   const l = document.createElement('div'); l.className = 'card local';
-  l.innerHTML = `<svg viewBox="0 0 ${VB} ${VB}"></svg><div class="seg lmsw"><button data-lm="line">${t('baseLine')}</button><button data-lm="relief">${t('baseShade')}</button></div>`;
+  l.innerHTML = `<svg viewBox="0 0 ${VB} ${VB}" preserveAspectRatio="xMidYMin meet"></svg><div class="seg lmsw"><button data-lm="line">${t('baseLine')}</button><button data-lm="relief">${t('baseShade')}</button></div><div class="seg lzsw"><button data-lz="region">${t('zoomRegion')}</button><button data-lz="site">${t('zoomSite')}</button><button data-lz="spot">${t('zoomSpot')}</button></div>`;
   l.querySelector('.lmsw').addEventListener('click', ev => { const b = ev.target.closest('[data-lm]'); if (b) setState({ lmap: b.dataset.lm }); });
+  l.querySelector('.lzsw').addEventListener('click', ev => { const b = ev.target.closest('[data-lz]'); if (b) setState({ lzoom: b.dataset.lz }); });
   root.appendChild(l);
   c.classList.add('inset'); l.appendChild(c);   // MOVE sits in a corner of the line map, like the globe on the left map
   loc = l.querySelector('svg');
@@ -43,7 +44,7 @@ const UNIT = { move: 'unitKm', mast: 'unitM', wait: 'unitD' };
 // where the zoom connector from the main map lands: the spot on the whole map, or the 3 km circle up close
 let conn = { cx: VB / 2, cy: VB / 2, r: 3 / R_LOC * VB / 2 };
 export function gridCenter() {
-  const r = loc.getBoundingClientRect(), k = Math.min(r.width, r.height) / VB, ox = r.left + (r.width - VB * k) / 2, oy = r.top + (r.height - VB * k) / 2;
+  const r = loc.getBoundingClientRect(), k = Math.min(r.width, r.height) / VB, ox = r.left + (r.width - VB * k) / 2, oy = r.top;   // map at the top (xMidYMin)
   return { x: ox + conn.cx * k, y: oy + conn.cy * k, r: conn.r * k };
 }
 
@@ -119,51 +120,59 @@ function drawMove(svg, st, data) {
   svg.onpointerleave = hideTip;
 }
 
+const HALF = { region: 200, site: 50, spot: R_LOC }, SCALE = { region: 50, site: 10, spot: 1 };
 function drawLocal(svg, st, data, e, near) {
   clear(svg);
-  loc.parentNode.querySelectorAll('[data-lm]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lm === (st.lmap || 'line'))));
-  const s = data.index.byId[st.site], x0 = s.x_m / 1000, y0 = s.y_m / 1000;
-  if (st.lmap !== 'relief') {   // the whole pole as contour lines (+-200 km), Earth up; the spot and the other sites on it
-    const k = VB / 400, X = x => (x + 200) * k, Y = y => (200 - y) * k;
-    el('rect', { x: 0, y: 0, width: VB, height: VB, fill: '#fff' }, svg);
-    // darken the thin lines (gamma 2.5 keeps the white paper white) so the whole map reads at this size
+  const relief = st.lmap === 'relief', zk = relief && HALF[st.lzoom] ? st.lzoom : 'region';
+  const box = loc.parentNode;
+  box.querySelectorAll('[data-lm]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lm === (relief ? 'relief' : 'line'))));
+  box.querySelectorAll('[data-lz]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lz === zk)));
+  box.querySelector('.lzsw').hidden = !relief;
+  const s = data.index.byId[st.site], sx = s.x_m / 1000, sy = s.y_m / 1000, R = HALF[zk];
+  // view window (km): the whole pole, or centred on the spot
+  const x0 = zk === 'region' ? 0 : sx, y0 = zk === 'region' ? 0 : sy, k = VB / (2 * R);
+  const X = x => (x - (x0 - R)) * k, Y = y => ((y0 + R) - y) * k, dark = relief;
+  el('rect', { x: 0, y: 0, width: VB, height: VB, fill: dark ? '#222' : '#fff' }, svg);
+  if (!relief) {   // contour lines; gamma 2.5 darkens the thin lines and keeps the white paper white
     const f = el('filter', { id: 'lmdark' }, el('defs', {}, svg)), ct = el('feComponentTransfer', {}, f);
     for (const ch of ['R', 'G', 'B']) el('feFunc' + ch, { type: 'gamma', amplitude: 1, exponent: 2.5, offset: 0 }, ct);
-    el('image', { href: 'data/linemap_4000.webp', x: 0, y: 0, width: VB, height: VB, preserveAspectRatio: 'none', filter: 'url(#lmdark)' }, svg);
-    for (const o of data.index.sites) if (o.id !== st.site && o.x_m != null) el('circle', { cx: X(o.x_m / 1000), cy: Y(o.y_m / 1000), r: 2.5, fill: '#fff', stroke: 'var(--ink)', 'stroke-width': 1 }, svg);
-    const cx = X(x0), cy = Y(y0);
-    el('circle', { cx, cy, r: 9, fill: 'none', stroke: 'var(--move)', 'stroke-width': 1.5 }, svg);
-    el('circle', { cx, cy, r: 4.5, fill: e.ok[st.day] ? 'var(--ok)' : 'var(--block)', stroke: '#fff', 'stroke-width': 1.5 }, svg);
+    el('image', { href: 'data/linemap_4000.webp', x: X(-200), y: Y(200), width: 400 * k, height: 400 * k, preserveAspectRatio: 'none', filter: 'url(#lmdark)' }, svg);
+  } else {
+    el('image', { href: zk === 'region' ? 'data/hillshade_2800.jpg' : 'data/hillshade_4000.jpg', x: X(-200), y: Y(200), width: 400 * k, height: 400 * k, preserveAspectRatio: 'none' }, svg);
+    if (zk === 'spot') {   // 20 m relief tiles (data/t20, 5 km each)
+      const T = 5, c0 = Math.floor((x0 - R + 200) / T), c1 = Math.floor((x0 + R + 200) / T), r0 = Math.floor((200 - (y0 + R)) / T), r1 = Math.floor((200 - (y0 - R)) / T);
+      for (let r = Math.max(0, r0); r <= Math.min(79, r1); r++) for (let c = Math.max(0, c0); c <= Math.min(79, c1); c++) {
+        const im = el('image', { href: `data/t20/${c}_${r}.jpg`, x: X(-200 + c * T) - .5, y: Y(200 - r * T) - .5, width: T * k + 1, height: T * k + 1, preserveAspectRatio: 'none' }, svg);
+        im.addEventListener('error', () => im.remove());
+      }
+    }
+  }
+  const cx = X(sx), cy = Y(sy), ok = e.ok[st.day], lc = dark ? 'locl dk' : 'locl';
+  if (zk === 'spot') {
+    const g = el('g', { transform: `translate(${cx},${cy})` }, svg);
+    el('circle', { cx: 0, cy: 0, r: 3 * k, fill: 'none', stroke: '#fff', 'stroke-width': 1.5, 'stroke-dasharray': '5 4' }, g);
+    text(g, t('km', 3), { x: 3 * k * .72 + 4, y: 3 * k * .72 + 4, class: 'locl dk' });
+    if (near) {   // arrow to the nearest GO cell of the MOVE grid
+      const x = near.c.dx * k, y = -near.c.dy * k, L = Math.hypot(x, y), ux = x / L, uy = y / L, tx = x - ux * 8, ty = y - uy * 8;
+      el('line', { x1: ux * 9, y1: uy * 9, x2: tx, y2: ty, stroke: 'var(--move)', 'stroke-width': 3 }, g);
+      el('path', { d: `M${x},${y}L${tx - uy * 6},${ty + ux * 6}L${tx + uy * 6},${ty - ux * 6}Z`, fill: 'var(--move)' }, g);
+      text(g, t('km', Math.round(near.d * 10) / 10), { x: x / 2 + (uy <= 0 ? 8 : -8) * (ux >= 0 ? 1 : -1), y: y / 2 - 6, 'text-anchor': ux >= 0 ? 'start' : 'end', class: 'locl dk' });
+    }
+    el('circle', { cx: 0, cy: 0, r: 6, fill: ok ? 'var(--ok)' : 'var(--block)', stroke: '#fff', 'stroke-width': 2 }, g);
+    conn = { cx, cy, r: 3 * k };
+  } else {
+    for (const o of data.index.sites) if (o.id !== st.site && o.x_m != null) {
+      const ox = X(o.x_m / 1000), oy = Y(o.y_m / 1000); if (ox < -5 || oy < -5 || ox > VB + 5 || oy > VB + 5) continue;
+      el('circle', { cx: ox, cy: oy, r: 2.5, fill: '#fff', stroke: 'var(--ink)', 'stroke-width': 1 }, svg);
+    }
+    el('circle', { cx, cy, r: 9, fill: 'none', stroke: dark ? '#fff' : 'var(--move)', 'stroke-width': 1.5 }, svg);
+    el('circle', { cx, cy, r: 4.5, fill: ok ? 'var(--ok)' : 'var(--block)', stroke: '#fff', 'stroke-width': 1.5 }, svg);
     const right = cx < VB - 120;
-    text(svg, siteName(s), { x: cx + (right ? 13 : -13), y: cy + 4, 'text-anchor': right ? 'start' : 'end', class: 'locl lname' });
-    text(svg, '↑ ' + t('earthUp'), { x: 8, y: 18, class: 'locl', fill: 'var(--earth)' });
-    const km = 50 * k;
-    el('path', { d: `M${VB - 10 - km},${VB - 34}v4h${km}v-4`, fill: 'none', stroke: 'var(--ink)', 'stroke-width': 1.5 }, svg);
-    text(svg, t('km', 50), { x: VB - 10 - km / 2, y: VB - 38, 'text-anchor': 'middle', class: 'tick' });
+    text(svg, siteName(s), { x: cx + (right ? 13 : -13), y: cy + 4, 'text-anchor': right ? 'start' : 'end', class: dark ? 'locl dk' : 'locl lname' });
     conn = { cx, cy, r: 9 };
-    return;
   }
-  // the spot up close (+-3.5 km) on 20 m relief tiles (data/t20, 5 km each), over the 100 m relief
-  const k = VB / (2 * R_LOC), C = VB / 2;
-  el('rect', { x: 0, y: 0, width: VB, height: VB, fill: '#222' }, svg);
-  el('image', { href: 'data/hillshade_4000.jpg', x: (-200 - (x0 - R_LOC)) * k, y: ((y0 + R_LOC) - 200) * k, width: 400 * k, height: 400 * k, preserveAspectRatio: 'none' }, svg);
-  const T = 5, c0 = Math.floor((x0 - R_LOC + 200) / T), c1 = Math.floor((x0 + R_LOC + 200) / T), r0 = Math.floor((200 - (y0 + R_LOC)) / T), r1 = Math.floor((200 - (y0 - R_LOC)) / T);
-  for (let r = Math.max(0, r0); r <= Math.min(79, r1); r++) for (let c = Math.max(0, c0); c <= Math.min(79, c1); c++) {
-    const im = el('image', { href: `data/t20/${c}_${r}.jpg`, x: (-200 + c * T - (x0 - R_LOC)) * k - .5, y: ((y0 + R_LOC) - (200 - r * T)) * k - .5, width: T * k + 1, height: T * k + 1, preserveAspectRatio: 'none' }, svg);
-    im.addEventListener('error', () => im.remove());
-  }
-  const g = el('g', { transform: `translate(${C},${C})` }, svg);
-  el('circle', { cx: 0, cy: 0, r: 3 * k, fill: 'none', stroke: '#fff', 'stroke-width': 1.5, 'stroke-dasharray': '5 4' }, g);
-  text(g, t('km', 3), { x: 3 * k * .72 + 4, y: 3 * k * .72 + 4, class: 'locl dk' });
-  if (near) {   // arrow to the nearest GO cell of the MOVE grid
-    const x = near.c.dx * k, y = -near.c.dy * k, L = Math.hypot(x, y), ux = x / L, uy = y / L, tx = x - ux * 8, ty = y - uy * 8;
-    el('line', { x1: ux * 9, y1: uy * 9, x2: tx, y2: ty, stroke: 'var(--move)', 'stroke-width': 3 }, g);
-    el('path', { d: `M${x},${y}L${tx - uy * 6},${ty + ux * 6}L${tx + uy * 6},${ty - ux * 6}Z`, fill: 'var(--move)' }, g);
-    text(g, t('km', Math.round(near.d * 10) / 10), { x: x / 2 + (uy <= 0 ? 8 : -8) * (ux >= 0 ? 1 : -1), y: y / 2 - 6, 'text-anchor': ux >= 0 ? 'start' : 'end', class: 'locl dk' });
-  }
-  el('circle', { cx: 0, cy: 0, r: 6, fill: e.ok[st.day] ? 'var(--ok)' : 'var(--block)', stroke: '#fff', 'stroke-width': 2 }, g);
-  text(svg, '↑ ' + t('earthUp'), { x: 8, y: 18, class: 'locl dk' });
-  el('path', { d: `M${VB - 10 - k},${VB - 34}v4h${k}v-4`, fill: 'none', stroke: '#fff', 'stroke-width': 1.5 }, svg);
-  text(svg, t('km', 1), { x: VB - 10 - k / 2, y: VB - 38, 'text-anchor': 'middle', class: 'tick dk' });
-  conn = { cx: C, cy: C, r: 3 * k };
+  text(svg, '↑ ' + t('earthUp'), { x: 8, y: 18, class: lc, ...(dark ? {} : { fill: 'var(--earth)' }) });
+  const km = SCALE[zk] * k;
+  el('path', { d: `M${VB - 10 - km},${VB - 34}v4h${km}v-4`, fill: 'none', stroke: dark ? '#fff' : 'var(--ink)', 'stroke-width': 1.5 }, svg);
+  text(svg, t('km', SCALE[zk]), { x: VB - 10 - km / 2, y: VB - 38, 'text-anchor': 'middle', class: dark ? 'tick dk' : 'tick' });
 }
