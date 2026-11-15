@@ -139,12 +139,12 @@ export function compose(st) {
       if (o === 1) { f = 0; nd = 0; } else if (o === -1) { f = f > 1 ? f : 2; nd = 0; }
       failCount[i] = nd ? 255 : f;
       const h = hill[i];
-      if (fa) {   // the factor's colour steps; ground that misses its limit dimmed
+      if (fa) {   // the factor's gradient; ground that misses its limit a little dimmer
         const o = i * 4, a = fa[o + 3], L = light[h];
         if (!nd && f === 0) passPx++;
         let br, bg, bb;
         if (a === 255) { br = h * .18 + fa[o] * L * .82; bg = h * .18 + fa[o + 1] * L * .82; bb = h * .18 + fa[o + 2] * L * .82; }
-        else if (a) { br = (h * .6 + fa[o] * L * .4) * .38; bg = (h * .6 + fa[o + 1] * L * .4) * .38; bb = (h * .6 + fa[o + 2] * L * .4) * .38; }
+        else if (a) { br = (h * .3 + fa[o] * L * .7) * .6; bg = (h * .3 + fa[o + 1] * L * .7) * .6; bb = (h * .3 + fa[o + 2] * L * .7) * .6; }
         else { br = bg = bb = h * .4; }
         out[i] = pack(br | 0, bg | 0, bb | 0);
         continue;

@@ -1,29 +1,29 @@
 // Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 // One factor on the map: clicking Sun / Earth / Dark / Slope / Ice in the criteria colours the ground by that factor's
-// value in steps (brighter = better), dims the ground that misses its limit, and draws the limit as a line. The
-// slider track of that row carries the same steps, so the track is the legend. Sun / Earth / dark are the values over
+// value as a gradient (brighter = better), dims the ground that misses its limit a little, and draws the limit as a line. The
+// slider track of that row carries the same gradient, so the track is the legend. Sun / Earth / dark are the values over
 // the stay from the chosen day (the trip window, js/window.js); slope and ice are fixed layers.
 import { N } from './config.js';
 import { colorAt } from './ramps.js';
 import { valueOf } from './data.js';
 import { winVals } from './window.js';
 
-// lo..hi = the slider's value range (the track maps value linearly); steps = number of colour bands
+// lo..hi = the slider's value range (the track maps value linearly, the colour runs along it)
 export const FX = {
-  sun:   { lo: 0, hi: 100, steps: 10, dir: '>=', ramp: ['#2b1a04', '#6e4200', '#b96f00', '#f0a531', '#ffe7a6'] },
-  earth: { lo: 0, hi: 100, steps: 10, dir: '>=', ramp: ['#0b1833', '#173873', '#2459b8', '#74a2f2', '#dce8ff'] },
-  dark:  { lo: 0, hi: 150, steps: 10, dir: '<=', ramp: ['#1b1430', '#3b2a6b', '#6a4fb0', '#a58ce6', '#e6dcff'] },
-  slope: { lo: 0, hi: 20, steps: 10, dir: '<=', ramp: ['#1a2206', '#44580f', '#7c9a1e', '#b7d353', '#eef7c4'] },
-  ice:   { lo: 0, hi: 25, steps: 10, dir: '<=', ramp: ['#0b2a3a', '#0f4f6b', '#2386ad', '#5cc6ec', '#d6f3ff'] },
+  sun:   { lo: 0, hi: 100, dir: '>=', ramp: ['#2b1a04', '#6e4200', '#b96f00', '#f0a531', '#ffe7a6'] },
+  earth: { lo: 0, hi: 100, dir: '>=', ramp: ['#0b1833', '#173873', '#2459b8', '#74a2f2', '#dce8ff'] },
+  dark:  { lo: 0, hi: 150, dir: '<=', ramp: ['#1b1430', '#3b2a6b', '#6a4fb0', '#a58ce6', '#e6dcff'] },
+  slope: { lo: 0, hi: 20, dir: '<=', ramp: ['#1a2206', '#44580f', '#7c9a1e', '#b7d353', '#eef7c4'] },
+  ice:   { lo: 0, hi: 25, dir: '<=', ramp: ['#0b2a3a', '#0f4f6b', '#2386ad', '#5cc6ec', '#d6f3ff'] },
 };
 const NPX = N * N;
 let D = null;
 export const initFactor = data => { D = data; };
 const metaOf = id => D.layers.find(m => m.id === id);
 
-// colour of band b (0 = lowest value)
-const bandColor = (k, b) => { const f = FX[k], t = (b + .5) / f.steps, g = f.dir === '<=' ? 1 - t : t; return colorAt(f.ramp, .12 + .88 * g); };
-const bandOf = (k, v) => { const f = FX[k]; return Math.max(0, Math.min(f.steps - 1, Math.floor((v - f.lo) / (f.hi - f.lo) * f.steps))); };
+// continuous colour along the slider's value range (t = 0 at lo .. 1 at hi), brighter = better
+const colorT = (k, t) => { const f = FX[k], g = f.dir === '<=' ? 1 - t : t; return colorAt(f.ramp, .12 + .88 * g); };
+const tOf = (k, v) => { const f = FX[k]; return Math.max(0, Math.min(1, (v - f.lo) / (f.hi - f.lo))); };
 
 // the limit of factor k now (null = no limit, e.g. ice switched off)
 export function limitOf(st, k) {
@@ -61,10 +61,10 @@ export function fxImage(st) {
   if (out.key === key) return out;
   if (!cv) { cv = document.createElement('canvas'); cv.width = cv.height = N; }
   const g = cv.getContext('2d'), im = g.createImageData(N, N), d = im.data, f = FX[k];
-  const lut = Array.from({ length: f.steps }, (_, b) => bandColor(k, b));
+  const lut = Array.from({ length: 256 }, (_, j) => colorT(k, j / 255));
   for (let i = 0; i < NPX; i++) {
     const x = v[i]; if (x !== x) continue;
-    const c = lut[bandOf(k, x)], o = i * 4;
+    const c = lut[Math.round(tOf(k, x) * 255)], o = i * 4;
     d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = thr == null || passes(k, x, thr) ? 255 : 128;
   }
   g.putImageData(im, 0, 0);
@@ -72,12 +72,12 @@ export function fxImage(st) {
   return out;
 }
 
-// the slider track of factor k: the same bands, the side that misses the limit dimmed
+// the slider track of factor k: the same gradient, the side that misses the limit dimmed
 export function trackCss(st, k) {
   const f = FX[k], parts = [];
-  for (let b = 0; b < f.steps; b++) { const c = `rgb(${bandColor(k, b)})`; parts.push(`${c} ${b * 100 / f.steps}%`, `${c} ${(b + 1) * 100 / f.steps}%`); }
+  for (let j = 0; j <= 20; j++) parts.push(`rgb(${colorT(k, j / 20)}) ${j * 5}%`);
   const thr = limitOf(st, k), bands = `linear-gradient(to right,${parts.join(',')})`;
   if (thr == null) return bands;
-  const p = Math.max(0, Math.min(100, (thr - f.lo) / (f.hi - f.lo) * 100)).toFixed(1), dim = 'rgba(12,15,22,.72)';
+  const p = Math.max(0, Math.min(100, (thr - f.lo) / (f.hi - f.lo) * 100)).toFixed(1), dim = 'rgba(12,15,22,.5)';
   return (f.dir === '>=' ? `linear-gradient(to right,${dim} ${p}%,transparent ${p}%),` : `linear-gradient(to right,transparent ${p}%,${dim} ${p}%),`) + bands;
 }

@@ -257,12 +257,12 @@ void main() {
     col = mix(col, vec3(0.455, 0.635, 0.949), smoothstep(0.35, 0.65, go) * 0.42);
     col = mix(col, vec3(0.70, 0.82, 1.0), outline * 0.95);
   }
-  if (uFxOn > 0.5) {   // the factor's colour steps; dimmed where it misses the limit; the limit as a thin bright line
+  if (uFxOn > 0.5) {   // the factor's gradient; a little dimmer where it misses the limit; the limit as a thin bright line
     vec4 fx = texture2D(uFx, vec2((vMap.x + 200.0) / 400.0, (200.0 - vMap.y) / 400.0));
     float shade = 0.55 + 0.5 * clamp(amb, 0.0, 1.2);
     float met = smoothstep(0.7, 0.8, fx.a), has = smoothstep(0.1, 0.3, fx.a);
     vec3 fc = fx.rgb * shade;
-    col = mix(col, mix(mix(col, fc, 0.4) * 0.4, mix(col, fc, 0.85), met), has);
+    col = mix(col, mix(mix(col, fc, 0.75) * 0.6, mix(col, fc, 0.85), met), has);
     float wl = max(fwidth(fx.a), 1e-4);
     col = mix(col, vec3(0.96, 0.97, 0.99), (1.0 - smoothstep(0.0, 1.4 * wl, abs(fx.a - 0.75))) * 0.95 * has);
   }
