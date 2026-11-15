@@ -162,7 +162,7 @@ async function boot() {
 }
 
 function onKey(e) {
-  if (e.target.matches('input,select,textarea')) return;
+  if (e.target.matches('input,select,textarea') || (e.target.closest && e.target.closest('#where-pop'))) return;   // the WHERE list uses the arrows itself
   const ids = data.index.sites.map(s => s.id);
   const step = e.shiftKey ? 7 : 1;
   if (e.key === 'ArrowLeft') setState({ day: state.day - step });
