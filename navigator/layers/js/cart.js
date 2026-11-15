@@ -24,10 +24,17 @@ export function readCart(s) {
   return (s || '').split(';').map(p => p.split(',').map(Number)).filter(v => v.length === 2 && v.every(n => Number.isInteger(n) && n >= 0 && n < 800)).slice(0, MAX).map(([col, row]) => ({ col, row }));
 }
 const titleOf = c => { const { x, y } = cellToXY(c.col, c.row); return describe(x, y, D.landmarks) || `${(x / 1000).toFixed(1)}, ${(y / 1000).toFixed(1)} km`; };
-export function compareHref(st) {
-  const pts = st.cart.map(c => { const { x, y } = cellToXY(c.col, c.row); return `${Math.round(x)},${Math.round(y)}`; });
-  const ch = critHash(D.meta, st.crit), ids = pts.map((_, k) => 'pin' + (k + 1));
-  return `../index.html${lq ? '?lang=' + lq : ''}#v=compare&s=${ids[0]}${ids.length > 1 ? '&cmp=' + ids.slice(1).join(',') : ''}&day=${st.tDay}&base=${st.tDay}&m=${st.mission}&pins=${pts.join(';')}${ch ? '&' + ch : ''}`;
+// sel: index of the spot that opens selected (default the first)
+export function compareHref(st, cart = st.cart, sel = 0) {
+  const pts = cart.map(c => { const { x, y } = cellToXY(c.col, c.row); return `${Math.round(x)},${Math.round(y)}`; });
+  const ch = critHash(D.meta, st.crit), ids = pts.map((_, k) => 'pin' + (k + 1)), rest = ids.filter((_, k) => k !== sel);
+  return `../index.html${lq ? '?lang=' + lq : ''}#v=compare&s=${ids[sel]}${rest.length ? '&cmp=' + rest.join(',') : ''}&day=${st.tDay}&base=${st.tDay}&m=${st.mission}&pins=${pts.join(';')}${ch ? '&' + ch : ''}`;
+}
+// "Open in Compare" on a spot card: Side by side with the shortlist plus this spot (selected); a full shortlist gives up its last one
+export function compareWith(st, col, row) {
+  let i = inCart(col, row), cart = st.cart;
+  if (i < 0) { cart = [...cart.slice(0, MAX - 1), { col, row }]; i = cart.length - 1; }
+  return compareHref(st, cart, i);
 }
 export function initCart(app, d, lang, langQ) {
   D = d; tx = TX[lang] || TX.en; lq = langQ || '';
