@@ -1,5 +1,5 @@
 import { state, setState, limitsOf } from './state.js';
-import { MAST_SLIDER } from './config.js';
+import { MAST_SLIDER, BUDGET } from './config.js';
 import { t, siteName } from './strings.js';
 import { status, fixText, isoDate, nearestOk, goRuns, shortDate, dateOf } from './logic.js';
 import { moveShort } from './orient.js';
@@ -24,6 +24,7 @@ export function init(el, data) {
     <div class="chips" hidden></div>
     <span class="grow"></span>
     <div class="verdict"></div>
+    <a id="api-link" class="api-link" target="_blank" rel="noopener" title="${t('apiTip')}">${t('apiLabel')}</a>
     <div class="adv"><button id="adv-btn" aria-label="${t('advanced')}" aria-expanded="false">⋯</button>
       <div id="adv-panel" hidden>${[['sun', '≥', '%'], ['earth', '≥', '%'], ['dark', '≤', 'h']].map(([k, op, u]) => `<div class="crit" data-c="${k}"><span>${t(k)} ${op}</span><span class="cseg">${LEVELS[k].map(v => `<button data-v="${v}">${v}</button>`).join('')}</span><span>${u}</span></div>`).join('')}<hr>${[['moveMax','maxMove',0.25,6,0.25],['mastMax','maxMast',MAST_SLIDER.min,MAST_SLIDER.max,1],['waitMax','maxWait',0,120,1]].map(([k,l,mn,mx,sp])=>`<label>${t(l)}<span class="rw"><input type="range" min="${mn}" max="${mx}" step="${sp}" data-k="${k}">${k==='mastMax'?`<i style="left:${(MAST_SLIDER.mark-mn)/(mx-mn)*100}%"></i>`:''}</span><input class="n" type="number" min="${mn}" max="${mx}" step="${sp}" data-k="${k}"></label>`).join('')}</div></div>
     ${seg([['focus', t('focus')], ['compare', t('compare')], ['sites', t('sites')]], 'view')}`;
@@ -107,4 +108,19 @@ export function render(st, data) {
   }
   refs.verdict.className = 'verdict' + (s.kind === 'ok' ? '' : ' nogo');
   refs.verdict.innerHTML = html;
+  apiLink(st);
+}
+
+// the same verdict as JSON from the Cloudflare Pages Functions API (/api/check); custom pins are not served
+function apiLink(st) {
+  const a = root.querySelector('#api-link');
+  a.hidden = st.site === 'pin';
+  if (a.hidden) return;
+  const q = new URLSearchParams({ site: st.site, date: isoDate(st.day), mission: String(st.mission) });
+  if (st.mast) q.set('mast', st.mast);
+  if (!isDefault(st.crit)) { q.set('sun', st.crit.sun); q.set('earth', st.crit.earth); q.set('dark', st.crit.dark); }
+  if (st.moveMax !== BUDGET.move) q.set('max_move', st.moveMax);
+  if (st.mastMax !== BUDGET.mast) q.set('max_mast', st.mastMax);
+  if (st.waitMax !== BUDGET.wait) q.set('max_wait', st.waitMax);
+  a.href = `api/check?${q}`;
 }

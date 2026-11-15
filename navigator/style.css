@@ -136,6 +136,9 @@ svg .lbl.red{fill:var(--block);font-family:var(--f-mono);font-size:11px}
 .cmp .yearc{display:flex;align-items:center;gap:8px}
 .cmp .yearc canvas{flex:1;height:14px}
 
+.api-link{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--muted);font-family:var(--f-mono);font-size:11px;text-decoration:none;white-space:nowrap}
+.api-link:hover{border-color:var(--ink);color:var(--ink)}
+.api-link[hidden]{display:none}
 /* advanced limits */
 .adv{position:relative}
 .adv>button{border:1px solid var(--line);background:var(--surface);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:16px;line-height:1}
@@ -215,3 +218,5 @@ main[data-zoomed="1"]:not([data-view="compare"]) #map{cursor:grab}
 #map{touch-action:none}
 #hold-ring{position:absolute;z-index:4;width:56px;height:56px;margin:-28px 0 0 -28px;border:2px solid #fff;border-radius:50%;pointer-events:none;opacity:0;animation:holdring .5s linear .15s infinite;box-shadow:0 0 0 1px rgba(0,0,0,.4)}
 @keyframes holdring{0%{transform:scale(1);opacity:.9}100%{transform:scale(.25);opacity:.2}}
+/* the API button on small presentation screens: icon only, tighter header */
+@media (max-width:1366px){header{gap:5px}.api-txt{display:none}.verdict{min-width:180px}}
