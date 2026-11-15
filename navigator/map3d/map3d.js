@@ -1498,7 +1498,7 @@ export function mountLunarMap(container, options = {}) {
     const rank = (s) => (s === hoverSite ? 0 : s === selSite ? 1 : 2);
     vis.sort((a, b) => rank(a) - rank(b));
     // one name per place: a candidate named after a landmark close by ('Malapert Massif' by 'Mons Malapert',
-    // 'Shackleton rim' by 'Shackleton') leaves the name to the landmark, unless it is the one picked or hovered
+    // 'Shackleton Rim' by 'Shackleton') leaves the name to the landmark, unless it is the one picked or hovered
     const base = (n) => String(n || '').toLowerCase().replace(/^(mons|mount|mt\.?)\s+/, '').split(/\s+/)[0];
     const dupOf = (st) => landmarks.some((m) => m.on && Math.hypot(m.x_m - st.x_m, m.y_m - st.y_m) < 30000 && base(m.name) && base(m.name) === base(st.name));
     for (const s of vis) {

@@ -236,13 +236,14 @@ function sync(st) {
   }
   // the 3 km MOVE grid on the ground, as on the MOVE card: GO cells blue, the rest dark; ring and cross as marks
   const det = st.view !== 'find';   // Find a site tab: no Detail grid, ring, mast or MOVE marks on the shared map
-  const ck = det && s && data.site ? `${st.site}:${s.x_m},${s.y_m}:${st.day}` : '';
+  const ck = det && s && data.site ? `${st.site}:${s.x_m},${s.y_m}:${st.day}:${landerOn}` : '';
   if (map.setCells && ck !== lastCells) {
     lastCells = ck;
     // the hover card inside the grid: the cell's own verdict (the same as its colour)
     const G = ck ? data.site : null, sx = s?.x_m, sy = s?.y_m;
     setGrid(G ? (x, y) => { const h = G.stepKm / 2, dx = (x - sx) / 1000, dy = (y - sy) / 1000; if (Math.abs(dx) > 3 + h || Math.abs(dy) > 3 + h) return null; const c = G.grid.find(c => Math.abs(c.dx - dx) <= h && Math.abs(c.dy - dy) <= h); return c || null; } : null);
-    map.setCells(ck ? data.site.grid.map(c => {
+    // Lander view: no fill (the ground stays visible from eye height), only the GO cells' outline, added to the marks below
+    map.setCells(ck && !landerOn ? data.site.grid.map(c => {
       const ok = c.ok[st.day] === '1';
       return { x: s.x_m + c.dx * 1000, y: s.y_m + c.dy * 1000, half: data.site.stepKm * 500, rgb: ok ? [0.455, 0.635, 0.949] : [0.13, 0.15, 0.2], a: ok ? (c.landable ? 0.85 : 0.45) : (c.landable ? 0.6 : 0.35) };
     }) : []);
@@ -254,6 +255,16 @@ function sync(st) {
       marks.push({ x1: s.x_m + R * Math.sin(a0), y1: s.y_m + R * Math.cos(a0), x2: s.x_m + R * Math.sin(a1), y2: s.y_m + R * Math.cos(a1), color: '#74a2f2', w: 1.2 });
     }
     marks.push({ x1: s.x_m - 150, y1: s.y_m, x2: s.x_m + 150, y2: s.y_m, color: '#fff', w: 1.5 }, { x1: s.x_m, y1: s.y_m - 150, x2: s.x_m, y2: s.y_m + 150, color: '#fff', w: 1.5 });
+  }
+  if (landerOn && det && s && data.site) {   // the GO ground's edge: a side of a GO cell whose neighbour is not GO
+    const G = data.site, k = G.stepKm, h = k * 500, key = (a, b) => `${Math.round(a / k)},${Math.round(b / k)}`;
+    const okSet = new Set(G.grid.filter(c => c.ok[st.day] === '1').map(c => key(c.dx, c.dy)));
+    for (const c of G.grid) {
+      if (c.ok[st.day] !== '1') continue;
+      const x = s.x_m + c.dx * 1000, y = s.y_m + c.dy * 1000;
+      for (const [ddx, ddy, x1, y1, x2, y2] of [[k, 0, h, -h, h, h], [-k, 0, -h, -h, -h, h], [0, k, -h, h, h, h], [0, -k, -h, -h, h, -h]])
+        if (!okSet.has(key(c.dx + ddx, c.dy + ddy))) marks.push({ x1: x + x1, y1: y + y1, x2: x + x2, y2: y + y2, color: '#74a2f2', w: 1.6 });
+    }
   }
   if (map.setMarks) map.setMarks(det ? marks : []);
   const h = det && s && e ? mastShown(e, st.day, st.mast, limitsOf(st)) : 0;

@@ -454,6 +454,9 @@ main[data-view="find"] #map-panel>:not(#map3d):not(#note3d){display:none!importa
 main[data-view="find"] #map3d .lmap-bar,main[data-view="find"] #map3d .lmap-tl,main[data-view="find"] #map3d .lmap-tr,main[data-view="find"] #map3d .lmap-strip{display:none!important}
 main[data-view="find"] #map3d{left:0!important;top:0!important;width:100%!important;height:100%!important}
 main[data-view="find"] #find{display:block;position:absolute;inset:0;z-index:40;pointer-events:none;background:transparent}
+/* phones: the page grows with its content, and Find a site holds only absolutely placed layers, so give it the
+   screen below the header (else it collapses to 0 px and the tab is blank) */
+@media (max-width:700px){main[data-view="find"]{position:relative;height:calc(100dvh - 54px);min-height:440px}}
 body[data-view="find"] header>*:not(.app-name):not([data-key="view"]):not(.grow){display:none}
 #space-hint{position:absolute;right:12px;bottom:86px;z-index:6;font-size:11px;color:#c9cfdb;background:rgba(15,19,27,.75);padding:3px 7px;pointer-events:none}
 #space-hint[hidden]{display:none}
@@ -561,13 +564,40 @@ main[data-view="find"] .tbar .tb-pole{display:block}   /* Find a site tab: Detai
 #when-pop[hidden]{display:none}
 #when-pop .chips{max-width:100%;flex-wrap:wrap;overflow:visible}
 #when-pop .slip{display:inline!important}
+#when-pop .seg[hidden]{display:none}
+#when-pop .wp-cal{flex-direction:column;align-items:stretch;gap:8px}
+#when-pop .wp-mh{display:flex;align-items:center;gap:6px}
+#when-pop .wp-mh b{min-width:96px;text-align:center;font-size:14px;font-weight:600}
+#when-pop .wp-mh button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:0;width:28px;height:28px;cursor:pointer}
+#when-pop .wp-mh .slip{margin-left:auto;color:var(--muted)}
+#when-pop .wp-grid{display:grid;grid-template-columns:repeat(7,36px);gap:2px}
+#when-pop .wp-grid em{font-style:normal;font-size:11px;color:var(--muted);text-align:center}
+#when-pop .wp-grid button{height:32px;border:1px solid var(--line);border-radius:0;background:var(--surface);color:var(--ink);font:inherit;font-size:13px;cursor:pointer;font-variant-numeric:tabular-nums}
+#when-pop .wp-grid button.go{background:color-mix(in srgb,var(--ok) 45%,var(--surface));border-color:color-mix(in srgb,var(--ok) 60%,var(--surface))}
+#when-pop .wp-grid button.plan{text-decoration:underline;text-underline-offset:3px}
+#when-pop .wp-grid button:hover{border-color:var(--ink)}
+#when-pop .wp-grid button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 header>.hb-ans{flex:1 1 0;min-width:0;margin:0 0 0 6px;font-size:14px;line-height:1.35;max-height:2.7em;overflow:hidden}
 .hb-ans b{font-weight:600}.hb-ans .hb-go{color:var(--ok)}.hb-ans .hb-nogo{color:var(--nogo,#f0655a)}
 header>.grow,header>.app-name{display:none}
 body[data-view="find"] header>.hb-trip,body[data-view="find"] header>.hb-ans{display:none}
-main.full #dock .adv{position:relative}
+main.full #dock .adv{position:relative;display:flex;flex-direction:column}
 main.full #dock #adv-panel{left:calc(100% + 6px);right:auto;top:0}
 main.full #dock #adv-btn.changed{border-color:var(--accent)}
+/* the dock: one width for every button, panel toggles as one joined stack, the page controls (All panels, Limits,
+   Side by side) as a second stack below; .tight (set when the dock would reach the Sun/Earth/Both legend) puts the
+   second stack beside the first */
+main.full #dock{gap:0;width:116px}
+main.full #dock button{height:30px;min-height:0;line-height:1;padding-top:0;padding-bottom:0}
+@media (pointer:coarse){main.full #dock button{height:44px}}
+main.full #dock>button,main.full #dock .adv,main.full #dock #adv-btn{width:100%;min-width:0;margin:0}
+main.full #dock>button+button,main.full #dock>button+.adv>#adv-btn,main.full #dock .adv+button{margin-top:-1px}
+main.full #dock #layout-btn{margin-top:10px}
+main.full #dock #adv-btn{display:block;height:30px;font-size:12px;padding:0 10px;text-align:left;letter-spacing:0}
+main.full #dock.tight{display:grid;align-items:start;grid-template-columns:116px 116px;grid-auto-flow:column;grid-template-rows:repeat(4,auto);column-gap:8px;width:auto;align-content:start}
+main.full #dock.tight>*{margin-top:0!important}
+main.full #dock.tight>[data-dk]+[data-dk]{margin-top:-1px!important}
+main.full #dock.tight #layout-btn{grid-row:1}main.full #dock.tight .adv{grid-row:2;margin-top:-1px!important}main.full #dock.tight #side-btn{grid-row:3;margin-top:-1px!important}
 @media (min-width:1180px) and (max-width:1500px){header>.hb-ans{font-size:13px}}
 @media (max-width:1100px){.hb-tb{min-width:140px;padding:2px 10px}}
 @media (max-width:700px){
@@ -607,7 +637,7 @@ main.full #dock #adv-btn.changed{border-color:var(--accent)}
 #vbadge .vfx button.tall b{color:#f0a531}
 
 /* Find a site: Detail's view buttons (Pole, Region, Site, Spot, Lander view) on the shared map too, for its spot */
-main[data-view="find"] #map-panel>#zoom:not(#map3d):not(#note3d){display:flex!important;z-index:45;top:118px;right:70px}
+main[data-view="find"] #map-panel>#zoom:not(#map3d):not(#note3d){display:flex!important;z-index:45;top:8px;right:8px}
 main[data-view="find"] .tbar .tb-pole{display:none}
 main[data-view="find"] #zoom .z-dim{display:none}
 #when-pop .hb-any{font:inherit;font-size:13px;padding:5px 10px;border:1px solid var(--ink);background:transparent;color:var(--ink);border-radius:0;cursor:pointer}
@@ -626,3 +656,14 @@ main[data-view="find"] #zoom .z-dim{display:none}
 /* Find a site: the scale bar sits right of the ranked-spots panel, never under it */
 main[data-view="find"] #map3d .lmap-scale{margin-left:312px}
 @media (max-width:1179px){main[data-view="find"] #map3d .lmap-scale{margin-left:272px}}
+/* Side by side: the selected site's column stands out (bright edge, lighter ground); a click on a column selects it;
+   ▾ by a column's name changes that column only */
+.cmp .cell[data-pick]{cursor:pointer}
+.cmp.sbs .cell.sel{background:rgba(255,255,255,.05);box-shadow:inset 1px 0 0 #e8eaf0,inset -1px 0 0 #e8eaf0;padding-left:6px;padding-right:6px}
+.cmp.sbs .cell.head.sel{box-shadow:inset 1px 0 0 #e8eaf0,inset -1px 0 0 #e8eaf0,inset 0 2px 0 #e8eaf0;padding-top:6px}
+.cmp.sbs.has-sel .cell:not(.sel):not(.lab){opacity:.72}
+.cmp.sbs.has-sel .cell:not(.sel):hover{opacity:1}
+.cmp .cname{display:flex;align-items:center;gap:6px}
+.cmp .cdd{position:relative;display:inline-grid;place-items:center;width:28px;height:28px;border:1px solid var(--line);font-size:12px;color:var(--muted);flex:none}
+.cmp .cdd:hover{border-color:var(--ink);color:var(--ink)}
+.cmp .cdd select{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
