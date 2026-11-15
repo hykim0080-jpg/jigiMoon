@@ -3,7 +3,7 @@ import { state, setState, limitsOf, ui, setHover, onHover } from './state.js';
 import { ZOOM } from './config.js';
 import { siteName, t } from './strings.js';
 import { el, text, clear, showTip, hideTip } from './svg.js';
-import { status, fixText, shortDate, blockage, azToMapDir, nearestOk, mastShown } from './logic.js';
+import { status, fixText, shortDate, nearestOk, mastShown } from './logic.js';
 import { togglePin, rowOrder } from './calendar.js';
 import { landmarks, where, fmtLatLon } from './orient.js';
 import * as shadow from './shadow.js';
@@ -376,22 +376,6 @@ function draw(st) {
   for (const l of lms) {
     if (l.kind !== 'crater' || (l.tier > 2 && !siteLevel)) continue;
     el('circle', { cx: px(l.x), cy: py(l.y), r: l.R * ppk, fill: 'none', stroke: '#fff', 'stroke-opacity': .35, 'stroke-dasharray': '2 3' }, svg);
-  }
-
-  // why-ray
-  if (data.site && !compare) {
-    const b = blockage(data.site.sky, st.day * 24 + st.hour), len = Math.min(60 * ppk, 176);
-    const x0 = px(site.x_m / 1000), y0 = py(site.y_m / 1000);
-    for (const k of ['sun', 'earth']) {
-      if (!b[k]) continue;
-      const [dx, dy] = azToMapDir(site.lon, b[k].az);
-      el('line', { x1: x0, y1: y0, x2: x0 + dx * len, y2: y0 - dy * len, stroke: 'var(--block)', 'stroke-width': 1.5 }, svg);
-      // what is hidden that way: the Sun or Earth, struck through by the ridge
-      const ex = x0 + dx * (len + 8), ey = y0 - dy * (len + 8);
-      el('circle', { cx: ex, cy: ey, r: 6, fill: `var(--${k})`, stroke: 'var(--block)', 'stroke-width': 1.5 }, svg);
-      el('line', { x1: ex - 6, y1: ey + 4, x2: ex + 6, y2: ey - 4, stroke: 'var(--block)', 'stroke-width': 1.5 }, svg);
-      text(svg, t('hiddenBy')[k], { x: ex + (dx < 0 ? -10 : 10), y: ey + 4, 'text-anchor': dx < 0 ? 'end' : 'start', class: 'raylab' });
-    }
   }
 
   // MOVE prescription point at Site level

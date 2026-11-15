@@ -4,7 +4,7 @@
 // February, June and December 2027 (4 h steps); other dates show the same day-of-month and hour of the nearer
 // computed month, and say so.
 import { state, setState, limitsOf } from './state.js';
-import { mastShown, nearestOk, blockage, azToMapDir } from './logic.js';
+import { mastShown, nearestOk } from './logic.js';
 import { ZOOM } from './config.js';
 import { FIRST_DAY } from './config.js';
 import { SPOT5 } from './map.js';
@@ -112,18 +112,12 @@ function sync(st) {
   if (lastZoom === null) lastZoom = st.zoom;
   else if (st.zoom !== lastZoom) { lastZoom = st.zoom; recenter(); }   // Region / Site / Spot buttons
   const s = data.index.byId[st.site], e = data.index.modes[st.mission]?.sites[st.site];
-  // the same marks as the 2D map: MOVE to the nearest GO cell, and toward a Sun/Earth hidden by a ridge
+  // the same mark as the 2D map: MOVE to the nearest GO cell
   const marks = [];
   if (s && e && data.site) {
     if (!e.ok[st.day]) {
       const n = nearestOk(data.site, st.day);
       if (n && n.d > 0) marks.push({ x1: s.x_m, y1: s.y_m, x2: s.x_m + n.c.dx * 1000, y2: s.y_m + n.c.dy * 1000, color: '#fff', w: 2, end: 'ring', label: t('moveToGo', +n.d.toFixed(1)) });
-    }
-    const b = blockage(data.site.sky, st.day * 24 + st.hour), L = 6000;
-    for (const k of ['sun', 'earth']) {
-      if (!b[k]) continue;
-      const [dx, dy] = azToMapDir(s.lon, b[k].az);
-      marks.push({ x1: s.x_m, y1: s.y_m, x2: s.x_m + dx * L, y2: s.y_m + dy * L, color: '#f0655a', w: 1.5, end: k === 'sun' ? '#f0a531' : '#74a2f2', label: t('hiddenBy')[k] });
     }
   }
   // the 3 km MOVE grid on the ground, as on the MOVE card: GO cells blue, the rest dark; ring and cross as marks

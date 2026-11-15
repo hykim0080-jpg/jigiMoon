@@ -1,5 +1,5 @@
 // Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
-import { state, setState, subscribe } from './state.js';
+import { state, setState, subscribe, limitsOf } from './state.js';
 import { loadIndex, loadSite, getSite, preloadCals, metricsOf } from './data.js';
 import { applyCriteria, critKey } from './criteria.js';
 import { t } from './strings.js';
@@ -19,6 +19,7 @@ import * as pin from './pin.js';
 import * as view3d from './view3d.js';
 import * as full from './full.js';
 import * as intro from './intro.js';
+import * as verdict from './verdict.js';
 if (intro.shouldPlay()) intro.play();   // opening shot: near side -> south pole
 
 const $ = id => document.getElementById(id);
@@ -66,6 +67,7 @@ function render(st) {
   if (!data.site && st.view !== 'compare') return;
   metrics.render(st, data);
   fixes.render(st, data);
+  verdict.render(st, data, $('map-panel'), limitsOf(st));
   detailNote(st);
   if (st.view === 'focus') { sky.render(st, data); timeline.render(st, data); chain.render(); }
 }
