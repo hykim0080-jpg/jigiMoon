@@ -1,6 +1,7 @@
-# Step 2 of build_ok.py: per-day GO calendars from acc.npz. Usage: python3 build_ok_win.py <dir with acc.npz> navigator
+# Step 2 of build_ok.py: per-day GO calendars from acc.npz. Usage: python3 build_ok_win.py <dir with acc.npz> navigator [m10]
+# With a suffix (acc.npz from the mast-top horizons): ok14_m10, ok14s90_m10, ok6s90_m10 (GO with a 10 m mast)
 import numpy as np, sys
-OUT, NAV = sys.argv[1], sys.argv[2]
+OUT, NAV = sys.argv[1], sys.argv[2]; SUF = '_' + sys.argv[3] if len(sys.argv) > 3 else ''
 a = np.load(f'{OUT}/acc.npz'); sunD, earD, g0, g1, cells = a['sunD'].astype(np.float64), a['earD'].astype(np.int32), a['g0'].astype(np.int32), a['g1'].astype(np.int32), a['cells']
 cs = lambda X: np.vstack([np.zeros((1, X.shape[1]), X.dtype), np.cumsum(X, 0)])
 CS, CE, CG = cs(sunD), cs(earD), cs(g0 + g1)
@@ -16,6 +17,9 @@ def write(o, name):
     keep = o.any(0); idx = cells[keep].astype(np.uint32); bits = np.packbits(o[:, keep].T, axis=1)   # (n, 46): byte=day>>3, bit 7-(day&7)
     bits = np.pad(bits, ((0, 0), (0, 46 - bits.shape[1])))
     idx.tofile(f'{OUT}/{name}_idx.wasm'); bits.astype(np.uint8).tofile(f'{OUT}/{name}_bits.wasm'); print(name, idx.size, o.sum())
+if SUF:
+    for m, sun, name in [(14, 70, 'ok14'), (14, 90, 'ok14s90'), (6, 90, 'ok6s90')]: write(ok(m, sun), name + SUF)
+    sys.exit()
 # check against the shipped 14-day / 70 % calendar
 o70 = ok(14, 70)
 ref_idx = np.fromfile(f'{NAV}/layers/data/ok14_idx.wasm', np.uint32); ref_bits = np.fromfile(f'{NAV}/layers/data/ok14_bits.wasm', np.uint8).reshape(-1, 46)

@@ -21,7 +21,9 @@ for (const mission of Object.keys(index.modes)) {
     for (let d = 0; d < 365; d++) {
       const r = await check(load, q({ site: s.id, date: isoDate(d), mission, sun: '70' }));
       const ok = e.ok[d] === '1';
-      expect((r.verdict === 'GO') === ok, `${s.id} ${mission} ${d} verdict`);
+      const okMast = !ok && e.mast[d] != null && e.mast[d] > 0 && e.mast[d] <= 20;   // a mast up to Max mast (20 m) is GO
+      expect((r.verdict === 'GO') === (ok || okMast), `${s.id} ${mission} ${d} verdict`);
+      expect((r.go_with_mast_m ?? null) === (okMast ? e.mast[d] : null), `${s.id} ${mission} ${d} go with mast`);
       expect((r.fixes.mast?.m ?? null) === e.mast[d], `${s.id} ${mission} ${d} mast`);
       expect((r.fixes.move?.km ?? null) === e.move[d], `${s.id} ${mission} ${d} move`);
       expect((r.fixes.wait?.days ?? null) === (ok ? 0 : e.wait[d]), `${s.id} ${mission} ${d} wait`);
@@ -31,7 +33,9 @@ for (const mission of Object.keys(index.modes)) {
 }
 
 // demo state shown on the slides (demo links pin the precomputed sun 70 %)
-const demo = await check(load, q({ site: 'nobile-rim-1', date: '2027-02-15', sun: '70' }));
+const auto = await check(load, q({ site: 'nobile-rim-1', date: '2027-02-15', sun: '70' }));
+expect(auto.verdict === 'GO' && auto.go_with_mast_m === 7, 'demo GO with a 7 m mast within Max mast');
+const demo = await check(load, q({ site: 'nobile-rim-1', date: '2027-02-15', sun: '70', max_mast: '5' }));
 expect(demo.verdict === 'NO-GO' && demo.recommended.text === 'AVAILABLE 0.6 KM AWAY', 'demo recommended');
 expect(demo.fixes.mast.m === 7 && demo.fixes.wait.days === 16 && demo.failing.join() === 'earth', 'demo fixes');
 const withMast = await check(load, q({ site: 'nobile-rim-1', date: '2027-02-15', mast: '7', sun: '70' }));

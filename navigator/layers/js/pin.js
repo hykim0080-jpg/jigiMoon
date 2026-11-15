@@ -3,7 +3,7 @@
 import { N, PX, BUDGET } from './config.js';
 import { cellToXY, cellToLatLon } from './geo.js';
 import { describe, sectorOf } from './orient.js';
-import { sample, failBase, critIds } from './compose.js';
+import { sample, failBase, critIds, mastFor } from './compose.js';
 import { skyAt, calendarFrom } from './time.js';
 import { isBase, critHash } from './crit.js';
 import { decode } from './data.js';
@@ -37,8 +37,9 @@ const dayVal = (arr, m, i) => arr && arr[i] <= 250 ? Math.round(arr[i] * 365 / 2
 function verdict(st, p, go, slopeV, nd) {
   const d = st.tDay, i = p.row * N + p.col, thr = st.threshold.slope, slopeOn = st.on.mask.slope && slopeMeta() && thr != null;
   const steep = !!(slopeOn && slopeV != null && slopeV > thr);
-  const goNow = !steep && !!go && go.go[d] === 1;
-  let run = 0; if (goNow) while (d + run < DAYS && go.go[d + run]) run++;
+  const ma = steep || (go && go.go[d] === 1) ? null : mastFor(st), mastH = ma ? ma[i] : 0;   // GO with a 10 m / 20 m mast
+  const goNow = !steep && (!!go && go.go[d] === 1 || mastH > 0);
+  let run = 0; if (goNow) while (go && d + run < DAYS && go.go[d + run]) run++;
   let wait = null; if (!steep && go && !goNow) for (let d2 = d + 1; d2 < DAYS; d2++) if (go.go[d2]) { wait = d2 - d; break; }
   let move = null;
   if (goNow) move = { here: true };
@@ -65,13 +66,13 @@ function verdict(st, p, go, slopeV, nd) {
     if (cw === Infinity && cm === Infinity) kind = mast && (go ? go.count === 0 : true) ? 'mast' : 'none';
     else kind = cw <= cm ? 'wait' : 'move';
   }
-  return { pending: nd && !go, kind, d, steep, slopeV, run, wait, move, mast, goNow, slopeThr: thr };
+  return { pending: nd && !go && !mastH, kind, d, steep, slopeV, run, wait, move, mast, goNow, mastH, slopeThr: thr };
 }
 
 export function pinInfo(st) {
   const p = st.pin; if (!p) { key = ''; return info = null; }
   const nd = !isBase(st.crit) || st.mission !== 14, ck = `${p.row * N + p.col}|${JSON.stringify(st.crit)}|${st.mission}`;
-  const k = `${p.col},${p.row},${st.tDay},${JSON.stringify(st.threshold)},${JSON.stringify(st.on.mask)},${ck},${cal.has(ck)},${st.mode}`;
+  const k = `${p.col},${p.row},${st.tDay},${!!mastFor(st)},${JSON.stringify(st.threshold)},${JSON.stringify(st.on.mask)},${ck},${cal.has(ck)},${st.mode}`;
   if (k === key) return info; key = k;
   const i = p.row * N + p.col, { x, y } = cellToXY(p.col, p.row), ll = cellToLatLon(p.col, p.row);
   let go = nd ? cal.get(ck) || null : goDays(i); const sv = slopeVal(i);
