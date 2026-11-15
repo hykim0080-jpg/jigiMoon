@@ -446,3 +446,4 @@ main[data-d3="1"] #zoom{z-index:6}
 #intro{position:fixed;inset:0;z-index:100;background:#000;cursor:pointer;transition:opacity .6s}
 #intro.out{opacity:0;pointer-events:none}
 #intro canvas{display:block}
+#side-btn{margin-right:6px}#side-btn[hidden]{display:none}#side-btn[aria-pressed="true"]{background:var(--ink);color:var(--bg)}

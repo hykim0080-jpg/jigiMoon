@@ -1,3 +1,4 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 // Why a NO-GO day has no fix within the limits, as one sentence (en / ko).
 // Copy text and rules from the site-data thread (space-apps/ux-text). Inputs follow navigator/js/data.js loadSite():
 //   site = { cal: {sun, earth, dark, noComm}           365-day arrays (%, %, h, h)

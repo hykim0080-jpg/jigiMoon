@@ -1,3 +1,4 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 // 3D view of the Compare map: the lunar/map3d module (Three.js) mounted over the 2D map.
 // Loaded on first use only (module ~2 MB, one month of frames ~18 MB). Lighting frames exist for
 // June and December 2027 (4 h steps); other dates show the same day-of-month and hour of the nearer
