@@ -132,6 +132,24 @@ export function paint(canvas, S) {
   return true;
 }
 
+// paint an 800x800 Earth-shadow mask for Earth vector E (moon-fixed unit vector): blue where the Earth (a point)
+// is below the local horizon, clear where it is in line of sight. Same per-pixel test as paint(), no disc.
+export function paintEarth(canvas, E, rgba = [36, 89, 184, 150]) {
+  if (!hor || !E) return false;
+  if (canvas.width !== N) { canvas.width = N; canvas.height = N; }
+  const g = canvas.getContext('2d'), out = g.createImageData(N, N), d = out.data;
+  const { cl, sl, cp, sp, lon } = geo;
+  for (let i = 0; i < N * N; i++) {
+    const h = cl[i] * E[0] + sl[i] * E[1], up = cp[i] * h + sp[i] * E[2];
+    const el = Math.asin(Math.max(-1, Math.min(1, up))) / D2R;
+    const az = Math.atan2(-sl[i] * E[0] + cl[i] * E[1], -sp[i] * h + cp[i] * E[2]) / D2R;
+    if (el > horizonAt(i, az + lon[i])) continue;              // Earth in view: clear
+    d[i * 4] = rgba[0]; d[i * 4 + 1] = rgba[1]; d[i * 4 + 2] = rgba[2]; d[i * 4 + 3] = rgba[3];
+  }
+  g.putImageData(out, 0, 0);
+  return true;
+}
+
 // visible Sun-disc share at map point (x, y in m) — used to cross-check against the site series
 export function sunAt(x, y, S) {
   const q = Math.round((x + 199750) / 500), r = Math.round((199750 - y) / 500), i = r * N + q;

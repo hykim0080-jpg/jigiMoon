@@ -46,6 +46,7 @@ export async function mount(root, opts = {}) {
   if (h.get('h') != null && h.get('h') !== '' && +h.get('h') >= 0 && +h.get('h') <= 23) { state.tHour = Math.round(+h.get('h')); state.tTouched = true; }
   if (h.get('bm') === 'shade') state.basemap = 'shade';
   if (h.get('sh') === '1') state.shadow = true;
+  else if (h.get('esh') === '1') state.eshadow = true;   // Earth shadow (exclusive with sh)
   if (h.get('st') === '6') state.mission = 6;
   if (state.adv && h.get('jb') === 'y') state.basis = 'year';
   if (REGIONS.some(r => r.id === h.get('r'))) state.region = h.get('r');
@@ -106,6 +107,7 @@ export async function mount(root, opts = {}) {
     if (state.tTouched) { q.set('d', new Date(Date.UTC(2027, 0, 1 + state.tDay)).toISOString().slice(0, 10)); q.set('h', String(state.tHour).padStart(2, '0')); }
     if (state.basemap === 'shade') q.set('bm', 'shade');
     if (state.shadow) q.set('sh', 1);
+    if (state.eshadow) q.set('esh', 1);
     if (state.mission !== 14) q.set('st', state.mission);
     if (state.adv && state.basis === 'year') q.set('jb', 'y');
     if (state.region) q.set('r', state.region);
