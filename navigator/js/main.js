@@ -15,6 +15,7 @@ import * as globe from './globe.js';
 import * as chain from './chain.js';
 import * as orient from './orient.js';
 import * as pin from './pin.js';
+import * as view3d from './view3d.js';
 
 const $ = id => document.getElementById(id);
 const data = { index: null, site: null };
@@ -47,6 +48,7 @@ function render(st) {
   if (st.view === 'compare') compare.render(st, data);
   if (st.view === 'sites' && !$('sites').firstChild) $('sites').innerHTML = '<iframe src="selection.html" title="selection"></iframe>';
   map.render(st, data);
+  view3d.render(st);
   globe.render(st, data);
   // while the site's file loads, keep the last numbers in place (dimmed) instead of emptying the panels
   main.dataset.loading = data.site || st.view === 'compare' ? '' : '1';
@@ -86,6 +88,7 @@ async function boot() {
   header.init($('header'), data);
   calendar.init($('cal-panel'), data);
   map.init($('map'), data, openPin);
+  view3d.init($('map-panel'), data);
   globe.init($('globe'), data);
   metrics.init($('metrics-panel'));
   sky.init($('sky'), $('countdowns'));

@@ -228,3 +228,17 @@ main[data-zoomed="1"]:not([data-view="compare"]) #map [data-id],main[data-zoomed
 @media (prefers-reduced-motion: reduce){#map image.fadein{transition:none}#pending-pin::after{animation:none}}
 #metrics-panel,#sky-panel,#fixes,#chain{transition:opacity .15s}
 main[data-loading="1"] #metrics-panel,main[data-loading="1"] #sky-panel,main[data-loading="1"] #fixes,main[data-loading="1"] #chain{opacity:.55}
+/* 3D view (lunar/map3d) over the 2D map */
+#dim{position:absolute;top:8px;right:180px;z-index:6;background:rgba(15,19,27,.8);border-color:#fff}
+#dim button{color:#fff;font-size:12px;padding:3px 9px}
+#dim button[aria-pressed="true"]{background:#fff;color:#0f131b}
+main[data-view="compare"] #dim{display:none}
+#map3d{position:absolute;z-index:4;background:#0f131b}
+#map3d.loading::after{content:"";position:absolute;left:50%;top:50%;width:28px;height:28px;margin:-14px;border-radius:50%;border:3px solid #fff;border-top-color:transparent;animation:spin .8s linear infinite}
+#map3d .lmap-tl{top:40px}
+#map3d .lmap-tr{top:40px}
+#map3d .lmap-tr .lmap-seg{display:none}
+#note3d{position:absolute;left:50%;transform:translateX(-50%);bottom:96px;z-index:5;background:rgba(15,19,27,.85);color:#fff;font-size:12px;padding:4px 10px;border-radius:6px;white-space:nowrap;pointer-events:none}
+main[data-d3="1"] #zoom,main[data-d3="1"] #expo,main[data-d3="1"] #globe,main[data-d3="1"] #pending-pin,main[data-d3="1"] #lander-card{display:none}
+main[data-d3="1"] #chain{display:none}
+main[data-d3="1"] .map-panel h2{z-index:5}
