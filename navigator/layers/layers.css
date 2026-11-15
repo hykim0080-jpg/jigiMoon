@@ -266,11 +266,11 @@ h2{margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spaci
 
 /* pin card */
 .lyr-pinp{display:flex;flex-direction:column;gap:8px;overflow:hidden;padding:12px}
-.lyr-pt{font-size:14px;font-weight:600;line-height:18px;min-height:18px}
+.lyr-pt{flex:none;font-size:14px;font-weight:600;line-height:18px;min-height:18px}
 .lyr-dt{display:flex;align-items:center;justify-content:space-between;height:28px;flex:none;border:1px solid var(--line);border-radius:0;padding:0 4px}
 .lyr-dt button{border:0;background:transparent;cursor:pointer;font-size:12px;width:28px;height:24px;color:var(--ink)}
 .lyr-dt .n{font-size:14px}
-.lyr-vd{display:flex;gap:8px;align-items:flex-start;font-size:16px;font-weight:600;line-height:20px;min-height:40px}
+.lyr-vd{flex:none;display:flex;gap:8px;align-items:flex-start;font-size:16px;font-weight:600;line-height:20px;min-height:40px}
 .lyr-dot{flex:none;width:12px;height:12px;border-radius:50%;margin-top:4px}
 .lyr-fxs{display:flex;flex-direction:column;flex:none}
 .lyr-fx{display:flex;justify-content:space-between;align-items:center;height:22px;border-left:3px solid transparent;padding-left:6px;font-size:13px}

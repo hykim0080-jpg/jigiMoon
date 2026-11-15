@@ -280,6 +280,20 @@ header>.verdict .fix{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;m
 @media (max-width:1400px){header .seg[data-key="view"] button,header .seg[data-key="pro"] button{padding:5px 8px}header .slip{display:none}}
 /* square corners: rules kept unchanged above so parallel PRs merge cleanly */
 .adv>button,.api-link,#lander-card{border-radius:0}
+/* movable panels (js/drag.js): a bar on the top edge */
+.dgrip{position:absolute;left:0;right:0;top:0;height:12px;cursor:grab;z-index:6;pointer-events:auto;touch-action:none}
+.dgrip::after{content:"";position:absolute;left:50%;top:4px;width:32px;height:3px;margin-left:-16px;background:#8892a6;opacity:.55}
+.dgrip:hover::after{opacity:1;background:#c9cfdb}
+.dgrip[hidden]{display:none}
+.dragging{user-select:none}.dragging .dgrip{cursor:grabbing}
+/* tablets and small windows (701-1179 px) on the full map: no sideways scroll, the header wraps onto a second row
+   (the grid of all panels keeps its 1180 px minimum) */
+@media (min-width:701px) and (max-width:1179px){
+  .app:has(main.full){min-width:0}
+  header{height:auto;min-height:48px;flex-wrap:wrap;row-gap:6px}
+  header>.grow{display:none}
+  header>.verdict{order:5;flex:1 1 100%;max-width:none}
+}
 
 /* phones (390 px): one column — header controls wrap, then map, fixes, sky, numbers, calendar */
 @media (max-width:700px){

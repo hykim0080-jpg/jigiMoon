@@ -2,6 +2,7 @@
 // The verdict for the selected place, big on the map: GO / NO-GO, each criterion that misses its limit (value vs limit),
 // and the fix (or, with none within the limits, the one-sentence reason from failreason.js).
 // verdictFor() is plain data so other views (3D hover card, Find a site) can show the same words.
+import { moved } from './drag.js';
 import { t } from './strings.js';
 import { THRESHOLDS } from './config.js';
 import { status, nearestOk, blockage } from './logic.js';
@@ -43,7 +44,7 @@ export function render(st, data, panel, lim) {
   const main = document.getElementById('main');
   if (!v) { main.style.setProperty('--vbh', '0px'); return; }
   const key = JSON.stringify(v);
-  if (box.dataset.k === key) return;
+  if (box.dataset.k === key) { vbh(main, box); return; }
   box.dataset.k = key;
   box.className = v.go ? 'go' : 'nogo';
   box.innerHTML = `<b>${v.go ? t('go') : t('nogo')}</b>`
@@ -51,5 +52,7 @@ export function render(st, data, panel, lim) {
     + v.fails.map(f => `<span class="vfail">${f.text}</span>`).join('')
     + (v.fix ? `<span class="vfix" style="color:var(--${v.fixKind})">→ ${v.fix}</span>` : '')
     + (v.why ? `<span class="vwhy">${v.why}</span>` : '');
-  main.style.setProperty('--vbh', box.offsetHeight + 8 + 'px');   // the dock, sky pop-up and 3D legend sit below it
+  vbh(main, box);
 }
+// the dock, sky pop-up and 3D legend sit below the block, unless it was dragged away
+const vbh = (main, box) => main.style.setProperty('--vbh', moved('verdict') ? '0px' : box.offsetHeight + 8 + 'px');
