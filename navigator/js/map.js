@@ -391,7 +391,7 @@ function draw(st) {
       const rr = Math.max(7, 0.2 * ppk);
       el('circle', { cx: x1, cy: y1, r: rr, fill: 'none', stroke: '#000', 'stroke-width': 4, 'stroke-opacity': .5 }, svg);
       el('circle', { cx: x1, cy: y1, r: rr, fill: 'none', stroke: '#fff', 'stroke-width': 2 }, svg);
-      text(svg, t('moveToGo', +n.d.toFixed(1)), { x: x1, y: y1 + rr + 22, 'text-anchor': 'middle', class: 'raylab' });
+      text(svg, t('moveToGo', data.index.modes[st.mission]?.sites[st.site]?.move?.[st.day] ?? +n.d.toFixed(1)), { x: x1, y: y1 + rr + 22, 'text-anchor': 'middle', class: 'raylab' });
     }
   }
 

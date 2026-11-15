@@ -215,12 +215,12 @@ function sync(st) {
   if (lastZoom === null) lastZoom = st.zoom;
   else if (st.zoom !== lastZoom) { lastZoom = st.zoom; recenter(); }   // Region / Site / Spot buttons
   const s = data.index.byId[st.site], e = data.index.modes[st.mission]?.sites[st.site];
-  // the same mark as the 2D map: MOVE to the nearest GO cell
+  // the same mark as the 2D map: MOVE to the nearest GO cell, labelled with the distance the verdict and Fixes show
   const marks = [];
   if (s && e && data.site) {
     if (!e.ok[st.day]) {
       const n = nearestOk(data.site, st.day);
-      if (n && n.d > 0) marks.push({ x1: s.x_m, y1: s.y_m, x2: s.x_m + n.c.dx * 1000, y2: s.y_m + n.c.dy * 1000, color: '#fff', w: 2, end: 'ring', label: t('moveToGo', +n.d.toFixed(1)) });
+      if (n && n.d > 0) marks.push({ x1: s.x_m, y1: s.y_m, x2: s.x_m + n.c.dx * 1000, y2: s.y_m + n.c.dy * 1000, color: '#fff', w: 2, end: 'ring', label: t('moveToGo', e.move?.[st.day] ?? +n.d.toFixed(1)) });
     }
   }
   // the 3 km MOVE grid on the ground, as on the MOVE card: GO cells blue, the rest dark; ring and cross as marks
