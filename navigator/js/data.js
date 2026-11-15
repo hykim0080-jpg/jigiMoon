@@ -1,6 +1,6 @@
 // Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 // The only file that knows the JSON field names.
-import { MAST_HEIGHTS } from './config.js';
+import { MAST_HEIGHTS, MAST_SLIDER } from './config.js';
 
 const toBits = str => Array.from(str, c => c === '1');
 const cache = {};
@@ -16,7 +16,7 @@ export async function loadIndex() {
   const modes = {};
   const first = Object.values(raw.modes)[0].sites[raw.sites[0].id];
   MAST_HEIGHTS.length = 0;
-  MAST_HEIGHTS.push(...Object.keys(first.mast_ok).map(Number).sort((a, b) => a - b));
+  MAST_HEIGHTS.push(...Object.keys(first.mast_ok).map(Number).filter(h => h <= MAST_SLIDER.max).sort((a, b) => a - b));
   const optimal = {}, sens = {};
   let landmarks = [], landers = [];
   try { landmarks = await getJson('data/orientation/landmarks.json'); } catch (e) { /* optional */ }
