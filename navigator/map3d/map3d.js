@@ -43,12 +43,12 @@ const CSS = `
   --bg:#0f131b;--surface:#181d28;--ink:#e8eaf0;--muted:#98a1b4;--line:#2b3242;--sun:#f0a531;--earth:#74a2f2;--ok:#4cbf82;
   font:12px/1.3 Inter,"Apple SD Gothic Neo",system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;user-select:none;-webkit-user-select:none;outline:none;
   --lmap-mono:Inter,system-ui,sans-serif}
-.lmap-mast{position:absolute;left:0;top:0;pointer-events:none;z-index:3;display:flex;flex-direction:column;align-items:center;transform-origin:50% 100%}
+.lmap-mast{position:absolute;left:0;top:0;pointer-events:none;cursor:pointer;z-index:3;display:flex;flex-direction:column;align-items:center;transform-origin:50% 100%}
 .lmap-mast i{display:block;width:3px;background:var(--mast,#4fc0c9);box-shadow:0 0 0 1px #0f131b}
-.lmap-mast .cmp{position:absolute;bottom:0;left:calc(50% + 6px);display:flex;align-items:flex-end;gap:3px}
-.lmap-mast .cmp svg{display:block;fill:#d6dbe6;stroke:#0f131b;stroke-width:.6}
+.lmap-mast .cmp{position:absolute;bottom:0;left:calc(50% + 4px);display:none;align-items:flex-end}
+.lmap-mast .cmp svg{display:block;stroke:none;overflow:visible}
 .lmap-mast b{display:block;width:12px;height:12px;border:2px solid var(--mast,#4fc0c9);border-radius:50%;border-bottom-color:transparent;transform:rotate(45deg);margin-bottom:-2px}
-.lmap-mast span{font:600 11px/1 Inter,system-ui,sans-serif;color:#fff;background:rgba(15,19,27,.85);border:1px solid var(--mast,#4fc0c9);padding:2px 5px;margin-bottom:3px;white-space:nowrap}
+.lmap-mast span,.lmap-mast i{pointer-events:auto}.lmap-mast span{font:600 11px/1 Inter,system-ui,sans-serif;color:#fff;background:rgba(15,19,27,.85);border:1px solid var(--mast,#4fc0c9);padding:2px 5px;margin-bottom:3px;white-space:nowrap}
 .lmap *,.lmap *::before,.lmap *::after{box-sizing:border-box;font-variant-numeric:tabular-nums!important}
 .lmap canvas.lmap-gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
 .lmap-ov{position:absolute;inset:0;pointer-events:none;overflow:hidden}
@@ -495,7 +495,7 @@ export function mountLunarMap(container, options = {}) {
   ctl3.enableDamping = true;
   ctl3.dampingFactor = 0.12;
   ctl3.maxPolarAngle = 88 * DEG;
-  ctl3.minDistance = 20;
+  ctl3.minDistance = 0.15;   // down to a few hundred metres across: the hillshade patches carry the detail there
   ctl3.maxDistance = 2500;
   ctl3.zoomToCursor = true;
   const ctl2 = new OrbitControls(cam2, canvas);
@@ -545,6 +545,42 @@ export function mountLunarMap(container, options = {}) {
     if (c < 0 || r < 0 || c >= nx || r >= ny) return -1;
     return r * nx + c;
   };
+
+  // ---------------------------------------------------------------- close-up patches
+  // Hillshade images (PGDA 5 m / 20 m) laid on the terrain around the selected spot; they fade in when the
+  // camera comes within ~12 km, where the 500 m lighting grid is only blocks. Heights follow the same grid.
+  let detail = [];
+  const texLoader = new THREE.TextureLoader();
+  function clearDetail() { for (const d of detail) { scene.remove(d.mesh); d.mesh.geometry.dispose(); d.mesh.material.map?.dispose(); d.mesh.material.dispose(); } detail = []; }
+  function addDetail({ x0, y0, x1, y1, url }) {
+    const n = 96, pos = new Float32Array((n + 1) * (n + 1) * 3), uv = new Float32Array((n + 1) * (n + 1) * 2), idx = [];
+    for (let j = 0; j <= n; j++) for (let i = 0; i <= n; i++) {
+      const k = j * (n + 1) + i, xm = x0 + (x1 - x0) * i / n, ym = y0 + (y1 - y0) * j / n;
+      pos[k * 3] = xm / 1000; pos[k * 3 + 1] = heightAt(xm, ym) / 1000; pos[k * 3 + 2] = -ym / 1000;
+      uv[k * 2] = i / n; uv[k * 2 + 1] = j / n;
+      if (i < n && j < n) idx.push(k, k + 1, k + n + 1, k + 1, k + n + 2, k + n + 1);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    geo.setIndex(idx);
+    const mat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4, side: THREE.DoubleSide });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.visible = false; mesh.renderOrder = 2; mesh.frustumCulled = false;
+    scene.add(mesh);
+    const d = { mesh, ready: false };
+    detail.push(d);
+    texLoader.load(url, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 4; mat.map = tx; mat.needsUpdate = true; d.ready = true; dirty = true; }, undefined, () => {});
+  }
+  function syncDetail() {
+    const dist = camera === cam3 ? cam3.position.distanceTo(ctl3.target) : 1e9;
+    const a = clamp((14 - dist) / 8, 0, 1) * 0.92;
+    for (const d of detail) { d.mesh.scale.y = exagV; d.mesh.visible = d.ready && a > 0; d.mesh.material.opacity = a; }
+    // near plane follows the camera in, so a close look does not clip the ground
+    const near = clamp(dist * 0.02, 0.0005, 5);
+    if (camera === cam3 && Math.abs(cam3.near - near) > near * 0.2) { cam3.near = near; cam3.updateProjectionMatrix(); }
+  }
+
   const worldOf = (xm, ym, out) => out.set(xm / 1000, heightAt(xm, ym) / 1000 * exagV, -ym / 1000);
 
   function buildTerrain() {
@@ -738,9 +774,9 @@ export function mountLunarMap(container, options = {}) {
   }
   function stepTween(now) {
     const k = clamp((now - tween.t0) / tween.dur, 0, 1);
-    const e = k * k * (3 - 2 * k);
+    const e = k < 0.5 ? 4 * k * k * k : 1 - (-2 * k + 2) ** 3 / 2;   // easeInOutCubic
     const { from: a, to: b } = tween;
-    const L = (p) => a[p] + (b[p] - a[p]) * e;
+    const L = (p) => p === 'r' ? a.r * (b.r / a.r) ** e : a[p] + (b[p] - a[p]) * e;
     ctl3.target.set(L('tx'), tween.toY != null ? tween.ty + (tween.toY - tween.ty) * e : tween.keepY ? tween.ty : tween.ty * (1 - e), L('tz'));
     sph(ctl3.target, L('r'), L('polar'), a.az + (((b.az - a.az + 3 * Math.PI) % (2 * Math.PI)) - Math.PI) * e, cam3.position);
     cam3.up.set(0, 1, 0);
@@ -1158,10 +1194,21 @@ export function mountLunarMap(container, options = {}) {
       if (marksSvg._h !== html) { marksSvg.innerHTML = html; marksSvg._h = html; }
     }
     if (mastPt) {
-      if (!mastEl) { mastEl = el('div', 'lmap-mast', `<span></span><b></b><i></i><div class="cmp">${SCALE_FIGS(6)}</div>`); ov.appendChild(mastEl); }
-      const ok = project(worldOf(mastPt.x, mastPt.y, v3));
-      const px = Math.round(Math.min(mastPt.h, 20) * 6);   // 6 px per metre, the same scale as the astronaut and lander beside it
-      if (mastEl._h !== mastPt.h) { mastEl.firstChild.textContent = mastPt.label; mastEl.lastChild.style.height = px + 'px'; mastEl._h = mastPt.h; }
+      if (!mastEl) {
+        mastEl = el('div', 'lmap-mast', `<span></span><b></b><i></i><div class="cmp">${SCALE_FIGS(6)}</div>`); ov.appendChild(mastEl);
+        mastEl.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+        mastEl.addEventListener('click', (ev) => { ev.stopPropagation(); opt.onMastClick?.(); });
+      }
+      worldOf(mastPt.x, mastPt.y, v3);
+      // the pole never draws smaller than 6 px per metre; close up it is at true size, with the astronaut and lander beside it
+      const ppm = camera === cam3 ? canvas.clientHeight / (2 * camera.position.distanceTo(v3) * Math.tan(FOV * DEG / 2)) / 1000 : 0;
+      const real = ppm >= 6, k = Math.max(ppm, 6), key = mastPt.h + ':' + (real ? k.toFixed(1) : '6');
+      const ok = project(v3);
+      const px = Math.round(Math.min(mastPt.h, 20) * k);
+      if (mastEl._h !== key) {
+        mastEl.firstChild.textContent = mastPt.label; mastEl.querySelector('i').style.height = px + 'px'; mastEl._h = key;
+        const c = mastEl.querySelector('.cmp'); c.style.display = real ? 'flex' : 'none'; if (real) c.innerHTML = SCALE_FIGS(k);
+      }
       const hh = mastEl.offsetHeight || px + 30;
       place(mastEl, v3.x - (mastEl.offsetWidth || 40) / 2, v3.y - hh, ok && inView(v3.x, v3.y));
     } else if (mastEl) place(mastEl, 0, 0, false);
@@ -1466,6 +1513,7 @@ export function mountLunarMap(container, options = {}) {
         }
       }
     }
+    syncDetail();
     renderer.render(scene, camera);
     updateOverlay();
     updateTime();
@@ -1534,19 +1582,33 @@ export function mountLunarMap(container, options = {}) {
   });
 
   // centre the view on a map point (navigator: the selected site or pin), Earth side up
-  function focusOn(x_m, y_m, halfKm = 25) {
+  // fly to a map point (navigator: the selected site or pin), Earth side up. o.dur ms (default 1300), o.polar
+  // (default the oblique home view; ~0 = straight down). Distance changes geometrically, so a long way down reads
+  // as one smooth glide. Resolves when the camera arrives.
+  function focusOn(x_m, y_m, halfKm = 25, o = {}) {
     const tx = x_m / 1000, tz = -y_m / 1000;
     if (view === '2d') {
       ctl2.target.set(tx, 0, tz); cam2.position.set(tx, 1500, tz);
       cam2.zoom = clamp(ortHalf() / halfKm, ctl2.minZoom, ctl2.maxZoom); cam2.updateProjectionMatrix(); ctl2.update();
-      dirty = true; return;
+      dirty = true; return Promise.resolve();
     }
     const s = new THREE.Spherical().setFromVector3(cam3.position.clone().sub(ctl3.target));
-    const r = clamp(halfKm / Math.tan(FOV * DEG / 2) * 1.4, ctl3.minDistance, ctl3.maxDistance);
+    const r = clamp(o.r ?? halfKm / Math.tan(FOV * DEG / 2) * 1.4, ctl3.minDistance, ctl3.maxDistance);
+    const instant = o.dur === 0 || matchMedia('(prefers-reduced-motion: reduce)').matches;
     ctl3.enabled = false;
-    tween = { t0: performance.now(), dur: 700, from: { r: s.radius, polar: s.phi, az: s.theta, tx: ctl3.target.x, tz: ctl3.target.z }, to: { r, polar: home.polar, az: 0, tx, tz }, ty: ctl3.target.y, toY: (() => { try { const y = heightAt(x_m, y_m) / 1000 * exagV; return Number.isFinite(y) ? y : null; } catch { return null; } })(),   // the site itself at the screen centre
-      done: () => { ctl3.enabled = true; ctl3.update(); dirty = true; } };
-    dirty = true;
+    if (tween) { const d = tween.done; tween = null; d(true); }
+    return new Promise((res) => {
+      tween = { t0: performance.now(), dur: instant ? 1 : (o.dur ?? 1300), from: { r: s.radius, polar: s.phi, az: s.theta, tx: ctl3.target.x, tz: ctl3.target.z }, to: { r, polar: o.polar ?? home.polar, az: 0, tx, tz }, ty: ctl3.target.y, toY: (() => { try { const y = heightAt(x_m, y_m) / 1000 * exagV; return Number.isFinite(y) ? y : null; } catch { return null; } })(),   // the site itself at the screen centre
+        done: () => { ctl3.enabled = true; ctl3.update(); dirty = true; res(); } };
+      dirty = true;
+    });
+  }
+  // put the 3D camera somewhere at once (no tween): above map point (x_m, y_m) at r km, polar angle from straight down
+  function setCamera(x_m, y_m, r, polar = 0.0005) {
+    if (tween) { const d = tween.done; tween = null; d(true); }
+    ctl3.target.set(x_m / 1000, 0, -y_m / 1000);
+    sph(ctl3.target, clamp(r, ctl3.minDistance, ctl3.maxDistance), polar, 0, cam3.position);
+    cam3.up.set(0, 1, 0); cam3.lookAt(ctl3.target); ctl3.update(); dirty = true;
   }
 
   raf = requestAnimationFrame(frame);
@@ -1562,7 +1624,9 @@ export function mountLunarMap(container, options = {}) {
     setDataset,
     setExaggeration: setExag,
     focus: focusOn,
+    setCamera,
     setMarks(list) { marks = list || []; dirty = true; },
+    setDetail(list) { clearDetail(); for (const d of list || []) addDetail(d); dirty = true; },
     setMast(h, x_m, y_m, label) { mastPt = h > 0 ? { h, x: x_m, y: y_m, label: label || `${h} m` } : null; if (mastEl) mastEl._h = null; dirty = true; },
     selectSite(id) { selSite = sites.find((s) => s.id === id) ?? null; stripDirty = true; dirty = true; },
     loaded: () => ({ loaded: ds.loaded, total: ds.n }),
@@ -1574,6 +1638,7 @@ export function mountLunarMap(container, options = {}) {
       ro.disconnect();
       for (const d of datasets) clearTimeout(d.timer);
       ctl3.dispose(); ctl2.dispose();
+      clearDetail();
       for (const d of disposables) d.dispose();
       renderer.dispose();
       root.remove();

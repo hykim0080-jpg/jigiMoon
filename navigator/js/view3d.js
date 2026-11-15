@@ -6,11 +6,14 @@ import { state, setState, limitsOf } from './state.js';
 import { mastShown, nearestOk, blockage, azToMapDir } from './logic.js';
 import { ZOOM } from './config.js';
 import { FIRST_DAY } from './config.js';
+import { SPOT5 } from './map.js';
+import * as intro from './intro.js';
+import { openMastPop } from './mastpop.js';
 import { t } from './strings.js';
 
 const SETS = [{ label: '2027-06', url: 'data/3d/frames/', y: 2027, m: 5 }, { label: '2027-12', url: 'data/3d/frames_dec/', y: 2027, m: 11 }];
 const STEP_H = 4;
-let lastZoom = null, onPin = null, hint, box, note, btns, map = null, loading = null, order = null, lastKey = '', lastSite = '', data = null;
+let mapReady = false, lastZoom = null, onPin = null, hint, box, note, btns, map = null, loading = null, order = null, lastKey = '', lastSite = '', data = null;
 
 export function init(panel, d, pinAt) {
   data = d; onPin = pinAt;
@@ -60,30 +63,48 @@ async function mount() {
       datasets: order.map(j => ({ label: SETS[j].label, url: SETS[j].url })),
       sitesUrl: 'data/3d/sites.json', landmarksUrl: 'data/orientation/landmarks.json', landersUrl: 'data/orientation/landers.json',
       lang, frame: f.i,
-      onSpace: recenter,   // Space: back to the selected site, Earth side up
+      onSpace: () => recenter(),
+      onMastClick: () => openMastPop(data),   // Space: back to the selected site, Earth side up
       // clicks pick like the 2D map: a marker selects that site, the ground drops a pin there
       onSiteClick: id => { if (data.index.byId[id]) setState({ site: id }); },
       onMapClick: (x, y) => { if (onPin) onPin(Math.round(x), Math.round(y)); },
       moonUrl: 'data/moon.jpg', sunUrl: 'data/sun_sdo_512.png', earthUrl: 'data/earth_bluemarble_1024.jpg', bodyMarkers: false,   // NASA SVS CGI Moon Kit, the globe under the terrain patch
     });
     return map.ready;
-  }).then(() => { box.classList.remove('loading'); lastKey = ''; lastSite = ''; sync(state); })
+  }).then(() => { box.classList.remove('loading'); lastKey = ''; lastSite = ''; mapReady = true; return arrive(); })
     .catch(e => { console.error('[3d]', e); box.classList.remove('loading'); });
   return loading;
 }
 
+// the map appears looking straight down on the pole (Earth up). After the opening shot it starts where the shot
+// ended (~1,400 km up) and keeps going down; then it flies to the selected place, or, on a fresh visit with nothing
+// chosen yet, tilts to the oblique view of the whole region
+const TOP_R = 1390, REGION_R = 760;
+let entering = false;
+async function arrive() {
+  const fromIntro = intro.phase === 'playing';
+  entering = true;
+  map.setCamera(0, 0, fromIntro ? TOP_R : REGION_R);
+  sync(state);   // frame, marks, selected site (the camera stays put while entering)
+  if (fromIntro) { await intro.arrived; const skip = intro.phase === 'skipped'; intro.handOver(); await map.focus(0, 0, 0, { r: REGION_R, polar: 0.0005, dur: skip ? 0 : 1600 }); }
+  entering = false;
+  if (window.__fresh) { await map.focus(0, 0, 0, { r: 700, dur: 1300 }); return; }
+  recenter(1300);
+}
+
 function sync(st) {
-  if (!map || !data.index) return;
+  if (!map || !mapReady || !data.index) return;
   const f = frameFor(st.day, st.hour), key = `${f.k}:${f.i}`;
   if (key !== lastKey) {
     lastKey = key;
     const j = order.indexOf(f.k);
     Promise.resolve(map.setDataset(j)).then(() => { if (lastKey === key) map.setFrame(f.i); });
   }
-  if (st.site !== lastSite) {
-    lastSite = st.site;
-    const s = data.index.byId[st.site];
-    if (s) { map.selectSite(st.site); map.focus(s.x_m, s.y_m, 22); }
+  const s0 = data.index.byId[st.site], siteKey = s0 ? `${st.site}:${s0.x_m},${s0.y_m}` : st.site;   // a new pin is a new place
+  if (siteKey !== lastSite) {
+    lastSite = siteKey;
+    const s = s0;
+    if (s) { map.selectSite(st.site); if (!entering) recenter(); if (map.setDetail) map.setDetail(closeUp(st.site, s)); }
   }
   if (lastZoom === null) lastZoom = st.zoom;
   else if (st.zoom !== lastZoom) { lastZoom = st.zoom; recenter(); }   // Region / Site / Spot buttons
@@ -112,11 +133,24 @@ function sync(st) {
   }
 }
 
+// hillshade laid on the terrain for a close look: the site's 9 km patch (PGDA 5 m where there is one, else 20 m),
+// or for a pin the 20 m tiles (5 km each) around it
+function closeUp(id, s) {
+  if (id !== 'pin') { const h = 4500; return [{ x0: s.x_m - h, x1: s.x_m + h, y0: s.y_m - h, y1: s.y_m + h, url: `data/${SPOT5.has(id) ? 'spot5' : 'spot'}/${id}.jpg` }]; }
+  const T = 5, c0 = Math.floor((s.x_m / 1000 + 200) / T), r0 = Math.floor((200 - s.y_m / 1000) / T), out = [];
+  for (let r = r0 - 1; r <= r0 + 1; r++) for (let c = c0 - 1; c <= c0 + 1; c++) {
+    if (c < 0 || r < 0 || c >= 80 || r >= 80) continue;
+    const x0 = (-200 + c * T) * 1000, y1 = (200 - r * T) * 1000;
+    out.push({ x0, x1: x0 + T * 1000, y0: y1 - T * 1000, y1, url: `data/t20/${c}_${r}.jpg` });
+  }
+  return out;
+}
+
 // Space: centre the 3D camera on the selected site again
-export function recenter() {
+export function recenter(dur) {
   const s = data && data.index && data.index.byId[state.site];
   const half = state.zoom >= ZOOM.spot - 0.01 ? 3.5 : state.zoom >= ZOOM.site - 0.01 ? 25 : state.zoom > 1.01 ? 200 / state.zoom : 22;
-  if (map && s) map.focus(s.x_m, s.y_m, half);
+  if (map && s && !entering) map.focus(s.x_m, s.y_m, half, { dur });
 }
 export const isOn = () => !!box && !box.hidden;
 
@@ -127,7 +161,7 @@ export function render(st) {
   document.getElementById('main').dataset.d3 = on ? '1' : '';
   box.hidden = !on;
   hint.hidden = !on;
-  if (!on) { note.hidden = true; place(); return; }
+  if (!on) { note.hidden = true; place(); intro.arrived.then(intro.handOver); return; }
   place();
   if (!map) mount(); else sync(st);
 }

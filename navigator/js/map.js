@@ -9,6 +9,7 @@ import { landmarks, where, fmtLatLon } from './orient.js';
 import * as shadow from './shadow.js';
 import { moment, bodyDir } from './globe.js';
 import { getSite } from './data.js';
+import { openMastPop } from './mastpop.js';
 import { isoDate } from './logic.js';
 import { critQuery } from './criteria.js';
 
@@ -57,7 +58,7 @@ const rho = deg => 2 * 1737.4 * Math.tan((deg * Math.PI / 180) / 2); // km at co
 let svg, data, S = 588, ppk = 1.47;
 const vp = { cx: 0, cy: 0, h: R_KM };
 // sites with a PGDA 5 m tile (data/spot5); the rest use the 20 m patch (data/spot)
-const SPOT5 = new Set(['haworth', 'malapert-massif', 'mons-mouton', 'nobile-rim-1', 'nobile-rim-2', 'de-gerlache-rim-2', 'shackleton-rim', 'connecting-ridge']);
+export const SPOT5 = new Set(['haworth', 'malapert-massif', 'mons-mouton', 'nobile-rim-1', 'nobile-rim-2', 'de-gerlache-rim-2', 'shackleton-rim', 'connecting-ridge']);
 let anim = null, hill = 'data/hillshade.jpg', instant = false, nextDur = 250;
 const px = x => (x - vp.cx + vp.h) / (2 * vp.h) * S;
 const py = y => (vp.cy + vp.h - y) / (2 * vp.h) * S;
@@ -416,6 +417,8 @@ function draw(st) {
       el('line', { x1: x0, y1: y0, x2: x0, y2: y0 - L, stroke: 'var(--mast)', 'stroke-width': 3 }, g);
       el('path', { d: `M${x0 - 7},${y0 - L - 6}a7 7 0 0 0 14 0`, fill: 'none', stroke: 'var(--mast)', 'stroke-width': 2 }, g);
       text(g, t('mastPole', h), { x: x0 + 10, y: y0 - L - 4, class: 'mastlab' });
+      el('rect', { x: x0 - 9, y: y0 - L - 18, width: 70, height: L + 20, fill: 'transparent' }, g);   // click target
+      g.addEventListener('click', ev => { ev.stopPropagation(); openMastPop(data); });
     }
   }
 

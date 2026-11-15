@@ -1,14 +1,13 @@
 import { state, setState, limitsOf } from './state.js';
 import { t, siteName } from './strings.js';
 import { el, text, clear, bar, showTip, hideTip } from './svg.js';
-import { fixes, bestFix, shortDate, nearestOk, mastShown, blockage } from './logic.js';
-import { mastSide } from './figs.js';
+import { fixes, bestFix, shortDate, nearestOk } from './logic.js';
 import { movePhrase, sector, bearing } from './orient.js';
 const ARROW = ['↑', '↗', '→', '↘', '↓', '↙', '←', '↖'];   // up = toward Earth, as on the map
 import { failStats, failReason } from './failreason.js';
 
 const KINDS = ['move', 'mast', 'wait'];
-let root, cards = {}, why, side;
+let root, cards = {}, why;
 
 // MAST and WAIT: one thin strip; below it the local line map of the spot (+-3.5 km), as big as the main map:
 // the spot, the arrow to the nearest GO cell and the 3 km circle. MOVE (3 km grid) is an inset in its corner.
@@ -32,7 +31,6 @@ export function init(node) {
   // MAST line: click to raise the antenna to the lowest height that works (click again to lower it)
   cards.mast.c.addEventListener('click', () => { const h = cards.mast.c.dataset.h; if (h) setState({ mast: state.mast === +h ? 0 : +h }); });
   root.appendChild(rows);
-  side = document.createElement('div'); side.className = 'mastside'; side.hidden = true; root.appendChild(side);
   const l = document.createElement('div'); l.className = 'card local';
   l.innerHTML = `<svg viewBox="0 0 ${VB} ${VB}" preserveAspectRatio="xMidYMin meet"></svg><div class="seg lmsw"><button data-lm="line">${t('baseLine')}</button><button data-lm="relief">${t('baseShade')}</button></div><div class="seg lzsw"><button data-lz="region">${t('zoomRegion')}</button><button data-lz="site">${t('zoomSite')}</button><button data-lz="spot">${t('zoomSpot')}</button></div>`;
   l.querySelector('.lmsw').addEventListener('click', ev => { const b = ev.target.closest('[data-lm]'); if (b) setState({ lmap: b.dataset.lm }); });
@@ -68,12 +66,6 @@ export function render(st, data) {
   const go = near && near.d > 0 && f.move <= lim.move;
   cards.move.dir.textContent = go ? ARROW[sector(bearing(near.c.dx, near.c.dy))] : '';
   cards.move.dir.title = go ? movePhrase(near.c.dx, near.c.dy) : '';
-  const mh = mastShown(e, st.day, st.mast, lim);
-  side.hidden = !mh;
-  if (mh) {
-    const b = data.site ? blockage(data.site.sky, st.day * 24 + st.hour) : {}, tg = !b.earth && b.sun ? 'sun' : 'earth';
-    if (side.dataset.k !== mh + tg) { side.dataset.k = mh + tg; side.innerHTML = mastSide(mh, tg); }
-  }
   if (!data.site) return;
   // no fix within the limits: say why in one sentence, above the fixes
   const none = !e.ok[st.day] && !best;
