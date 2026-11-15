@@ -54,6 +54,8 @@ export function init(panel, d, pinAt) {
     dimBtn = document.createElement('button'); dimBtn.type = 'button'; dimBtn.className = 'z-dim';
     dimBtn.addEventListener('click', e => { e.stopPropagation(); setState({ d3: state.d3 ? 0 : 1 }); });
     zoom.appendChild(dimBtn);
+    // Find a site: the same buttons go to its picked (or best) spot; pressing the current zoom again flies there too
+    zoom.addEventListener('click', e => { const b = e.target.closest('[data-z]'); if (state.view !== 'find' || !b || b === landerBtn) return; const z0 = state.zoom; setTimeout(() => { if (state.zoom === z0 && !landerOn) recenter(); }); }, true);
   }
   box = document.createElement('div'); box.id = 'map3d'; box.hidden = true;
   hint = document.createElement('div'); hint.id = 'space-hint'; hint.hidden = true; hint.textContent = t('spaceHint'); panel.appendChild(hint);
@@ -256,7 +258,9 @@ function sync(st) {
   // NO-GO without a mast fix: the lander shows why (cold, no Earth link, too steep) on the model itself
   // every place: the model tilts with the ground's real slope (map3d turns it into the angle seen from the camera)
   const fx = { ...(det && !h && data.site ? stageFx(st, data) : {}), ground: det && s ? s.slope_deg || 0 : 0 };
-  if (map.setMast) map.setMast(h, s?.x_m, s?.y_m, h ? t('mastPole', h) : stageLine(fx), fx);
+  if (!map.setMast) { /* older map */ }
+  else if (det) map.setMast(h, s?.x_m, s?.y_m, h ? t('mastPole', h) : stageLine(fx), fx);
+  else { const g = landerOn ? findTarget() : null; map.setMast(0, g?.x, g?.y, '', { ground: 1 }); }   // Find a site: the lander at its spot in Lander view
   note.hidden = f.exact;
   if (!f.exact) {
     const d = new Date(f.shown);
@@ -277,10 +281,17 @@ function closeUp(id, s) {
   return out;
 }
 
+// Find a site: the place the view buttons go to: its picked spot, else its best one, else Detail's place
+function findTarget() {
+  if (state.view !== 'find') return null;
+  const d = findlink.data(), c = d.pin || d.rank[0];
+  return c ? { x: (c.col + .5) * 500 - 200000, y: 200000 - (c.row + .5) * 500 } : null;
+}
 function landerView(dur = 1800) {
-  const s = data && data.index && data.index.byId[state.site], e = data && data.index.modes[state.mission]?.sites[state.site];
+  const s0 = data && data.index && data.index.byId[state.site], e = data && data.index.modes[state.mission]?.sites[state.site];
+  const ft = findTarget(), s = ft ? { x_m: ft.x, y_m: ft.y } : s0;
   if (!map || !s || entering) return;
-  const h = e ? mastShown(e, state.day, state.mast, limitsOf(state)) : 0;
+  const h = e && !ft ? mastShown(e, state.day, state.mast, limitsOf(state)) : 0;
   // the rig (lander, mast, panels) about 40 % of the map's height: k px per metre -> camera distance
   const H = box.clientHeight || 700, k = 0.4 * H / (Math.max(h, 4.3) + 1.2), ppm = k / (map.exaggeration ? map.exaggeration() : 3);
   // standing on the ground in front of it at eye height (1.8 m), looking level toward Earth: horizon and ridges behind
@@ -290,7 +301,7 @@ function landerView(dur = 1800) {
 // Space: centre the 3D camera on the selected site again
 export function recenter(dur) {
   if (landerOn) { landerView(dur); return; }
-  const s = data && data.index && data.index.byId[state.site];
+  const ft = findTarget(), s = ft ? { x_m: ft.x, y_m: ft.y } : data && data.index && data.index.byId[state.site];
   const half = state.zoom >= ZOOM.spot - 0.01 ? 3.5 : state.zoom >= ZOOM.site - 0.01 ? 25 : state.zoom > 1.01 ? 200 / state.zoom : 22;
   const spot = state.zoom >= ZOOM.spot - 0.01;   // Spot: straight down on the place, Earth up, like the MOVE card
   if (map && s && !entering) map.focus(s.x_m, s.y_m, spot ? 4 : half, { dur, polar: spot ? 0.0005 : undefined });
