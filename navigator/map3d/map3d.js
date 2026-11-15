@@ -573,9 +573,36 @@ export function mountLunarMap(container, options = {}) {
     detail.push(d);
     texLoader.load(url, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 4; mat.map = tx; mat.needsUpdate = true; d.ready = true; dirty = true; }, undefined, () => {});
   }
+
+  // cells painted on the ground (navigator: the 3 km MOVE grid, GO cells blue): [{ x, y, half (m), rgb: [r,g,b], a }]
+  let cellMesh = null;
+  const tmpC = new THREE.Color();
+  function setCells(list) {
+    if (cellMesh) { scene.remove(cellMesh); cellMesh.geometry.dispose(); cellMesh.material.dispose(); cellMesh = null; }
+    if (!list || !list.length || !grid) { dirty = true; return; }
+    const pos = new Float32Array(list.length * 12), col = new Float32Array(list.length * 16), idx = [];
+    list.forEach((c, q) => {
+      const g = c.half * 0.92, corners = [[-g, -g], [g, -g], [g, g], [-g, g]];
+      corners.forEach(([ox, oy], k) => {
+        const xm = c.x + ox, ym = c.y + oy, o = q * 4 + k;
+        pos[o * 3] = xm / 1000; pos[o * 3 + 1] = heightAt(xm, ym) / 1000; pos[o * 3 + 2] = -ym / 1000;
+        tmpC.setRGB(c.rgb[0], c.rgb[1], c.rgb[2], THREE.SRGBColorSpace);   // given as sRGB, like CSS
+        col.set([tmpC.r, tmpC.g, tmpC.b, c.a], o * 4);
+      });
+      const b = q * 4; idx.push(b, b + 1, b + 2, b, b + 2, b + 3);
+    });
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 4));
+    geo.setIndex(idx);
+    cellMesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -8 }));
+    cellMesh.renderOrder = 3; cellMesh.frustumCulled = false; cellMesh.scale.y = exagV;
+    scene.add(cellMesh); dirty = true;
+  }
   function syncDetail() {
     const dist = camera === cam3 ? cam3.position.distanceTo(ctl3.target) : 1e9;
     const a = clamp((14 - dist) / 8, 0, 1) * 0.92;
+    if (cellMesh) cellMesh.scale.y = exagV;
     for (const d of detail) { d.mesh.scale.y = exagV; d.mesh.visible = d.ready && a > 0; d.mesh.material.opacity = a; }
     // near plane follows the camera in, so a close look does not clip the ground
     const near = clamp(dist * 0.02, 0.0005, 5);
@@ -1627,6 +1654,7 @@ export function mountLunarMap(container, options = {}) {
     focus: focusOn,
     setCamera,
     setMarks(list) { marks = list || []; dirty = true; },
+    setCells,
     setDetail(list) { clearDetail(); for (const d of list || []) addDetail(d); dirty = true; },
     setMast(h, x_m, y_m, label) { mastPt = h > 0 ? { h, x: x_m, y: y_m, label: label || `${h} m` } : null; if (mastEl) mastEl._h = null; dirty = true; },
     selectSite(id) { selSite = sites.find((s) => s.id === id) ?? null; stripDirty = true; dirty = true; },

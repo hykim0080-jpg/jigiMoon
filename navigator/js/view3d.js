@@ -14,7 +14,7 @@ import { t } from './strings.js';
 
 const SETS = [{ label: '2027-06', url: 'data/3d/frames/', y: 2027, m: 5 }, { label: '2027-12', url: 'data/3d/frames_dec/', y: 2027, m: 11 }];
 const STEP_H = 4;
-let mapReady = false, lastZoom = null, onPin = null, hint, box, note, btns, map = null, loading = null, order = null, lastKey = '', lastSite = '', data = null;
+let lastCells = '', mapReady = false, lastZoom = null, onPin = null, hint, box, note, btns, map = null, loading = null, order = null, lastKey = '', lastSite = '', data = null;
 
 export function init(panel, d, pinAt) {
   data = d; onPin = pinAt;
@@ -72,7 +72,7 @@ async function mount() {
       moonUrl: 'data/moon.jpg', sunUrl: 'data/sun_sdo_512.png', earthUrl: 'data/earth_bluemarble_1024.jpg', bodyMarkers: false,   // NASA SVS CGI Moon Kit, the globe under the terrain patch
     });
     return map.ready;
-  }).then(() => { box.classList.remove('loading'); lastKey = ''; lastSite = ''; mapReady = true; return arrive(); })
+  }).then(() => { box.classList.remove('loading'); lastKey = ''; lastSite = ''; lastCells = ''; mapReady = true; return arrive(); })
     .catch(e => { console.error('[3d]', e); box.classList.remove('loading'); });
   return loading;
 }
@@ -124,6 +124,23 @@ function sync(st) {
       marks.push({ x1: s.x_m, y1: s.y_m, x2: s.x_m + dx * L, y2: s.y_m + dy * L, color: '#f0655a', w: 1.5, end: k === 'sun' ? '#f0a531' : '#74a2f2', label: t('hiddenBy')[k] });
     }
   }
+  // the 3 km MOVE grid on the ground, as on the MOVE card: GO cells blue, the rest dark; ring and cross as marks
+  const ck = s && data.site ? `${st.site}:${s.x_m},${s.y_m}:${st.day}` : '';
+  if (map.setCells && ck !== lastCells) {
+    lastCells = ck;
+    map.setCells(ck ? data.site.grid.map(c => {
+      const ok = c.ok[st.day] === '1';
+      return { x: s.x_m + c.dx * 1000, y: s.y_m + c.dy * 1000, half: data.site.stepKm * 500, rgb: ok ? [0.455, 0.635, 0.949] : [0.13, 0.15, 0.2], a: ok ? (c.landable ? 0.85 : 0.45) : (c.landable ? 0.6 : 0.35) };
+    }) : []);
+  }
+  if (s && data.site) {
+    const R = 3000 + data.site.stepKm * 500, N = 48;
+    for (let i = 0; i < N; i++) {
+      const a0 = i / N * 2 * Math.PI, a1 = (i + 1) / N * 2 * Math.PI;
+      marks.push({ x1: s.x_m + R * Math.sin(a0), y1: s.y_m + R * Math.cos(a0), x2: s.x_m + R * Math.sin(a1), y2: s.y_m + R * Math.cos(a1), color: '#74a2f2', w: 1.2 });
+    }
+    marks.push({ x1: s.x_m - 150, y1: s.y_m, x2: s.x_m + 150, y2: s.y_m, color: '#fff', w: 1.5 }, { x1: s.x_m, y1: s.y_m - 150, x2: s.x_m, y2: s.y_m + 150, color: '#fff', w: 1.5 });
+  }
   if (map.setMarks) map.setMarks(marks);
   const h = s && e ? mastShown(e, st.day, st.mast, limitsOf(st)) : 0;
   if (map.setMast) map.setMast(h, s?.x_m, s?.y_m, h ? t('mastPole', h) : '');
@@ -151,7 +168,8 @@ function closeUp(id, s) {
 export function recenter(dur) {
   const s = data && data.index && data.index.byId[state.site];
   const half = state.zoom >= ZOOM.spot - 0.01 ? 3.5 : state.zoom >= ZOOM.site - 0.01 ? 25 : state.zoom > 1.01 ? 200 / state.zoom : 22;
-  if (map && s && !entering) map.focus(s.x_m, s.y_m, half, { dur });
+  const spot = state.zoom >= ZOOM.spot - 0.01;   // Spot: straight down on the place, Earth up, like the MOVE card
+  if (map && s && !entering) map.focus(s.x_m, s.y_m, spot ? 4 : half, { dur, polar: spot ? 0.0005 : undefined });
 }
 export const isOn = () => !!box && !box.hidden;
 
