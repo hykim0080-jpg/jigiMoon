@@ -15,7 +15,7 @@ export const pending = st => useWin(st) && !cache.has(keyOf(st));
 // a token that changes whenever the judged result changes (used by the ranked spots and the redraw)
 export const winToken = st => useWin(st) ? keyOf(st) + (cache.has(keyOf(st)) ? '' : '?') : 'year';
 
-const NW = 2;   // workers, each takes half of the rows (about 2.5 s for a 14-day stay on a laptop)
+const NW = Math.max(2, Math.min(4, (navigator.hardwareConcurrency || 4) - 1));   // workers, each takes a band of rows (2 of them: about 2.5 s for a 14-day stay on a laptop)
 let workers = [], parts = null;
 function start() {
   if (ready) return ready;
@@ -38,6 +38,8 @@ function start() {
     }
   });
 }
+// start the workers early (their per-pixel set-up takes a few seconds), so they are ready when the stay is asked for
+export const warmWin = () => start();
 // share of the running window done (0..1), from the workers' progress notes
 let onProg = null;
 const progressOf = () => parts ? Object.values(parts.done).reduce((a, b) => a + b, 0) / NW : 0;

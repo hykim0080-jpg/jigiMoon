@@ -11,11 +11,11 @@ import { initPinCard, renderPinCard, renderPinSky } from './pincard.js';
 import { DEFAULT_ON, ZONE } from './config.js';
 import { t, lang } from './strings.js';
 import { initPin, setOnCal } from './pin.js';
-import { syncShadow, syncExpo, renderTime, ensure as ensureTime } from './time.js';
+import { syncShadow, syncExpo, renderTime, ensure as ensureTime, prefetchMasts } from './time.js';
 import { xyToCell, cellToXY } from './geo.js';
 import { initTrip, renderTrip, tripRanked, REGIONS, regionBBox } from './trip.js';
 import { mapHome, setBadges, shadowLegend } from './mapview.js';
-import { syncWin, winToken, pending, winProgress, setWinProgress, keyOf } from './window.js';
+import { syncWin, winToken, pending, winProgress, setWinProgress, keyOf, warmWin } from './window.js';
 import { initCart, renderCart, readCart, cartHash } from './cart.js';
 import * as g3 from './find3d.js';
 import * as pn from './panels.js';
@@ -29,6 +29,9 @@ export async function mount(root, opts = {}) {
   root.innerHTML = `<div class="lyr-app">${header ? `<header><div class="seg lyr-sw"><a href="${cmp}">${t('compare')}</a><button aria-pressed="true">${t('find')}</button></div><div class="app-id"><a class="app-name" href="${cmp}">${t('app')}</a><span class="app-tag">${t('tagline')}</span></div></header>` : ''}<div class="lyr-main"><section class="panel lyr-left"><div class="lyr-lh"><h2>${t('criteria')}</h2><button class="lyr-advb" aria-pressed="false">${t('adv')}</button></div><div class="lyr-crit"></div><div class="lyr-advwrap lyr-layers"></div><div class="lyr-tripl"></div><div class="lyr-zones"></div></section><section class="panel lyr-map" data-theme="dark"></section><div class="lyr-loading" role="status">${t('loading')}</div><section class="panel lyr-pinp"><button class="lyr-pclose" aria-label="${t('close')}">×</button><div class="lyr-pcard"></div></section></div></div><div id="tip" hidden></div>`;
   // the loading label counts up in % (files first, then the stay being worked out)
   const ldEl = () => root.querySelector('.lyr-loading'), pctTxt = f => ` ${Math.floor(100 * f)} %`;
+  // the horizons, Sun/Earth tracks and 10 m / 20 m mast horizons (for the ranked list) do not need the layers:
+  // fetch them alongside, not after
+  ensureTime(); warmWin(); prefetchMasts();
   const data = await loadAll(dataUrl, f => { const ld = ldEl(); if (ld) ld.textContent = t('loading') + pctTxt(f); });
   setWinProgress((key, f) => {
     if (key !== keyOf(state)) return;
