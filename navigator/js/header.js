@@ -232,7 +232,7 @@ function answer(st, data, lim, s, slip) {
   let tail = '';
   if (v && !v.go) {
     const miss = v.fails.map(f => f.text.split(' · ')[0]).join(', ');
-    tail = `${miss ? ` — ${miss}` : ''}.${v.fix ? ` <span style="color:var(--${v.fixKind})">${v.fix}.</span>` : ''}`;
+    tail = `${miss ? `&ensp;${miss}` : ''}.${v.fix ? ` <span style="color:var(--${v.fixKind})">${v.fix}.</span>` : ''}`;
   } else if (v && v.capped) tail = ` <span style="color:var(--mast)">${t('mast')} ${t('m', st.mast)}</span>.`;
   else tail = '.';
   const word = `<b class="${s.kind === 'ok' ? 'hb-go' : 'hb-nogo'}">${s.kind === 'ok' ? t('go') : t('nogo')}</b>`;
