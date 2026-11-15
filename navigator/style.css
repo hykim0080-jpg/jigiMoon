@@ -205,6 +205,8 @@ main[data-view="compare"] #expo{display:none}
   #site-select{max-width:180px}
   .verdict{font-size:13px;max-width:300px}
 }
+/* the API button on small presentation screens: icon only, tighter header */
+@media (max-width:1366px){header{gap:5px}.api-txt{display:none}.verdict{min-width:180px}}
 #lander-card{position:absolute;z-index:5;width:236px;background:rgba(15,19,27,.94);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:10px 12px;font-size:12px;line-height:1.45}
 #lander-card b{font-size:13px;display:block;padding-right:16px}
 #lander-card .k{color:#aab;font-size:11px}
@@ -218,5 +220,3 @@ main[data-zoomed="1"]:not([data-view="compare"]) #map{cursor:grab}
 #map{touch-action:none}
 #hold-ring{position:absolute;z-index:4;width:56px;height:56px;margin:-28px 0 0 -28px;border:2px solid #fff;border-radius:50%;pointer-events:none;opacity:0;animation:holdring .5s linear .15s infinite;box-shadow:0 0 0 1px rgba(0,0,0,.4)}
 @keyframes holdring{0%{transform:scale(1);opacity:.9}100%{transform:scale(.25);opacity:.2}}
-/* the API button on small presentation screens: icon only, tighter header */
-@media (max-width:1366px){header{gap:5px}.api-txt{display:none}.verdict{min-width:180px}}
