@@ -40,7 +40,8 @@ export function render(st, data, panel, lim) {
   if (!box) { box = document.createElement('div'); box.id = 'vbadge'; panel.appendChild(box); }
   const v = st.view === 'focus' ? verdictFor(st, data, lim) : null;
   box.hidden = !v;
-  if (!v) return;
+  const main = document.getElementById('main');
+  if (!v) { main.style.setProperty('--vbh', '0px'); return; }
   const key = JSON.stringify(v);
   if (box.dataset.k === key) return;
   box.dataset.k = key;
@@ -50,4 +51,5 @@ export function render(st, data, panel, lim) {
     + v.fails.map(f => `<span class="vfail">${f.text}</span>`).join('')
     + (v.fix ? `<span class="vfix" style="color:var(--${v.fixKind})">→ ${v.fix}</span>` : '')
     + (v.why ? `<span class="vwhy">${v.why}</span>` : '');
+  main.style.setProperty('--vbh', box.offsetHeight + 8 + 'px');   // the dock, sky pop-up and 3D legend sit below it
 }
