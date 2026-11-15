@@ -50,8 +50,8 @@ const CLASS_COLOR_GLOW = { none: '#16181c', sun: '#b8742a', earth: '#7b8fb3', bo
 const CSS = `
 .lmap{position:relative;width:100%;height:100%;min-height:240px;overflow:hidden;background:#0f131b;color:#e8eaf0;
   --bg:#0f131b;--surface:#181d28;--ink:#e8eaf0;--muted:#98a1b4;--line:#2b3242;--sun:#f0a531;--earth:#74a2f2;--ok:#4cbf82;
-  font:12px/1.3 Inter,"Apple SD Gothic Neo",system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;user-select:none;-webkit-user-select:none;outline:none;
-  --lmap-mono:Inter,system-ui,sans-serif}
+  font:12px/1.3 Roboto,"Apple SD Gothic Neo",system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;user-select:none;-webkit-user-select:none;outline:none;
+  --lmap-mono:Roboto,system-ui,sans-serif}
 .lmap-mast{position:absolute;left:0;top:0;pointer-events:none;cursor:pointer;z-index:3;display:flex;flex-direction:column;align-items:center}
 .lmap-mast .rig svg{display:block;overflow:visible}.lmap-mast .rig{pointer-events:auto}
 .lmap-mast b{display:block;width:8px;height:8px;border-radius:50%;background:var(--mast,#4fc0c9);box-shadow:0 0 0 2px #0f131b;margin-top:2px}
@@ -60,13 +60,13 @@ const CSS = `
 .lmap-mast.seen .fig-startle{animation:none}
 @keyframes lmap-startle{0%{transform:none}20%{transform:translateY(-.35px) rotate(-8deg)}45%{transform:none}62%{transform:rotate(-3deg)}100%{transform:none}}
 @media (prefers-reduced-motion:reduce){.lmap-mast .fig-startle{animation:none}}
-.lmap-mast span{pointer-events:auto;font:600 11px/1 Inter,system-ui,sans-serif;color:#fff;background:rgba(15,19,27,.85);border:1px solid var(--mast,#4fc0c9);padding:2px 5px;margin-bottom:3px;white-space:nowrap}
+.lmap-mast span{pointer-events:auto;font:600 11px/1 Roboto,system-ui,sans-serif;color:#fff;background:rgba(15,19,27,.85);border:1px solid var(--mast,#4fc0c9);padding:2px 5px;margin-bottom:3px;white-space:nowrap}
 .lmap *,.lmap *::before,.lmap *::after{box-sizing:border-box;font-variant-numeric:tabular-nums!important}
 .lmap canvas.lmap-gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
 .lmap-ov{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .lmap-ov>*{position:absolute;left:0;top:0;will-change:transform;white-space:nowrap}
 .lmap-ov>svg.lmap-marks{width:100%;height:100%;overflow:visible}
-.lmap-scale{font:11px/1 Inter,system-ui,sans-serif;color:#e8eaf0;text-shadow:0 0 3px #0f131b;display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+.lmap-scale{font:11px/1 Roboto,system-ui,sans-serif;color:#e8eaf0;text-shadow:0 0 3px #0f131b;display:flex;flex-direction:column;align-items:flex-start;gap:3px}
 .lmap-scale i{display:block;height:5px;border:1.5px solid #e8eaf0;border-top:0}
 .lmap-site{width:11px;height:11px;margin:-5.5px 0 0 -5.5px;border-radius:50%;border:1.5px solid var(--ink);background:var(--line);
   pointer-events:auto;cursor:pointer;box-shadow:0 0 0 1px rgba(15,19,27,.85)}
@@ -77,7 +77,7 @@ const CSS = `
 .lmap-pin{pointer-events:auto;cursor:pointer;white-space:nowrap}
 .lmap-pin i{position:absolute;left:-6px;top:-6px;width:12px;height:12px;transform:rotate(45deg);background:#74a2f2;box-shadow:0 0 0 1.5px #0f131b,0 0 10px rgba(116,162,242,.9)}
 .lmap-pin::before{content:"";position:absolute;left:-.5px;top:6px;width:1px;height:24px;background:rgba(116,162,242,.95)}
-.lmap-pin span{position:absolute;left:11px;top:-7px;font:700 11.5px/1 Inter,system-ui,sans-serif;color:#9cc0ff;text-shadow:0 0 3px #000,0 0 6px #000}
+.lmap-pin span{position:absolute;left:11px;top:-7px;font:700 11.5px/1 Roboto,system-ui,sans-serif;color:#9cc0ff;text-shadow:0 0 3px #000,0 0 6px #000}
 .lmap-pin.is-rank i{background:#4cbf82;box-shadow:0 0 0 1.5px #0f131b,0 0 12px rgba(76,191,130,.95)}
 .lmap-pin.is-rank::before{background:rgba(76,191,130,.95)}
 .lmap-pin.is-rank span{color:#7fe0aa;font-size:13px}
@@ -87,7 +87,7 @@ const CSS = `
 .lmap-link{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:2;overflow:visible}
 .lmap-link line{stroke:#7fe0aa;stroke-width:1.5;stroke-dasharray:4 3}
 .lmap-link circle{fill:#4cbf82;stroke:#0f131b;stroke-width:1.5}
-.lmap-link text{fill:#7fe0aa;font:600 12px Inter,system-ui,sans-serif;paint-order:stroke;stroke:#0f131b;stroke-width:3px}
+.lmap-link text{fill:#7fe0aa;font:600 12px Roboto,system-ui,sans-serif;paint-order:stroke;stroke:#0f131b;stroke-width:3px}
 .lmap-pin.is-pin i{background:#fff;box-shadow:0 0 0 1.5px #0f131b}
 .lmap-pin.is-pin::before{background:rgba(255,255,255,.9)}
 .lmap-pin.is-saved i{width:14px;height:18px;left:-7px;top:-20px;transform:none;background:#fff;clip-path:path('M7 18C4.5 13.5 0 11.5 0 7a7 7 0 0 1 14 0c0 4.5-4.5 6.5-7 11z');box-shadow:none}
@@ -116,7 +116,7 @@ const CSS = `
 .lmap-card .lmap-mono{font:10.5px/1.3 var(--lmap-mono)}
 .lmap-card .lmap-sts{display:flex;gap:12px;margin-top:1px}
 .lmap-card .lmap-st{color:var(--ink)}.lmap-card .lmap-st.is-off{color:var(--muted)}
-.lmap-read .lmap-rel{font:12px/1 Inter,"Apple SD Gothic Neo",system-ui,sans-serif;color:var(--ink);overflow:hidden;text-overflow:ellipsis}
+.lmap-read .lmap-rel{font:12px/1 Roboto,"Apple SD Gothic Neo",system-ui,sans-serif;color:var(--ink);overflow:hidden;text-overflow:ellipsis}
 .lmap[data-lang=en] .lmap-lm{letter-spacing:.06em}
 .lmap[data-lang=en] .lmap-compass{font-size:11px}
 .lmap-compass{all:unset;position:absolute;right:12px;top:62px;z-index:2;width:50px;height:50px;border-radius:50%;background:rgba(24,29,40,.86);border:1px solid var(--line);cursor:pointer;backdrop-filter:blur(6px);display:grid;place-items:center;font-size:11px;font-weight:500;color:var(--earth)}
@@ -146,8 +146,8 @@ const CSS = `
 .lmap-time{font:500 15px/1 var(--lmap-mono);letter-spacing:.01em;white-space:nowrap}
 .lmap-time small{font-size:10px;color:var(--muted);margin-left:6px;font-weight:400}
 .lmap-read{margin-left:auto;display:flex;align-items:center;gap:12px;min-width:0;font:11px/1 var(--lmap-mono);color:var(--muted);white-space:nowrap;overflow:hidden}
-.lmap-read b{font:600 12px/1 Inter,"Apple SD Gothic Neo",system-ui,sans-serif;color:var(--ink);overflow:hidden;text-overflow:ellipsis}
-.lmap-st{display:flex;align-items:center;gap:5px;font:11px/1 Inter,"Apple SD Gothic Neo",system-ui,sans-serif;color:var(--ink)}
+.lmap-read b{font:600 12px/1 Roboto,"Apple SD Gothic Neo",system-ui,sans-serif;color:var(--ink);overflow:hidden;text-overflow:ellipsis}
+.lmap-st{display:flex;align-items:center;gap:5px;font:11px/1 Roboto,"Apple SD Gothic Neo",system-ui,sans-serif;color:var(--ink)}
 .lmap-st i{width:9px;height:9px;border-radius:50%;border:1.5px solid currentColor;flex:none}
 .lmap-st.is-off{color:var(--muted);opacity:.55}
 .lmap-st.is-sun i{color:var(--sun)}.lmap-st.is-earth i{color:var(--earth)}

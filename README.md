@@ -15,7 +15,7 @@ Compares lunar south-pole landing sites and dates by sunlight (power) and direct
 | `submission/` | Draft submission texts: `SOURCES.md` (references & licences), `AI_USE.md`, `NASA_DATA.md`. |
 | `notes/` | Planning notes (Korean). |
 
-Data sources and licences: `submission/SOURCES.md`. AI assistance disclosure: `submission/AI_USE.md`.
+Data sources and licences: `submission/SOURCES.md`. Font: Roboto by The Roboto Project Authors, SIL Open Font License 1.1, bundled in `navigator/fonts/`. AI assistance disclosure: `submission/AI_USE.md`.
 
 ## Verdict API (Cloudflare Pages Functions)
 
