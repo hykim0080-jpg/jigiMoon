@@ -10,6 +10,7 @@ import { FIRST_DAY } from './config.js';
 import { SPOT5 } from './map.js';
 import * as intro from './intro.js';
 import { openMastPop } from './mastpop.js';
+import { stageFx, stageLine } from './verdict.js';
 import { t } from './strings.js';
 import { initHover, hover } from './hover3d.js';
 import { ranked } from './rank3d.js';
@@ -242,7 +243,9 @@ function sync(st) {
   }
   if (map.setMarks) map.setMarks(det ? marks : []);
   const h = det && s && e ? mastShown(e, st.day, st.mast, limitsOf(st)) : 0;
-  if (map.setMast) map.setMast(h, s?.x_m, s?.y_m, h ? t('mastPole', h) : '');
+  // NO-GO without a mast fix: the lander shows why (cold, no Earth link, too steep) on the model itself
+  const fx = det && !h && data.site ? stageFx(st, data) : {};
+  if (map.setMast) map.setMast(h, s?.x_m, s?.y_m, h ? t('mastPole', h) : stageLine(fx), fx);
   note.hidden = f.exact;
   if (!f.exact) {
     const d = new Date(f.shown);
@@ -269,7 +272,7 @@ function landerView(dur = 1800) {
   const h = e ? mastShown(e, state.day, state.mast, limitsOf(state)) : 0;
   // the rig (lander, mast, panels) about 40 % of the map's height: k px per metre -> camera distance
   const H = box.clientHeight || 700, k = 0.4 * H / (Math.max(h, 4.3) + 1.2), ppm = k / (map.exaggeration ? map.exaggeration() : 3);
-  map.focus(s.x_m, s.y_m, 0, { r: Math.max(0.03, H / (2 * Math.tan(15 * Math.PI / 180) * ppm * 1000)), polar: 1.25, dur });
+  map.focus(s.x_m, s.y_m, 0, { r: Math.max(0.03, H / (2 * Math.tan(15 * Math.PI / 180) * ppm * 1000)), polar: 1.1, dur });
 }
 
 // Space: centre the 3D camera on the selected site again

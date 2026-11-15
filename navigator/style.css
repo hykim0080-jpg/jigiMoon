@@ -280,9 +280,17 @@ header>.verdict .fix{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;m
 @media (max-width:1400px){header .seg[data-key="view"] button,header .seg[data-key="pro"] button{padding:5px 8px}header .slip{display:none}}
 /* square corners: rules kept unchanged above so parallel PRs merge cleanly */
 .adv>button,.api-link,#lander-card{border-radius:0}
+/* fixes, simplified (현기 11-15): name and value only, no colour squares or effort bars; the name carries the colour,
+   size and weight carry the order; the picked fix keeps a thin edge */
+#fixes .card h2::before,#fixes .fixrow h2::before{display:none}
+#fixes .effort,#fixes .card.inset .effort{display:none}
+#fixes .fixrow{display:flex;align-items:baseline;gap:8px;padding:6px 12px}
+#fixes .fixrow h2,#fixes .card.inset .left h2{font-size:11px;font-weight:600;letter-spacing:.08em;margin:0}
+#fixes .fixrow .val b{font-size:20px}
+#fixes .fixrow.na h2{opacity:.55}
 /* movable panels (js/drag.js): a bar on the top edge */
 .dgrip{position:absolute;left:0;right:0;top:0;height:12px;cursor:grab;z-index:6;pointer-events:auto;touch-action:none}
-.dgrip::after{content:"";position:absolute;left:50%;top:4px;width:32px;height:3px;margin-left:-16px;background:#8892a6;opacity:.55}
+.dgrip::after{content:"";position:absolute;left:50%;top:3px;width:24px;height:1px;margin-left:-12px;background:#8892a6;opacity:.4}
 .dgrip:hover::after{opacity:1;background:#c9cfdb}
 .dgrip[hidden]{display:none}
 .dragging{user-select:none}.dragging .dgrip{cursor:grabbing}

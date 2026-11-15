@@ -55,6 +55,7 @@ const CSS = `
 .lmap-mast{position:absolute;left:0;top:0;pointer-events:none;cursor:pointer;z-index:3;display:flex;flex-direction:column;align-items:center}
 .lmap-mast .rig svg{display:block;overflow:visible}.lmap-mast .rig{pointer-events:auto}
 .lmap-mast b{display:block;width:8px;height:8px;border-radius:50%;background:var(--mast,#4fc0c9);box-shadow:0 0 0 2px #0f131b;margin-top:2px}
+.lmap-mast.is-nogo span{border-color:#f0655a;color:#ffd9d5}
 .lmap-mast span{pointer-events:auto;font:600 11px/1 Inter,system-ui,sans-serif;color:#fff;background:rgba(15,19,27,.85);border:1px solid var(--mast,#4fc0c9);padding:2px 5px;margin-bottom:3px;white-space:nowrap}
 .lmap *,.lmap *::before,.lmap *::after{box-sizing:border-box;font-variant-numeric:tabular-nums!important}
 .lmap canvas.lmap-gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
@@ -1376,13 +1377,14 @@ export function mountLunarMap(container, options = {}) {
       // solar panels on top, and the astronaut stand at the place
       const ppm = camera === cam3 ? canvas.clientHeight / (2 * camera.position.distanceTo(v3) * Math.tan(FOV * DEG / 2)) / 1000 : 0;
       const k = ppm * exagV, rig = Math.max(mastPt.h, 4.3) * k >= 14;
-      const key = mastPt.h + ':' + (rig ? k.toFixed(2) : '-');
+      const key = mastPt.h + ':' + (rig ? k.toFixed(2) : '-') + JSON.stringify(mastPt.fx) + mastPt.label;
       const ok = project(v3);
       if (mastEl._h !== key) {
         mastEl.firstChild.textContent = mastPt.label; mastEl._h = key;
-        const r = mastEl.querySelector('.rig'); r.innerHTML = rig ? MAST_RIG(Math.min(mastPt.h, 100), k).svg : '';
+        const r = mastEl.querySelector('.rig'); r.innerHTML = rig ? MAST_RIG(Math.min(mastPt.h, 100), k, mastPt.fx).svg : '';
         mastEl.querySelector('b').style.display = rig || !mastPt.h ? 'none' : '';
-        mastEl.firstChild.style.display = mastPt.h ? '' : 'none';
+        mastEl.firstChild.style.display = mastPt.h || (rig && mastPt.label) ? '' : 'none';
+        mastEl.classList.toggle('is-nogo', !mastPt.h && !!mastPt.label);
       }
       const hh = mastEl.offsetHeight || 30, mw = mastEl.offsetWidth || 40, mx = v3.x - mw / 2, my = v3.y - hh + (rig ? 0 : 6);
       const on = ok && inView(v3.x, v3.y) && (rig || mastPt.h > 0);
@@ -1861,7 +1863,8 @@ export function mountLunarMap(container, options = {}) {
     setCells,
     setDetail(list) { clearDetail(); for (const d of list || []) addDetail(d); dirty = true; },
     // h = 0: no mast, only the lander and astronaut close up (nothing from afar)
-    setMast(h, x_m, y_m, label) { mastPt = x_m != null && y_m != null ? { h: h > 0 ? h : 0, x: x_m, y: y_m, label: h > 0 ? label || `${h} m` : '' } : null; if (mastEl) mastEl._h = null; dirty = true; },
+    // fx: how a NO-GO place is staged on the model (figs.js MAST_RIG); label then = the one short reason line
+    setMast(h, x_m, y_m, label, fx) { mastPt = x_m != null && y_m != null ? { h: h > 0 ? h : 0, x: x_m, y: y_m, label: h > 0 ? label || `${h} m` : label || '', fx: fx || {} } : null; if (mastEl) mastEl._h = null; dirty = true; },
     exaggeration: () => exagV,
     selectSite(id) { selSite = sites.find((s) => s.id === id) ?? null; stripDirty = true; dirty = true; },
     loaded: () => ({ loaded: ds.loaded, total: ds.n }),

@@ -71,24 +71,45 @@ export function mastSide(h, target = 'earth') {
   return s + '</svg>';
 }
 
-// the MAST fix as it would stand, at k px per metre: the lander with the mast rising from its deck, a pair of solar
-// panels at the top, and the astronaut beside it. The panels' centre is h m above the ground, the height the
-// calculation uses; a mast lower than the deck (2-3 m) shows as panels just above it. Ground centre of the lander
-// is at the middle of the bottom edge.
-export function MAST_RIG(h, k) {
-  const top = Math.max(h, 4.3), W = 3.3, H = h > 0 ? top + 0.85 : 4.1;
-  const pw = Math.max(0.14, 2 / k), deck = 3.55;
-  const panel = (s) => {   // one wing, outer edge lifted a little: tilted up toward the low Sun
-    const x0 = s * (pw / 2 + 0.06), x1 = s * 1.45, y = -top;
-    const pts = `${x0},${y - 0.6} ${x1},${y - 0.72} ${x1},${y + 0.48} ${x0},${y + 0.6}`;
+// the lander as it would stand, at k px per metre: the mast (h > 0) rising from its deck with a pair of solar panels
+// at the top (their centre h m above the ground, the height the calculation uses; a mast lower than the deck shows as
+// panels just above it), and the astronaut beside it. Ground centre of the lander = middle of the bottom edge.
+// fx stages why a NO-GO place fails, on the model itself: cold (too little Sun or too long dark: frost, pale blue,
+// dark panels, astronaut hunched), comm (Earth too little in view: the signal from the dish breaks off before a greyed
+// Earth), slope (degrees; the lander tips at that angle about its downhill foot, the other leg off the ground)
+export function MAST_RIG(h, k, fx = {}) {
+  const top = Math.max(h, 4.3), W = 3.8, tip = Math.min(fx.slope || 0, 35);
+  const H = Math.max(h > 0 ? top + 0.85 : 4.1, fx.comm ? 5.6 : 0, tip ? 4.1 + 2 * Math.sin(tip * Math.PI / 180) : 0);
+  const pw = Math.max(0.14, 2 / k), deck = 3.55, lw = (px) => Math.max(px / k, 0.02);
+  const pfill = fx.cold ? '#2a2f3a' : '#1f3f72', pline = fx.cold ? '#5a6377' : '#9fc1ef';
+  const panel = (sd) => {   // one wing, outer edge lifted a little: tilted up toward the low Sun
+    const x0 = sd * (pw / 2 + 0.06), x1 = sd * 1.45, y = -top;
     const mid = (x0 + x1) / 2;
-    return `<polygon points="${pts}" fill="#1f3f72" stroke="#9fc1ef" stroke-width="${Math.max(0.03, 1 / k)}"/>`
-      + `<path d="M${mid} ${y - 0.66}V${y + 0.54}M${x0} ${y}L${x1} ${y - 0.12}" stroke="#9fc1ef" stroke-width="${Math.max(0.02, 0.7 / k)}" opacity=".7"/>`;
+    return `<polygon points="${x0},${y - 0.6} ${x1},${y - 0.72} ${x1},${y + 0.48} ${x0},${y + 0.6}" fill="${pfill}" stroke="${pline}" stroke-width="${lw(1)}"/>`
+      + `<path d="M${mid} ${y - 0.66}V${y + 0.54}M${x0} ${y}L${x1} ${y - 0.12}" stroke="${pline}" stroke-width="${lw(0.7)}" opacity=".7"/>`;
   };
-  const svg = `<svg width="${(2 * W * k).toFixed(1)}" height="${(H * k).toFixed(1)}" viewBox="${-W} ${-H} ${2 * W} ${H}">`
-    + `<g transform="translate(2.65 0)">${ASTRO}</g>${LANDER}`
+  let lander = LANDER
     + (h > 0 ? (top > deck ? `<rect x="${-pw / 2}" y="${-top}" width="${pw}" height="${top - deck}" fill="#4fc0c9"/>` : '')
-      + panel(-1) + panel(1) + `<rect x="${-pw}" y="${-top - 0.08}" width="${2 * pw}" height="0.16" fill="#4fc0c9"/>` : '')
-    + '</svg>';
+      + panel(-1) + panel(1) + `<rect x="${-pw}" y="${-top - 0.08}" width="${2 * pw}" height="0.16" fill="#4fc0c9"/>` : '');
+  if (fx.cold) {   // frost: a pale blue film over the body, icicles under the deck, crystals on the top
+    lander += `<rect x="-1.3" y="-3.6" width="2.6" height="1.75" fill="#bfe3ff" opacity=".42"/>`
+      + `<rect x="-1.95" y="-3.35" width="0.75" height="1" fill="#2a2f3a" opacity=".85"/>`
+      + [-1.1, -0.7, -0.3, 0.1, 0.5, 0.9].map((x, i) => `<path d="M${x} -1.9l0.07 ${0.22 + (i % 3) * 0.08}l0.07 -${0.22 + (i % 3) * 0.08}z" fill="#e6f4ff"/>`).join('')
+      + [[-0.7, -3.75], [0.15, -3.8], [0.95, -3.7]].map(([x, y]) => `<path d="M${x - 0.13} ${y}h0.26M${x} ${y - 0.13}v0.26M${x - 0.09} ${y - 0.09}l0.18 0.18M${x + 0.09} ${y - 0.09}l-0.18 0.18" stroke="#e6f4ff" stroke-width="${lw(1)}"/>`).join('');
+  }
+  let earth = '';
+  if (fx.comm) {   // from the dish (0.57, -3.95): arcs toward Earth, up and to the right, breaking off; Earth greyed out
+    const ox = 0.57, oy = -3.95, arc = (r, o, dash) => {
+      const a0 = -80 * Math.PI / 180, a1 = -20 * Math.PI / 180;
+      return `<path d="M${(ox + r * Math.cos(a0)).toFixed(2)} ${(oy + r * Math.sin(a0)).toFixed(2)}A${r} ${r} 0 0 1 ${(ox + r * Math.cos(a1)).toFixed(2)} ${(oy + r * Math.sin(a1)).toFixed(2)}" fill="none" stroke="#74a2f2" stroke-width="${lw(2)}" opacity="${o}"${dash ? ` stroke-dasharray="${dash}"` : ''}/>`;
+    };
+    lander += arc(0.45, 1) + arc(0.8, 0.7, '0.25 0.15') + arc(1.15, 0.35, '0.12 0.3');
+    earth = `<circle cx="${ox + 1.9}" cy="${oy - 1.1}" r="0.32" fill="#3a3f4a" stroke="#6b7385" stroke-width="${lw(1)}"/>`
+      + `<path d="M${ox + 1.67} ${oy - 0.87}l0.46 -0.46" stroke="#f0655a" stroke-width="${lw(2)}"/>`;
+  }
+  if (tip) lander = `<g transform="rotate(${tip.toFixed(1)} 1.7 0)">${lander}</g>`;   // downhill foot at +1.7 m, the left leg lifts
+  const astro = fx.cold ? `<g transform="translate(2.65 0) rotate(7 0 0) scale(1 0.88)">${ASTRO}</g>` : `<g transform="translate(2.65 0)">${ASTRO}</g>`;
+  const tint = fx.cold ? '<rect x="-3.6" y="-0.02" width="7.2" height="0.02" fill="#bfe3ff"/>' : '';
+  const svg = `<svg width="${(2 * W * k).toFixed(1)}" height="${(H * k).toFixed(1)}" viewBox="${-W} ${-H} ${2 * W} ${H}">${astro}${lander}${earth}${tint}</svg>`;
   return { svg, w: 2 * W * k, h: H * k };
 }

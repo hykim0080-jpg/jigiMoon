@@ -58,3 +58,18 @@ export function render(st, data, panel, lim) {
 }
 // the dock, sky pop-up and 3D legend sit below the block, unless it was dragged away
 const vbh = (main, box) => main.style.setProperty('--vbh', moved('verdict') ? '0px' : box.offsetHeight + 8 + 'px');
+
+// how a NO-GO place is staged on the lander model in 3D (figs.js MAST_RIG): cold = too little Sun or too long dark,
+// comm = Earth too little in view, slope = degrees when steeper than the landing limit (8°). GO: nothing.
+export function stageFx(st, data) {
+  const site = data.site, e = data.index.modes[st.mission]?.sites[st.site], s = data.index.byId[st.site];
+  if (!site || !e || !s || e.ok[st.day]) return {};
+  const c = st.crit || THRESHOLDS, d = st.day, m = st.mast && site.mast;
+  const sun = m ? m.sun[st.mast][d] : site.cal.sun[d], earth = m ? m.earth[st.mast][d] : site.cal.earth[d], dark = m ? m.dark[st.mast][d] : site.cal.dark[d];
+  return { cold: sun < c.sun || dark > c.dark, comm: earth < c.earth, slope: s.slope_deg > 8 ? s.slope_deg : 0 };
+}
+// the one short line under the model for a NO-GO place
+export function stageLine(fx) {
+  const w = [fx.cold && t('fxCold'), fx.comm && t('fxComm'), fx.slope && t('fxSteep', Math.round(fx.slope))].filter(Boolean);
+  return w.length ? `${t('nogo')} · ${w.join(' · ')}` : '';
+}
