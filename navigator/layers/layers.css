@@ -395,3 +395,19 @@ h2{margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spaci
 .lyr-app[data-adv="1"] .lyr-basis{display:flex}
 .lyr-basis .seg button{font-size:12px;padding:2px 8px}
 .lyr-row.win .lyr-hd,.lyr-row.win .lyr-th,.lyr-row.win .lyr-cover{visibility:hidden}
+/* shortlist: add buttons and the tray at the bottom */
+.lyr-addc{flex:none;display:block;width:100%;margin:0 0 6px;border:1px solid var(--ok);background:transparent;color:var(--ok);border-radius:0;padding:4px 6px;font-size:12px;font-weight:600;cursor:pointer}
+.lyr-addc.in{background:var(--ok);color:#fff}
+.lyr-addc:disabled{border-color:var(--line);color:var(--muted);cursor:default}
+.lyr-tradd{margin-left:6px;width:20px;height:20px;padding:0;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:0;font-size:13px;line-height:1;cursor:pointer;vertical-align:middle}
+.lyr-tradd.in{background:var(--ok);border-color:var(--ok);color:#fff}
+.lyr-cart{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:30;display:flex;align-items:center;gap:8px;max-width:calc(100vw - 24px);padding:8px;background:var(--ink);color:var(--surface);box-shadow:0 4px 18px rgba(0,0,0,.3)}
+.lyr-cart[hidden]{display:none}
+.lyr-cit{display:flex;align-items:center;border:1px solid rgba(255,255,255,.35);min-width:0}
+.lyr-cgo{border:0;background:transparent;color:inherit;font-size:12px;padding:4px 6px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;text-align:left}
+.lyr-cgo b{display:inline-block;min-width:16px;margin-right:6px;background:#46e58c;color:#000;text-align:center}
+.lyr-crm{border:0;border-left:1px solid rgba(255,255,255,.35);background:transparent;color:inherit;padding:4px 8px;cursor:pointer}
+.lyr-cnote{font-size:12px;opacity:.75;padding:0 6px;white-space:nowrap}
+.lyr-cgo2{flex:none;background:#46e58c;color:#000;font-size:13px;font-weight:600;padding:6px 14px;text-decoration:none;white-space:nowrap}
+@media (max-width:700px){.lyr-cart{left:0;right:0;bottom:0;transform:none;max-width:none}.lyr-cgo .t{display:none}.lyr-cgo b{margin:0}.lyr-cgo2{margin-left:auto}}
+@media (max-width:700px){.has-cart .lyr-app,.lyr-app.has-cart{padding-bottom:64px}}

@@ -158,15 +158,15 @@ export async function compute(x, y) {
 const pixelXYx = (q, r) => shadow.pixelXY(q, r);
 
 // compute and register the pin as the 13th site of the index
-export async function setup(index, x, y) {
+export async function setup(index, x, y, id = 'pin') {
   const r = await compute(x, y), { lat, lon } = latLon(x, y);
-  const site = { id: 'pin', name: '', x_m: x, y_m: y, lat, lon, slope_deg: Math.round(r.slope * 10) / 10, group: 'custom', isPin: true };
+  const site = { id, name: '', x_m: x, y_m: y, lat, lon, slope_deg: Math.round(r.slope * 10) / 10, group: 'custom', isPin: true };
   index.sites.unshift(site);
-  index.byId.pin = site;
+  index.byId[id] = site;
   site.name = where(site);
   for (const m of [14, 6]) {
-    index.modes[m].sites.pin = r.res[m].entry;
-    setCustom(m, { id: 'pin', mission: m, ...r.res[m].detail, sky: r.sky });
+    index.modes[m].sites[id] = r.res[m].entry;
+    setCustom(m, { id, mission: m, ...r.res[m].detail, sky: r.sky });
   }
   return r;
 }

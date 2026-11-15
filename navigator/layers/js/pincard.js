@@ -10,6 +10,7 @@ import { skyAt, skyCached, drawPinSky } from './time.js';
 import { critName, critValue } from './criteria.js';
 import { statsCached, statsFor, whyNoFix, tt } from './trip.js';
 import { WIN_IDS, useWin } from './window.js';
+import { inCart, toggleCart, ct, MAX } from './cart.js';
 
 let el, data, key = '', drag = false;
 const KIND = { go: 'ok', wait: 'wait', move: 'move', mast: 'mast', none: 'block' };
@@ -21,7 +22,7 @@ export function initPinCard(root, d) {
   el.addEventListener('pointerdown', e => { if (e.target.closest('.lyr-pcal')) { drag = true; el.setPointerCapture(e.pointerId); dayFrom(e); } });
   el.addEventListener('pointermove', e => { if (drag) dayFrom(e); });
   el.addEventListener('pointerup', () => { drag = false; });
-  el.addEventListener('click', e => { const b = e.target.closest('[data-step]'); if (b) setDay(state.tDay + +b.dataset.step); });
+  el.addEventListener('click', e => { const b = e.target.closest('[data-step]'); if (b) setDay(state.tDay + +b.dataset.step); if (e.target.closest('[data-cart]') && state.pin) toggleCart(state.pin.col, state.pin.row); });
 }
 function verdictHtml(v, inf, st) {
   if (v.pending) return `<i class="lyr-dot" style="background:var(--muted)"></i><span style="color:var(--muted)">…</span>`;
@@ -33,7 +34,7 @@ function verdictHtml(v, inf, st) {
 }
 export function renderPinCard(st) {
   const inf = pinInfo(st);
-  const k = inf ? `${inf.col},${inf.row},${st.tDay},${st.mission},${!!statsCached(inf.col, inf.row, st.mission)},${st.adv},${inf.pending},${inf.go ? inf.go.count : ''},${JSON.stringify(st.crit)},${JSON.stringify(st.threshold)},${JSON.stringify(st.on.mask)}` : '';
+  const k = inf ? `${JSON.stringify(st.cart)},${inf.col},${inf.row},${st.tDay},${st.mission},${!!statsCached(inf.col, inf.row, st.mission)},${st.adv},${inf.pending},${inf.go ? inf.go.count : ''},${JSON.stringify(st.crit)},${JSON.stringify(st.threshold)},${JSON.stringify(st.on.mask)}` : '';
   if (k === key) return; key = k;
   if (!inf) { el.innerHTML = ''; return; }
   const v = inf.v, f = (kind, label, val, title = '') => `<div class="lyr-fx${v.kind === kind ? ' pick' : ''}${val == null ? ' na' : ''}" style="--c:var(--${kind})" title="${title}"><span>${label}</span><span class="n">${val ?? '—'}</span></div>`;
@@ -58,10 +59,11 @@ export function renderPinCard(st) {
 <div class="lyr-cks">${checks}</div>${adv}
 <svg class="lyr-sky"></svg>
 ${inf.go ? `<div class="lyr-cal"><canvas class="lyr-pcal"></canvas><span class="n lyr-go-n">${t('go')} ${t('days', inf.go.count)}</span></div>` : ''}
-<a class="lyr-link" href="${inf.link}">${t('open_cmp')}</a>`;
+${cartBtn(inf, st)}<a class="lyr-link" href="${inf.link}">${t('open_cmp')}</a>`;
   drawCal(inf, st);
   renderPinSky(st);
 }
+const cartBtn = (inf, st) => { const i = inCart(inf.col, inf.row), full = i < 0 && st.cart.length >= MAX; return `<button class="lyr-addc${i >= 0 ? ' in' : ''}" data-cart${full ? ' disabled' : ''}>${i >= 0 ? ct('added') : full ? ct('full') : ct('add')}</button>`; };
 // the stay's own numbers for this landing day (same as the ranked list)
 function winRow(inf, st) {
   const w = statsCached(inf.col, inf.row, st.mission), c = st.crit;

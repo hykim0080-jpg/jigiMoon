@@ -13,6 +13,8 @@ function readHash() {
     out[k] = typeof DEFAULT[k] === 'number' ? Number(p.get(h)) : p.get(h);
   }
   if (p.has('cmp')) out.pinned = p.get('cmp').split(',').filter(Boolean);
+  // #pins=x,y;x,y;...: the shortlist from Find a site, opened as sites pin1..pin4
+  if (/^-?\d+(\.\d+)?,-?\d+(\.\d+)?(;-?\d+(\.\d+)?,-?\d+(\.\d+)?){0,3}$/.test(p.get('pins') || '')) out.pinsXY = p.get('pins');
   // #pin=<x_m>,<y_m>[&d=YYYY-MM-DD]: a custom point from the layer viewer
   const m = /^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/.exec(p.get('pin') || '');
   if (m) {
@@ -25,13 +27,14 @@ function readHash() {
   return out;
 }
 
-export const state = { pinXY: '', ...DEFAULT, ...readHash(), crit: readCrit() };
+export const state = { pinXY: '', pinsXY: '', ...DEFAULT, ...readHash(), crit: readCrit() };
 
 function writeHash() {
   const p = new URLSearchParams();
   for (const [k, h] of Object.entries(KEYS)) p.set(h, state[k]);
   if (state.pinned.length) p.set('cmp', state.pinned.join(','));
   if (state.pinXY) p.set('pin', state.pinXY);
+  if (state.pinsXY) p.set('pins', state.pinsXY);
   for (const [h, v] of critParams(state.crit)) p.set(h, v);
   const old = new URLSearchParams(location.hash.slice(1));
   if (old.has('lang')) p.set('lang', old.get('lang'));

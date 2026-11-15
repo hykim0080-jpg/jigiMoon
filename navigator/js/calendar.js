@@ -93,7 +93,7 @@ export function render(st, d) {
   const ink = css('--ink'), muted = css('--muted'), line = css('--line');
 
   // rows: sites sorted by baseline OK days, best on top
-  order = data.index.sites.map(s => s.id).sort((a, b) => (b === 'pin') - (a === 'pin') || mode[b].summary.ok_days - mode[a].summary.ok_days);
+  order = data.index.sites.map(s => s.id).sort((a, b) => /^pin/.test(b) - /^pin/.test(a) || mode[b].summary.ok_days - mode[a].summary.ok_days);
 
   ctx.clearRect(0, 0, W, H);
   ctx.font = '12px "IBM Plex Sans KR", system-ui, sans-serif';

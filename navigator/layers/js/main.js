@@ -16,6 +16,7 @@ import { xyToCell, cellToXY } from './geo.js';
 import { initTrip, renderTrip, tripRanked, REGIONS, regionBBox } from './trip.js';
 import { mapHome, setBadges } from './mapview.js';
 import { syncWin, winToken } from './window.js';
+import { initCart, renderCart, readCart, cartHash } from './cart.js';
 
 export async function mount(root, opts = {}) {
   const { dataUrl = './data/', header = true } = opts;
@@ -47,6 +48,7 @@ export async function mount(root, opts = {}) {
   if (h.get('st') === '6') state.mission = 6;
   if (state.adv && h.get('jb') === 'y') state.basis = 'year';
   if (REGIONS.some(r => r.id === h.get('r'))) state.region = h.get('r');
+  state.cart = readCart(h.get('k'));
   const mon = +h.get('mon'); if (state.adv && mon >= 1 && mon <= 12 && data.month) state.month = mon - 1;
   let pinFly = null;
   if (h.get('pin')) { const [px, py] = h.get('pin').split(',').map(Number), c = xyToCell(px, py); if (Number.isFinite(c.col) && c.col >= 0 && c.row >= 0 && c.col < 800 && c.row < 800) { state.pin = c; pinFly = c; state.autoPin = false; } }
@@ -60,7 +62,7 @@ export async function mount(root, opts = {}) {
     if (!(await applyLevels(data, next, dataUrl))) { await applyLevels(data, state.crit, dataUrl); return false; }
     saveCrit(next); setState({ crit: next }, 'pixels'); return true;
   };
-  initCriteria(pCrit, data, setCrit); initZones(pZones, data, { pick }); initPinCard(pPin, data); initMap(pMap, data, comp); setPick(pick);
+  initCart(app, data, lang, lq); initCriteria(pCrit, data, setCrit); initZones(pZones, data, { pick }); initPinCard(pPin, data); initMap(pMap, data, comp); setPick(pick);
   { const hd = root.querySelector('.lyr-app header'), tl = main.querySelector('.lyr-tripl');
     initTrip(hd || main, tl, data, { pick, fly: bb => flyToCells(bb, 8), home: () => mapHome(), ranked: rk => { if (state.autoPin && rk[0] && !(state.pin && state.pin.col === rk[0].col && state.pin.row === rk[0].row)) setState({ pin: { col: rk[0].col, row: rk[0].row } }, 'panel'); } });
     setBadges(() => { const r = tripRanked(), g = r.filter(z => z.go).length; return r.slice(0, g ? Math.min(g, 15) : 3); }); }
@@ -96,6 +98,7 @@ export async function mount(root, opts = {}) {
       if (p.has('hover')) { overlay(); readout(); renderZones(state); }
     }
     renderTrip(state);   // after compose(): the ranked spots follow the current mask
+    renderCart(state);
     const q = new URLSearchParams(); if (state.base !== 'sun') q.set('b', state.base); if (state.adv) { q.set('a', 1); q.set('m', state.mode); } if (state.site) q.set('s', state.site);
     if (state.pin && !state.autoPin) { const c = cellToXY(state.pin.col, state.pin.row); q.set('pin', Math.round(c.x) + ',' + Math.round(c.y)); }
     if (state.adv && state.month != null) q.set('mon', state.month + 1);
@@ -104,10 +107,11 @@ export async function mount(root, opts = {}) {
     if (state.mission !== 14) q.set('st', state.mission);
     if (state.adv && state.basis === 'year') q.set('jb', 'y');
     if (state.region) q.set('r', state.region);
+    if (state.cart.length) q.set('k', cartHash());
     { const ch = critHash(data.meta, state.crit); for (const kv of ch ? ch.split('&') : []) { const [a, b] = kv.split('='); q.set(a, b); } }
     if (lq) q.set('lang', lq);
     { const ch = critHash(data.meta, state.crit), href = '../index.html' + (lq ? '?lang=' + lq : '') + '#v=focus&day=' + state.tDay + '&m=' + state.mission + (ch ? '&' + ch : ''); for (const a of app.querySelectorAll('.lyr-sw a, .app-name')) a.setAttribute('href', href); }
-    history.replaceState(null, '', '#' + q.toString().replace(/%2C/g, ','));
+    history.replaceState(null, '', '#' + q.toString().replace(/%2C/g, ',').replace(/%3B/g, ';'));
   };
   const zonesSoon = () => scheduleZones(state, () => {
     const z = getZones()[0];

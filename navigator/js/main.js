@@ -28,7 +28,7 @@ function criteriaReady(st) {
   if (applied[st.mission] === key) return true;
   const ids = data.index.sites.map(s => s.id);
   if (applyCriteria(data.index, st.mission, st.crit, id => metricsOf(id, st.mission))) { applied[st.mission] = key; return true; }
-  if (!loadingCals[st.mission]) loadingCals[st.mission] = preloadCals(ids.filter(id => id !== 'pin'), st.mission).then(() => render(state));
+  if (!loadingCals[st.mission]) loadingCals[st.mission] = preloadCals(ids.filter(id => !/^pin\d*$/.test(id)), st.mission).then(() => render(state));
   return false;
 }
 
@@ -98,6 +98,16 @@ async function boot() {
     await new Promise(r => requestAnimationFrame(() => setTimeout(r, 30)));
     try { const [x, y] = state.pinXY.split(',').map(Number); await pin.setup(data.index, x, y); }
     catch (e) { console.error(e); state.pinXY = ''; if (state.site === 'pin') state.site = data.index.sites[0].id; }
+    $('busy').hidden = true;
+  }
+  if (state.pinsXY) {   // shortlist from Find a site: register each spot as pin1..pinN (computed like the map pin)
+    $('busy').hidden = false;
+    await new Promise(r => requestAnimationFrame(() => setTimeout(r, 30)));
+    const list = state.pinsXY.split(';').map(s => s.split(',').map(Number));
+    for (let k = list.length - 1; k >= 0; k--) {
+      try { await pin.setup(data.index, list[k][0], list[k][1], 'pin' + (k + 1)); data.index.byId['pin' + (k + 1)].name = t('spotN', k + 1); } catch (e) { console.error(e); }
+    }
+    state.pinned = state.pinned.filter(id => data.index.byId[id]);
     $('busy').hidden = true;
   }
   if (!data.index.byId[state.site]) state.site = data.index.sites[0].id;

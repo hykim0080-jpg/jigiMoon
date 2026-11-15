@@ -31,7 +31,7 @@ function columns(st) {
       .sort((a, b) => b.v - a.v);
     ids.push(...others.slice(0, 2).map(o => o.id));
   }
-  return ids.slice(0, 3);
+  return ids.slice(0, 4);   // up to four: the Find a site shortlist
 }
 
 const valBar = (text, o, fail) => `<div class="vl"><span class="n${fail ? ' fail' : ''}">${text}</span>${bar(o)}</div>`;
