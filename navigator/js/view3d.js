@@ -20,7 +20,6 @@ import * as findlink from './findlink.js';
 import * as timebar from './timebar.js';
 import * as gomask from './gomask3d.js';
 import { loadCam, saveCam, share, onShare } from './cam3d.js';
-import { isBase } from './criteria.js';
 
 const SETS = [{ label: '2027-01', url: 'data/3d/frames_jan/', y: 2027, m: 0 }, { label: '2027-02', url: 'data/3d/frames_feb/', y: 2027, m: 1 }, { label: '2027-03', url: 'data/3d/frames_mar/', y: 2027, m: 2 }, { label: '2027-04', url: 'data/3d/frames_apr/', y: 2027, m: 3 }, { label: '2027-05', url: 'data/3d/frames_may/', y: 2027, m: 4 }, { label: '2027-06', url: 'data/3d/frames/', y: 2027, m: 5 }, { label: '2027-07', url: 'data/3d/frames_jul/', y: 2027, m: 6 }, { label: '2027-08', url: 'data/3d/frames_aug/', y: 2027, m: 7 }, { label: '2027-09', url: 'data/3d/frames_sep/', y: 2027, m: 8 }, { label: '2027-10', url: 'data/3d/frames_oct/', y: 2027, m: 9 }, { label: '2027-11', url: 'data/3d/frames_nov/', y: 2027, m: 10 }, { label: '2027-12', url: 'data/3d/frames_dec/', y: 2027, m: 11 }];
 const STEP_H = 4;
@@ -156,11 +155,11 @@ async function arrive() {
 
 let maskKey = '';
 function syncMask(st) {
-  // GO for the chosen day (14-day stay, default criteria: the per-cell calendar exists for those): blue on the map
-  const on = st.mission === 14 && isBase(st.crit), k = on ? 'd' + st.day : 'off';
+  // GO for the chosen day (a per-cell calendar exists for 14 d at 70 % and for 6 / 14 d at 90 %): blue on the map
+  const set = gomask.setOf(st.mission, st.crit), on = !!set, k = on ? set + 'd' + st.day : 'off';
   if (k === maskKey) return; maskKey = k;
   if (!on) { map.setMask(null); return; }
-  gomask.load().then(() => { if (maskKey === k) { map.setMask(gomask.maskFor(st.day)); rankKey = ''; syncRank(state); } });
+  gomask.load(set).then(() => { if (maskKey === k) { map.setMask(gomask.maskFor(st.day, set)); rankKey = ''; syncRank(state); } });
 }
 // Find a site tab: its GO ground, ranked spots and picked spot on this map (js/findlink.js)
 let findShown = false;
