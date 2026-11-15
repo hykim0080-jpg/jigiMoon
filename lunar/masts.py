@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Mast height vs. sunlight / Earth visibility / feasible landing days, per site (2027, hourly).
 Optimal mast (definition): the lowest height (from HEIGHTS) that captures >= 90% of the total gain in
 2027 mean sunlight between 2 m and 100 m. Reported both uncapped and capped at the practical limit (20 m)."""

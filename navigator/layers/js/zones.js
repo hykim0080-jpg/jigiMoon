@@ -1,3 +1,4 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 // ZONES: 8-connected components of the current result (mask pass / score >= cutoff), with a user include/exclude override.
 import { N, PX, ZONE, MONTHS, SIMPLE } from './config.js';
 import { state, setState } from './state.js';

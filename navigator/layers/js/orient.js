@@ -1,3 +1,4 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 // Landmarks, landers and relative-position text (port of lunar/orientation/orientation.py describe()).
 export const SECTORS = ['지구 쪽', '지구 쪽 오른편', '오른쪽', '지구 반대쪽 오른편', '지구 반대쪽', '지구 반대쪽 왼편', '왼쪽', '지구 쪽 왼편'];
 import { lang } from './strings.js';

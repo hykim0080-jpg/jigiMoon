@@ -1,3 +1,4 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 import { state, setState, subscribe } from './state.js';
 import { loadAll, fmt } from './data.js';
 import { initCompose, compose, sample, scoreIds, critIds, scoreColor } from './compose.js';
@@ -36,6 +37,7 @@ export async function mount(root, opts = {}) {
   state.crit = readCrit(data.meta, h);
   Object.assign(state, { order: ids, on, opacity, threshold, weight, lastWeight, ov: loadOverride() });
   if (h.get('a') === '1') state.adv = true;
+  if (['sun', 'earth', 'dark', 'slope'].includes(h.get('b'))) state.base = h.get('b');
   if (state.adv && ['layers', 'mask', 'score'].includes(h.get('m'))) state.mode = h.get('m');
   if (data.sites.some(s => s.id === h.get('s'))) state.site = h.get('s');
   const dd = Date.parse((h.get('d') || '') + 'T00:00:00Z'); if (!isNaN(dd)) { state.tDay = Math.max(0, Math.min(364, Math.round((dd - Date.UTC(2027, 0, 1)) / 864e5))); state.tTouched = true; }
@@ -91,7 +93,7 @@ export async function mount(root, opts = {}) {
       if (p.has('hover')) { overlay(); readout(); renderZones(state); }
     }
     renderTrip(state);   // after compose(): the ranked spots follow the current mask
-    const q = new URLSearchParams(); if (state.adv) { q.set('a', 1); q.set('m', state.mode); } if (state.site) q.set('s', state.site);
+    const q = new URLSearchParams(); if (state.base !== 'sun') q.set('b', state.base); if (state.adv) { q.set('a', 1); q.set('m', state.mode); } if (state.site) q.set('s', state.site);
     if (state.pin && !state.autoPin) { const c = cellToXY(state.pin.col, state.pin.row); q.set('pin', Math.round(c.x) + ',' + Math.round(c.y)); }
     if (state.adv && state.month != null) q.set('mon', state.month + 1);
     if (state.tTouched) { q.set('d', new Date(Date.UTC(2027, 0, 1 + state.tDay)).toISOString().slice(0, 10)); q.set('h', String(state.tHour).padStart(2, '0')); }

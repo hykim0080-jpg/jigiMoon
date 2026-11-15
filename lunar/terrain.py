@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Build the terrain stack (5 m site tile -> 20 m -> 80 m -> 240 m) around a site, plus slope.
 
 All inputs are PGDA LOLA products (NASA GSFC, public domain):

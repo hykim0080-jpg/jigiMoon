@@ -1,3 +1,4 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 // A custom point ("pin") as a temporary 13th site, computed in the browser from the terrain horizon masks.
 import * as shadow from './shadow.js';
 import { loadSky, setCustom } from './data.js';

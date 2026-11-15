@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Short map label and one-line purpose (en/ko) for each spacecraft in landers.json.
 Run after landers.py: python3 lander_info.py landers.json"""
 import json, sys

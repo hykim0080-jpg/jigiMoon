@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Pick one representative landing point per candidate region.
 
 Region boxes: NASA's official Artemis III candidate-region map (Oct 2024,

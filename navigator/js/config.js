@@ -1,3 +1,4 @@
+// Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 // defaults for the search limits; adjustable on the page (advanced options)
 export const BUDGET = { move: 3, mast: 20, wait: 60 };
 export const THRESHOLDS = { sun: 70, dark: 50, earth: 50 };

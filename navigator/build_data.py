@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Build web data for the navigator from ../lunar/out (14 d) and ../lunar/out/mission_6d (6 d).
 Run: python3 build_data.py   -> data/index.json, data/<mode>/<id>.json, data/sky/<id>.json, data/hillshade.jpg
 """

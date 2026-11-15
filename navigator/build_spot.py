@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Make data/spot/<site>.jpg: hillshade of the PGDA LOLA 20 m/px DEM (LDEM_80S_20MPP_ADJ), +-4.5 km around each site.
 Run: python3 build_spot.py  (needs rasterio and network access to pgda.gsfc.nasa.gov)"""
 import json,os,numpy as np,rasterio

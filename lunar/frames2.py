@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Frames for the 3D map thread: 800x800 @500 m (+-200 km), PNG per frame (R = sun disc fraction*255,
 G = 255 if Earth centre visible), height.bin float32, meta.json. See frames.py for the method."""
 import datetime as dt, json, os, sys, time

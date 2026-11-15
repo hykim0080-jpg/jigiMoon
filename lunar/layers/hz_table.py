@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Per-pixel terrain horizon table for the south-pole layer maps (800x800 @500 m, +-200 km).
 For each of NA map azimuths (clockwise from map +y), march LOLA terrain (80 m, 240 m beyond 80S) out to
 150 km from every pixel (observer MAST m above ground, curvature included) and keep the max elevation angle.

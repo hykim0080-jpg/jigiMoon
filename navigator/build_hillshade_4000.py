@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Run: python3 build_hillshade_4000.py LDEM_80S_40MPP_ADJ.TIF data/hillshade_4000.jpg  (https://pgda.gsfc.nasa.gov/data/LOLA_20mpp/)
 data/hillshade_4000.jpg: +-200 km hillshade at 100 m/px from PGDA LOLA LDEM_80S_40MPP_ADJ (average-downsampled)."""
 import sys,numpy as np,rasterio

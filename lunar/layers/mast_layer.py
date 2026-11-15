@@ -1,3 +1,4 @@
+# Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 """Optimal mast layer, same definition as lunar/masts.py (optimal_mast_practical_m) but per 500 m pixel and with
 the heights we have horizon tables for (2, 10, 20 m): the lowest height that gets 90% of the gain in feasible
 landing days (6-day mission, 2027) available up to 20 m; gain < 10 days -> stay at 2 m.
