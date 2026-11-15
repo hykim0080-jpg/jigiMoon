@@ -142,7 +142,8 @@ export function render(st, d) {
     ctx.font = `${selected ? 600 : 400} ${narrow ? 11 : 12}px Inter, "Apple SD Gothic Neo", system-ui, sans-serif`;
     ctx.textAlign = 'left';
     const pinned = st.pinned.includes(id);
-    if (pinned) { ctx.fillStyle = ink; ctx.fillRect(2, y + 5, 4, 4); ctx.fillStyle = selected ? ink : muted; }
+    if (data.index.byId[id]?.isPin) { ctx.fillStyle = ink; ctx.beginPath(); ctx.arc(5, y + CELL_H / 2 - 2, 3, Math.PI, 0); ctx.lineTo(5, y + CELL_H / 2 + 4); ctx.closePath(); ctx.fill(); ctx.fillStyle = selected ? ink : muted; }   // a saved spot: the pin glyph
+    else if (pinned) { ctx.fillStyle = ink; ctx.fillRect(2, y + 5, 4, 4); ctx.fillStyle = selected ? ink : muted; }
     ctx.fillText(fitText(siteName(data.index.byId[id]), GUT_L - 16), 12, y + CELL_H / 2);
     // right gutter: bar + number
     const pct = Math.round(ok / 365 * 100), bx = W - GUT_R + 8;

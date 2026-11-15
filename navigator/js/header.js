@@ -3,7 +3,7 @@ import { state, setState, limitsOf } from './state.js';
 import { MAST_SLIDER, BUDGET, THRESHOLDS } from './config.js';
 import { ranked } from './rank3d.js';
 import { bestFix } from './logic.js';
-import { t, siteName } from './strings.js';
+import { t, siteName, PIN_IC } from './strings.js';
 import { status, fixText, isoDate, nearestOk, goRuns, shortDate, dateOf } from './logic.js';
 import { moveShort } from './orient.js';
 import { LEVELS, critQuery, isDefault } from './criteria.js';
@@ -201,11 +201,11 @@ function whereList(st, data) {
   const row = s => {
     const e = mode[s.id], k = e ? status(e, st.day, st.mast, lim).kind : null;
     const dot = k == null ? '' : k === 'ok' ? 'go' : 'nogo', sel = s.id === st.site;
-    return `<button type="button" role="option" tabindex="-1" data-v="${s.id}" aria-selected="${sel}"><i class="wd ${dot}" aria-label="${k == null ? '' : k === 'ok' ? t('go') : t('nogo')}"></i><span>${esc(siteName(s))}</span></button>`;
+    return `<button type="button" role="option" tabindex="-1" data-v="${s.id}" aria-selected="${sel}"><i class="wd ${dot}" aria-label="${k == null ? '' : k === 'ok' ? t('go') : t('nogo')}"></i>${s.isPin ? PIN_IC : ''}<span>${esc(siteName(s))}</span></button>`;
   };
   const pins = data.index.sites.filter(s => /^pin/.test(s.id)), ex = data.index.sites.filter(s => !/^pin/.test(s.id));
   return `<button type="button" role="option" tabindex="-1" data-v="${ANY}" aria-selected="false" class="wp-any"><i class="wd any"></i><span>${t('anywhere')}</span></button>`
-    + (pins.length ? `<hr>${pins.map(row).join('')}` : '') + `<hr>${ex.map(row).join('')}`;
+    + (pins.length ? `<hr><div class="wp-grp">${t('yourSpots')}</div>${pins.map(row).join('')}` : '') + `<hr>${ex.map(row).join('')}`;
 }
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 // best day of the year for the selected place: a GO day with the most room over the Sun and Earth limits (earliest on
