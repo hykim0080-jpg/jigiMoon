@@ -210,7 +210,7 @@ void main() {
   // style 'glow': relief around the edge level uRef, eased flat near the rim, on the Moon's curvature
   // the patch edge is a rounded square (p = 4), so spots near the ±200 km corners keep their ground
   float r = length(position.xz), e = pow(pow(abs(position.x), 4.0) + pow(abs(position.z), 4.0), 0.25);
-  float y = mix(aH * uExag, (aH - uRef) * uExag * (1.0 - smoothstep(190.0, 200.0, e)) - r * r / 3474.8 + 0.3 * smoothstep(184.0, 192.0, e), uCurv);
+  float y = mix(aH * uExag, (aH - uRef) * uExag * (1.0 - smoothstep(165.0, 200.0, e)) - r * r / 3474.8 + 0.3 * smoothstep(160.0, 170.0, e), uCurv);
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position.x, y, position.z, 1.0);
 }`;
 
@@ -293,7 +293,7 @@ void main() {
   }
   col = mix(col, vec3(0.97, 0.95, 0.90), rim);
 
-  gl_FragColor = vec4(col, mix(1.0, 1.0 - smoothstep(192.0, 200.0, pow(pow(abs(vMap.x), 4.0) + pow(abs(vMap.y), 4.0), 0.25)), uCurv));
+  gl_FragColor = vec4(col, mix(1.0, 1.0 - smoothstep(170.0, 200.0, pow(pow(abs(vMap.x), 4.0) + pow(abs(vMap.y), 4.0), 0.25)), uCurv));
 }`;
 
 const SKIRT_VERT = /* glsl */`
@@ -510,13 +510,30 @@ export function mountLunarMap(container, options = {}) {
   // directions from the pole (azimuth, elevation from the frame metadata); sizes are enlarged to be seen.
   const R_MOON = 1737.4;
   const moonGroup = new THREE.Group();
+  const gSun = { value: new THREE.Vector4() }, gEarth = { value: new THREE.Vector4() }, gC = { value: new THREE.Vector3() };   // globe shading (glow)
   const moonMat = new THREE.MeshBasicMaterial({ color: 0x3a3e46 });   // dark, so the lit south-pole patch stands out
-  if (opt.moonUrl) new THREE.TextureLoader().load(opt.moonUrl, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; moonMat.map = tx; moonMat.color.set(0x474b54); moonMat.needsUpdate = true; dirty = true; });
+  if (opt.moonUrl) new THREE.TextureLoader().load(opt.moonUrl, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; moonMat.map = tx; moonMat.color.set(0x2f3239); moonMat.needsUpdate = true; dirty = true; });
   // glow: the globe has an opening under the curved patch (6 deg = 182 km around the pole), so the patch's craters show
   const moonGeo = opt.style === 'glow' ? new THREE.SphereGeometry(R_MOON, 256, 160) : new THREE.SphereGeometry(R_MOON, 160, 80);
   if (opt.style === 'glow') moonMat.onBeforeCompile = (sh) => {   // a rounded-square hole under the terrain patch (same shape as its edge)
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vW;').replace('#include <project_vertex>', '#include <project_vertex>\nvW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vW;').replace('void main() {', 'void main() {\nif (vW.y > -2000.0 && pow(pow(abs(vW.x), 4.0) + pow(abs(vW.z), 4.0), 0.25) < 196.0) discard;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vW;').replace('void main() {', 'void main() {\nfloat eW = pow(pow(abs(vW.x), 4.0) + pow(abs(vW.z), 4.0), 0.25);\nif (vW.y > -2000.0 && eW < 166.0) discard;\ngl_FragDepth = vW.y > -2000.0 && eW < 202.0 ? gl_FragCoord.z + 0.5 * (1.0 - gl_FragCoord.z) : gl_FragCoord.z;');
+    // under the patch's faded rim (166-200 km) the globe is drawn as if twice as far, so the fading terrain always lies over it
+    // Sun / Earth beyond the patch: the same colours as the patch where the globe faces them (no terrain there, a smooth
+    // terminator), fading out 450-900 km from the pole, so the light runs on past the patch's edge
+    Object.assign(sh.uniforms, { gSun, gEarth, gC, uSunW: uniforms.uSunW, uEarthW: uniforms.uEarthW, cNone: uniforms.cNone, cSun: uniforms.cSun, cEarth: uniforms.cEarth, cBoth: uniforms.cBoth });
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec4 gSun, gEarth;\nuniform vec3 gC, cNone, cSun, cEarth, cBoth;\nuniform float uSunW, uEarthW;')
+      .replace('#include <opaque_fragment>', `{
+  vec3 gN = normalize(vW - gC);
+  float gP = acos(clamp(gN.y, -1.0, 1.0)) * 1737.4;
+  float gR = 1.0 - smoothstep(450.0, 900.0, gP);
+  float gs = smoothstep(-0.01, 0.05, dot(gN, gSun.xyz)) * gSun.w * uSunW;
+  float ge = smoothstep(-0.002, 0.006, dot(gN, gEarth.xyz)) * gEarth.w * uEarthW;
+  vec3 gT = mix(mix(cNone * 0.75, cEarth * 0.8, ge), mix(cSun, cBoth, ge), gs) * 0.7;
+  float gD = clamp(dot(outgoingLight, vec3(0.3, 0.59, 0.11)) / 0.075, 0.35, 2.2);
+  outgoingLight = mix(outgoingLight, gT * gD, gR * (0.25 + 0.2 * gs));
+}
+#include <opaque_fragment>`);
   };
   const moonMesh = new THREE.Mesh(moonGeo, moonMat);
   moonMesh.rotation.x = Math.PI;          // south pole to +y
@@ -562,10 +579,12 @@ export function mountLunarMap(container, options = {}) {
   function placeSky(tt) {
     for (const k of ['sun', 'earth']) {
       const b = bodyAt(`${k}_az_el_at_pole`, tt), sp = sky[k];
-      if (!b) { sp.visible = false; continue; }
+      const gd = k === 'sun' ? gSun : gEarth;
+      if (!b) { sp.visible = false; gd.value.w = 0; continue; }
       const a = b.az * DEG, e = b.el * DEG;
       sp.position.set(Math.sin(a) * Math.cos(e) * SKY_D, Math.sin(e) * SKY_D, -Math.cos(a) * Math.cos(e) * SKY_D);
       sp.visible = true;
+      gd.value.set(sp.position.x / SKY_D, sp.position.y / SKY_D, sp.position.z / SKY_D, 1);
       if (k === 'sun') { sunLight.position.copy(sp.position); sunLight.target.position.copy(earthMesh.position); }
     }
     earthMesh.lookAt(0, 0, 0);
@@ -574,7 +593,7 @@ export function mountLunarMap(container, options = {}) {
     if (!Number.isFinite(hMin)) return;
     // globe top just under the lowest terrain, so the patch sits on it and nothing pokes through
     const top = glow ? 0 : (hMin / 1000 - 1.5) * exagV + 4;
-    moonGroup.position.set(0, top - R_MOON, 0);
+    moonGroup.position.set(0, top - R_MOON, 0); gC.value.copy(moonGroup.position);
     moonGroup.visible = true;
   }
 
@@ -744,7 +763,7 @@ export function mountLunarMap(container, options = {}) {
     const h = heightAt(xm, ym) / 1000;
     if (!glow) return h * exagV;
     const r = Math.hypot(xm, ym) / 1000, e = ((Math.abs(xm / 1000) ** 4 + Math.abs(ym / 1000) ** 4) ** 0.25), ss = (a, b, x) => { const u = clamp((x - a) / (b - a), 0, 1); return u * u * (3 - 2 * u); };
-    return (h - uniforms.uRef.value) * exagV * (1 - ss(190, 200, e)) - r * r / 3474.8 + 0.3 * ss(184, 192, e);
+    return (h - uniforms.uRef.value) * exagV * (1 - ss(165, 200, e)) - r * r / 3474.8 + 0.3 * ss(160, 170, e);
   };
   const worldOf = (xm, ym, out) => out.set(xm / 1000, yAt(xm, ym), -ym / 1000);
 
