@@ -15,6 +15,7 @@ import { t } from './strings.js';
 const SETS = [{ label: '2027-02', url: 'data/3d/frames_feb/', y: 2027, m: 1 }, { label: '2027-06', url: 'data/3d/frames/', y: 2027, m: 5 }, { label: '2027-12', url: 'data/3d/frames_dec/', y: 2027, m: 11 }];
 const STEP_H = 4;
 let lastCells = '', mapReady = false, lastZoom = null, onPin = null, hint, box, note, btns, map = null, loading = null, order = null, lastKey = '', lastSite = '', data = null;
+let landerOn = false, landerBtn = null;   // Lander view
 
 export function init(panel, d, pinAt) {
   data = d; onPin = pinAt;
@@ -24,6 +25,17 @@ export function init(panel, d, pinAt) {
   panel.appendChild(seg);
   btns = [...seg.children];
   btns.forEach(b => b.addEventListener('click', () => setState({ d3: Number(b.dataset.d) })));
+  // Lander view (3D only): down beside the lander, looking toward Earth, close enough to see it and the mast whole
+  const zoom = document.getElementById('zoom');
+  if (zoom) {
+    landerBtn = document.createElement('button'); landerBtn.type = 'button'; landerBtn.dataset.z = 'lander'; landerBtn.textContent = t('zoomLander');
+    landerBtn.addEventListener('click', () => { landerOn = true; landerView(); render(state); });
+    // Region / Site / Spot leave it: first (capture) so their own move is the usual one; same zoom as before: move back here
+    let was = null;
+    zoom.addEventListener('click', e => { const b = e.target.closest('button'); was = landerOn && b && b !== landerBtn ? state.zoom : null; if (was !== null) landerOn = false; }, true);
+    zoom.addEventListener('click', () => { if (was !== null && state.zoom === was && map && !entering) recenter(); if (was !== null) render(state); was = null; });
+    zoom.appendChild(landerBtn);
+  }
   box = document.createElement('div'); box.id = 'map3d'; box.hidden = true;
   hint = document.createElement('div'); hint.id = 'space-hint'; hint.hidden = true; hint.textContent = t('spaceHint'); panel.appendChild(hint);
   note = document.createElement('div'); note.id = 'note3d'; note.hidden = true;
@@ -160,8 +172,18 @@ function closeUp(id, s) {
   return out;
 }
 
+function landerView(dur = 1800) {
+  const s = data && data.index && data.index.byId[state.site], e = data && data.index.modes[state.mission]?.sites[state.site];
+  if (!map || !s || entering) return;
+  const h = e ? mastShown(e, state.day, state.mast, limitsOf(state)) : 0;
+  // the rig (lander, mast, panels) about 40 % of the map's height: k px per metre -> camera distance
+  const H = box.clientHeight || 700, k = 0.4 * H / (Math.max(h, 4.3) + 1.2), ppm = k / (map.exaggeration ? map.exaggeration() : 3);
+  map.focus(s.x_m, s.y_m, 0, { r: Math.max(0.03, H / (2 * Math.tan(15 * Math.PI / 180) * ppm * 1000)), polar: 1.25, dur });
+}
+
 // Space: centre the 3D camera on the selected site again
 export function recenter(dur) {
+  if (landerOn) { landerView(dur); return; }
   const s = data && data.index && data.index.byId[state.site];
   const half = state.zoom >= ZOOM.spot - 0.01 ? 3.5 : state.zoom >= ZOOM.site - 0.01 ? 25 : state.zoom > 1.01 ? 200 / state.zoom : 22;
   const spot = state.zoom >= ZOOM.spot - 0.01;   // Spot: straight down on the place, Earth up, like the MOVE card
@@ -173,6 +195,12 @@ export function render(st) {
   if (!box) return;
   const on = !!st.d3 && st.view === 'focus';
   btns.forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.d) === (on ? 1 : 0))));
+  if (landerBtn) {
+    landerBtn.hidden = !on;
+    if (!on) landerOn = false;
+    if (landerOn) landerBtn.parentNode.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === landerBtn)));
+    else landerBtn.setAttribute('aria-pressed', 'false');
+  }
   document.getElementById('main').dataset.d3 = on ? '1' : '';
   box.hidden = !on;
   hint.hidden = !on;
