@@ -5,10 +5,13 @@ import { status, fixText, shortDate } from './logic.js';
 import { calOf } from './data.js';
 import { showTip, hideTip } from './svg.js';
 
-const GUT_L = 150, GUT_R = 80, AXIS = 18;
+let GUT_L = 150, GUT_R = 80, narrow = false;   // gutters shrink when the calendar sits in the narrow left column
+const AXIS = 18;
 let ROW = 16, CELL_H = 14;
 let canvas, ctx, overlay, data, order = [], dragging = false;
 let sel, bracket, hoverLine, baseMark;
+// cut a name with an ellipsis instead of squeezing it
+const fitText = (s, w) => { if (ctx.measureText(s).width <= w) return s; while (s.length > 2 && ctx.measureText(s + '…').width > w) s = s.slice(0, -1); return s + '…'; };
 const geom = () => ({ w: canvas.clientWidth, cw: (canvas.clientWidth - GUT_L - GUT_R) / 365 });
 
 export function init(panel, d) {
@@ -83,6 +86,7 @@ export function render(st, d) {
   data = d;
   const dpr = devicePixelRatio || 1, W = canvas.clientWidth, H = canvas.clientHeight;
   if (!W) return;
+  narrow = W < 640; GUT_L = narrow ? 104 : 150; GUT_R = narrow ? 30 : 80;
   canvas.width = W * dpr; canvas.height = H * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const { cw } = geom();
@@ -110,15 +114,14 @@ export function render(st, d) {
     }
     const selected = id === st.site;
     ctx.fillStyle = selected ? ink : muted;
-    ctx.font = `${selected ? 600 : 400} 12px "IBM Plex Sans KR", system-ui, sans-serif`;
+    ctx.font = `${selected ? 600 : 400} ${narrow ? 11 : 12}px "IBM Plex Sans KR", system-ui, sans-serif`;
     ctx.textAlign = 'left';
     const pinned = st.pinned.includes(id);
     if (pinned) { ctx.fillStyle = ink; ctx.fillRect(2, y + 5, 4, 4); ctx.fillStyle = selected ? ink : muted; }
-    ctx.fillText(siteName(data.index.byId[id]), 12, y + CELL_H / 2, GUT_L - 16);
+    ctx.fillText(fitText(siteName(data.index.byId[id]), GUT_L - 16), 12, y + CELL_H / 2);
     // right gutter: bar + number
     const pct = Math.round(ok / 365 * 100), bx = W - GUT_R + 8;
-    ctx.fillStyle = line; ctx.fillRect(bx, y + 5, 44, 4);
-    ctx.fillStyle = col.ok; ctx.fillRect(bx, y + 5, 44 * ok / 365, 4);
+    if (!narrow) { ctx.fillStyle = line; ctx.fillRect(bx, y + 5, 44, 4); ctx.fillStyle = col.ok; ctx.fillRect(bx, y + 5, 44 * ok / 365, 4); }
     ctx.fillStyle = selected ? ink : muted; ctx.textAlign = 'right';
     ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
     ctx.fillText(String(pct), W - 6, y + CELL_H / 2);

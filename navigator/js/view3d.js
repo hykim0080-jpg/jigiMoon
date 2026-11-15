@@ -41,7 +41,8 @@ function place() {
   if (seg && zoom) seg.style.right = (8 + zoom.offsetWidth + 6) + 'px';
   if (!box || box.hidden) return;
   const r = svg.getBoundingClientRect(), b = box.parentNode.getBoundingClientRect();   // an <svg> has no offsetLeft
-  Object.assign(box.style, { left: r.left - b.left + 'px', top: r.top - b.top + 'px', width: r.width + 'px', height: r.height + 'px' });
+  // down to the bottom of the panel: in Detail the map column is taller than the square 2D map
+  Object.assign(box.style, { left: r.left - b.left + 'px', top: r.top - b.top + 'px', width: r.width + 'px', height: Math.max(r.height, b.bottom - r.top - 1) + 'px' });
 }
 
 async function mount() {
