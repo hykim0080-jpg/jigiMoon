@@ -2,7 +2,7 @@
 const S = {
   en: {
     app: 'LUNAR LANDING SITE NAVIGATOR', compare: 'Compare sites', find: 'Find a site', go: 'GO', none: 'none', here: 'here', open_cmp: 'Open in Compare ↗',
-    layers: 'LAYERS', sites: 'SITES', zones: 'ZONES', d: 'd', ds: ' d', z_add: 'Add', z_erase: 'Erase', z_clear: 'Clear', z_area: 'km²', z_score: 'Score', month: 'Landing days (month)', shadow: 'Shadow',
+    layers: 'LAYERS', sites: 'SITES', zones: 'ZONES', d: 'd', ds: ' d', z_add: 'Add', z_erase: 'Erase', z_clear: 'Clear', z_area: 'km²', z_score: 'Score', month: 'Landing days (month)', shadow: 'Shadow', eshadow: 'Earth shadow',
     b_line: 'Lines', b_shade: 'Relief', m_layers: 'Layers', m_mask: 'Mask', m_score: 'Score', km: 'km', home: '⌂', open: '↗',
     suitable: 'SUITABLE', criteria: 'CRITERIA', adv: 'Advanced', layerTip: 'Show or hide this layer (hatched where it fails)', legHatch: 'Hatched = fails:', legName: { sun: 'Sun', earth: 'Earth', dark: 'Dark', slope: 'Slope' },
     legStay: (n, km) => `Green = works for the whole ${n}-day stay · ${km} km²`, legYear: km => `Green = meets every criterion · ${km} km²`,
@@ -17,7 +17,7 @@ const S = {
   },
   ko: {
     app: '달 착륙지 내비게이터', compare: '사이트 비교', find: '입지 분석', go: 'GO', none: '없음', here: '여기', open_cmp: '사이트 비교에서 보기 ↗',
-    layers: '레이어', sites: '후보지', zones: '구역', d: '일', ds: '일', z_add: '추가', z_erase: '지우기', z_clear: '초기화', z_area: 'km²', z_score: '점수', month: '가능 착륙일 (월)', shadow: '그림자',
+    layers: '레이어', sites: '후보지', zones: '구역', d: '일', ds: '일', z_add: '추가', z_erase: '지우기', z_clear: '초기화', z_area: 'km²', z_score: '점수', month: '가능 착륙일 (월)', shadow: '그림자', eshadow: '지구 그림자',
     b_line: '선', b_shade: '음영', m_layers: '레이어', m_mask: '마스크', m_score: '점수', km: 'km', home: '⌂', open: '↗',
     suitable: '적합', criteria: '조건', adv: '고급', layerTip: '이 레이어 켜기·끄기 (기준에 못 미치는 곳에 빗금)', legHatch: '빗금 = 미달:', legName: { sun: '햇빛', earth: '지구', dark: '어둠', slope: '경사' },
     legStay: (n, km) => `초록 = ${n}일 체류 내내 가능 · ${km} km²`, legYear: km => `초록 = 모든 조건 충족 · ${km} km²`,

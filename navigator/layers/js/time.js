@@ -4,6 +4,7 @@
 // Copied (navigator/js/pin.js): bodyDir, latLon, bodies, series — only the hourly Sun/Earth vectors and per-point az/el/visibility.
 import * as shadow from '../../js/shadow.js';
 import { drawSky } from '../../js/sky.js';
+import { syncEarth, earthCanvas } from './earthshadow.js';
 import { state, setState } from './state.js';
 import { MONTH_NAMES, lang, t } from './strings.js';
 
@@ -77,7 +78,7 @@ export function drawPinSky(svg, st) {
 }
 
 // ---- shadow overlay ----
-export const shadowCanvas = () => state.expo ? (expoOk ? expoCv : null) : state.shadow && painted ? cv : null;
+export const shadowCanvas = () => state.expo ? (expoOk ? expoCv : null) : state.eshadow ? (B ? earthCanvas() : null) : state.shadow && painted ? cv : null;
 // ---- long exposure (as mode A): Sun-disc share over the 14-day window from the selected day, 3 h steps ----
 let expoCv = null, expoOk = false, expoKey = null, expoTimer = 0, expoData = null, slopeBytes = null; export let expoTop = [];
 export function syncExpo(st) {
@@ -95,8 +96,9 @@ export function syncExpo(st) {
   }, 150);
 }
 export function syncShadow() {
-  if (!state.shadow) return;
+  if (!state.shadow && !state.eshadow) return;
   if (!B) { ensure().then(() => setState({}, 'time')); return; }
+  if (state.eshadow) { syncEarth(state, B); return; }
   const key = state.tDay * 24 + state.tHour; if (painted === key) return;
   cv = cv || document.createElement('canvas');
   const o = key * 3;
@@ -110,17 +112,18 @@ export const doyOfMonth = m => (Date.UTC(2027, m, 1) - T0) / 864e5;
 export function initTime(panel, d) {
   slopeBytes = d && d.bytes.slope;
   const el = document.createElement('div'); el.className = 'lyr-time';
-  el.innerHTML = `<button class="lyr-sunb" aria-pressed="false" title="${t('shadow')}">☀</button><button class="lyr-expob" aria-pressed="false">${t('expo', 14)}</button><span class="n lyr-td"></span><input class="lyr-dsl" type="range" min="0" max="364" step="1"><input class="lyr-hsl" type="range" min="0" max="23" step="1"><span class="n lyr-th2"></span>`;
+  el.innerHTML = `<button class="lyr-sunb" aria-pressed="false" title="${t('shadow')}">☀</button><button class="lyr-sunb lyr-earthb" aria-pressed="false" title="${t('eshadow')}" aria-label="${t('eshadow')}">⊕</button><button class="lyr-expob" aria-pressed="false">${t('expo', 14)}</button><span class="n lyr-td"></span><input class="lyr-dsl" type="range" min="0" max="364" step="1"><input class="lyr-hsl" type="range" min="0" max="23" step="1"><span class="n lyr-th2"></span>`;
   panel.append(el);
-  bar = { el, sun: el.querySelector('.lyr-sunb'), expo: el.querySelector('.lyr-expob'), td: el.querySelector('.lyr-td'), d: el.querySelector('.lyr-dsl'), h: el.querySelector('.lyr-hsl'), th: el.querySelector('.lyr-th2') };
+  bar = { el, sun: el.querySelector('.lyr-sunb'), earth: el.querySelector('.lyr-earthb'), expo: el.querySelector('.lyr-expob'), td: el.querySelector('.lyr-td'), d: el.querySelector('.lyr-dsl'), h: el.querySelector('.lyr-hsl'), th: el.querySelector('.lyr-th2') };
   for (const ev of ['pointerdown', 'dblclick', 'wheel', 'pointermove', 'pointerup']) el.addEventListener(ev, e => e.stopPropagation(), { passive: true });
-  bar.sun.onclick = () => { setState({ shadow: !state.shadow, expo: false }, 'time'); };
-  bar.expo.onclick = () => { setState({ expo: !state.expo, shadow: false }, 'time'); };
+  bar.sun.onclick = () => { setState({ shadow: !state.shadow, expo: false, eshadow: false }, 'time'); };
+  bar.expo.onclick = () => { setState({ expo: !state.expo, shadow: false, eshadow: false }, 'time'); };
+  bar.earth.onclick = () => { setState({ eshadow: !state.eshadow, shadow: false, expo: false }, 'time'); };
   bar.d.oninput = () => setState({ tDay: +bar.d.value, tTouched: true }, 'time');
   bar.h.oninput = () => setState({ tHour: +bar.h.value, tTouched: true }, 'time');
 }
 export function renderTime(st) {
-  bar.el.classList.toggle('open', !!st.shadow); bar.el.parentNode.classList.toggle('topen', !!st.shadow);
+  const open = !!(st.shadow || st.eshadow); bar.el.classList.toggle('open', open); bar.el.parentNode.classList.toggle('topen', open); bar.earth.setAttribute('aria-pressed', !!st.eshadow);
   bar.expo.setAttribute('aria-pressed', !!st.expo); bar.sun.setAttribute('aria-pressed', st.shadow); bar.d.value = st.tDay; bar.h.value = st.tHour;
   bar.td.textContent = dateText(st.tDay); bar.expo.textContent = t('expo', st.mission || 14); bar.th.textContent = String(st.tHour).padStart(2, '0') + ':00';
 }
