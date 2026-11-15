@@ -6,6 +6,14 @@ import { winPass, winAt } from './window.js';
 const NPX = N * N;
 let D, comp, ctx, maskCv, maskCtx, maskImg, maskU32, halo, haloCtx, tmpCv, tmpCtx, D2, img, u32, light, ramp = {}, scoreLut, sitesCells = {}, last = { st: null, nCrit: 0, passPx: 0 };
 export let failCount, failBase, failYear, score100;
+// stacked map layers: one fail mask per criterion (alpha 255 where that criterion fails); mapview hatches each
+// in the criterion's colour and direction, so overlapping failures read as crossing hatches
+const hatchCv = {}, hatchBuf = {};
+export let hatchList = [];
+function hatchMask(id) {
+  if (!hatchCv[id]) { const c = document.createElement('canvas'); c.width = N; c.height = N; const g = c.getContext('2d'), im = g.createImageData(N, N); hatchCv[id] = c; hatchBuf[id] = { g, im, u32: new Uint32Array(im.data.buffer) }; }
+  return hatchBuf[id];
+}
 const ID3 = Uint8Array.from({ length: 256 }, (_, v) => v);   // pass bytes of the window arrays are already 0 / 1
 
 // continuous base of the default view: one factor as intensity (ramp colour, alpha rising with the value)
@@ -89,6 +97,7 @@ export function compose(st) {
   last = { st, nCrit: 0, passPx: 0 };
   const hill = D.hill, out = u32;
   if (st.mode === 'layers') {
+    hatchList = [];
     const ids = st.order.filter(id => D.bytes[id] && st.on.layers[id]).reverse(), n = ids.length;
     const bs = ids.map(id => D.bytes[id]), rl = ids.map(id => ramp[id]);
     const al = ids.map((id, k) => { const f = new Float32Array(256); for (let v = 0; v < 256; v++) f[v] = rl[k].a[v] / 255 * (st.opacity[id] ?? .85); return f; });
@@ -113,11 +122,13 @@ export function compose(st) {
     const P = hexOf(pc), M = hexOf(mc), ND = hexOf(nc), SP = hexOf(SIMPLE.pass), spk = pack(SP[0], SP[1], SP[2]), fi = ids.indexOf(st.focusCrit);
     let passPx = 0, BL = null;
     maskU32.fill(0);
+    const hb = ids.map(id => { const b = hatchMask(id); b.u32.fill(0); return b.u32; }), HK = 0xff000000;
     if (simple) { const bo = baseOf(st); if (bo) { BL = baseLUT(bo); BL.arr = D.bytes[bo.id]; } }
     if (!n) { for (let i = 0; i < NPX; i++) { const h = hill[i]; out[i] = pack(h, h, h); failCount[i] = 0; failBase[i] = 0; failYear[i] = 0; } }
     else for (let i = 0; i < NPX; i++) {
       let f = 0, nd = 0, lk = -1;
-      for (let k = 0; k < nb; k++) { const p = pl[k][bs[k][i]]; if (p === 2) nd = 1; else if (p === 0) { f++; lk = k; } }
+      for (let k = 0; k < nb; k++) { const p = pl[k][bs[k][i]]; if (p === 2) nd = 1; else if (p === 0) { f++; lk = k; hb[k][i] = HK; } }
+      if (nd) for (let k = 0; k < nb; k++) hb[k][i] = 0;
       failBase[i] = nd ? 255 : f;
       if (yk.length) { let fy = f; for (let j = 0; j < yk.length; j++) { const p = ypl[j][ybs[j][i]], q = pl[yk[j]][bs[yk[j]][i]]; fy += (p === 0) - (q === 0); } failYear[i] = nd ? 255 : fy; } else failYear[i] = failBase[i];
       if (mon && mon[i] < mthr) { f++; lk = nb; }
@@ -129,13 +140,12 @@ export function compose(st) {
         let br = h, bg = h, bb = h;
         if (BL) { const v = BL.arr[i]; if (v <= 250) { const A = BL.a[v], L = light[h]; br = h * (1 - A) + BL.r[v] * L * A; bg = h * (1 - A) + BL.g[v] * L * A; bb = h * (1 - A) + BL.b[v] * L * A; } }
         if (!nd && f === 0) { passPx++; maskU32[i] = spk; }
-        else if (!nd && f === 1 && lk === fi && fi >= 0) { const A = SIMPLE.focusA, C = hc[lk]; br = br * (1 - A) + C[0] * A; bg = bg * (1 - A) + C[1] * A; bb = bb * (1 - A) + C[2] * A; }
         out[i] = pack(br | 0, bg | 0, bb | 0);
         continue;
       }
       let C, a;
       if (nd) { C = ND; a = na; }
-      else { if (f === 0) { C = P; a = pa; passPx++; } else if (f === 1) { C = hc[lk]; a = oa; } else { C = M; a = Math.min(ma, 0.2 + 0.18 * (f - 2)); } }
+      else if (f === 0) { C = P; a = pa; passPx++; } else { C = P; a = 0; }   // failures: hatched per criterion (mapview), not filled
       const L = light[h] * a, b = h * (1 - a);
       out[i] = pack((b + C[0] * L) | 0, (b + C[1] * L) | 0, (b + C[2] * L) | 0);
     }
@@ -149,7 +159,9 @@ export function compose(st) {
       buildHalo();
     }
     last.passPx = passPx;
+    hatchList = ids.map(id => { const b = hatchBuf[id]; b.g.putImageData(b.im, 0, 0); return { id, canvas: hatchCv[id] }; });
   } else {
+    hatchList = [];
     const ids = scoreIds(st), n = ids.length, a = MASK_COLORS.score;
     const bs = ids.map(id => D.bytes[id]), sl = ids.map(id => scoreLUT(metaOf(id), metaOf(id).threshold == null ? null : st.threshold[id]));
     const w = ids.map(id => st.weight[id]); let W = 0; for (const x of w) W += x;
