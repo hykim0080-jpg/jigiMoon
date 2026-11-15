@@ -6,7 +6,7 @@
 import { N } from './config.js';
 import { state, setState } from './state.js';
 import { failCount } from './compose.js';
-import { tripRanked } from './trip.js';
+import { tripRanked, showRanks } from './trip.js';
 import { pending } from './window.js';
 import { xyToCell, cellToXY } from './geo.js';
 
@@ -39,7 +39,7 @@ export function init() {
   addEventListener('message', e => {
     if (e.source !== parent || !e.data || !e.data.mj) return;
     const m = e.data;
-    if (m.type === 'click' || m.type === 'pick') { const c = m.col != null ? { col: m.col, row: m.row } : xyToCell(m.x, m.y); if (c.col >= 0 && c.row >= 0 && c.col < N && c.row < N) setState({ pin: c, autoPin: false }, 'panel'); }
+    if (m.type === 'click' || m.type === 'pick') { showRanks(); const c = m.col != null ? { col: m.col, row: m.row } : xyToCell(m.x, m.y); if (c.col >= 0 && c.row >= 0 && c.col < N && c.row < N) setState({ pin: c, autoPin: false }, 'panel'); }
     if (m.type === 'settime') { synced = true; const mi = m.mission === 6 ? 6 : 14, d = Math.max(0, Math.min(364, m.day)), h = Math.max(0, Math.min(mi * 24 - 1, m.hour)); lastTime = `${d}|${mi}|${h}`; if (d !== state.tDay || mi !== state.mission || h !== state.tHour) setState({ tDay: d, plan: d, tHour: h, mission: mi, tTouched: true }, 'time'); }
     if (m.type === 'hello') { lastRects = ''; lastRank = ''; lastPin = ''; lastTime = ''; maskDirty = true; render(state); }
   });
