@@ -33,12 +33,14 @@ export function critValue(m, v) {
 export function initCriteria(root, d, setCrit) {
   el = root; data = d; setCritFn = setCrit;
   for (const m of data.layers.filter(m => m.threshold != null)) {
-    const r = document.createElement('div'); r.className = 'lyr-cr'; r.dataset.id = m.id; r.title = data.meta.definitions?.[m.id] || '';
+    const r = document.createElement('div'); r.className = 'lyr-cr'; r.dataset.id = m.id; r.style.setProperty('--c', layerColor(m.id, false)); r.title = data.meta.definitions?.[m.id] || '';
     const c = layerColor(m.id, false);
     r.innerHTML = `<div class="lyr-cl1"><button class="lyr-tg" aria-pressed="true" style="--c:${c}"></button><span class="lyr-nm">${critName(m)}</span><span class="n lyr-cv"></span></div><div class="lyr-ct" tabindex="0" role="slider"><i class="lyr-ctk"></i><b class="lyr-hd2"></b><u class="lyr-pt2"></u></div>`;
     const q = s => r.querySelector(s), tr = q('.lyr-ct');
     q('.lyr-nm').onclick = e => {
-      const b = e.target.closest('button'); if (!b) return; e.stopPropagation();
+      const b = e.target.closest('button');
+      if (!b) { if (state.base !== hue(m.id)) setState({ base: hue(m.id) }, 'pixels'); return; }
+      e.stopPropagation();
       if (b.dataset.open) { picking = m.id; renderCriteria(state); }
       else { picking = null; setCritFn(CL()[m.id].param, +b.dataset.v); renderCriteria(state); }
     };
@@ -67,7 +69,7 @@ export function initCriteria(root, d, setCrit) {
 export function renderCriteria(st) {
   for (const { r, m, tg, cv, tr, hd } of Object.values(rows)) {
     const thr = st.threshold[m.id], p = 100 * (thr - m.min) / (m.max - m.min), ge = m.direction !== '<=', c = layerColor(m.id, false), on = !!st.on.mask[m.id];
-    r.classList.toggle('off', !on); tg.setAttribute('aria-pressed', on);
+    r.classList.toggle('off', !on); r.classList.toggle('base', state.base === hue(m.id)); tg.setAttribute('aria-pressed', on);
     cv.textContent = critValue(m, thr); r.querySelector('.lyr-nm').innerHTML = nameHtml(m, picking === m.id);
     tr.style.background = ge ? `linear-gradient(to right,var(--line) ${p}%,${c} ${p}%)` : `linear-gradient(to right,${c} ${p}%,var(--line) ${p}%)`;
     hd.style.left = p + '%'; tr.setAttribute('aria-valuenow', thr);
