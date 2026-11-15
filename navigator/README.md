@@ -17,5 +17,5 @@ Static prototype (plain HTML/CSS/ES modules). Serve the folder with any static s
 
 ## 3D view (Compare map, 2D/3D toggle)
 - `map3d/`: copy of `lunar/map3d` (imports point at `./vendor/` so no importmap is needed; adds `focus(x_m, y_m, halfKm)`). Loaded only when 3D is first switched on.
-- `data/3d/frames_jan/`, `frames_feb/`, `frames_mar/`, `frames_apr/`, `frames_may/` (January to May 2027), `data/3d/frames/` (June 2027) and `data/3d/frames_dec/` (December 2027): sunlit / Earth-visible frames every 4 h on a 500 m grid, from `lunar/` (LOLA LDEM_80S_80MPP_ADJ + LDEM_60S_240MPP_ADJ, NASA GSFC PGDA; Sun/Earth from JPL DE421). Other months show the same day and hour of the nearer computed month, with a note on the map.
+- `data/3d/frames_jan/` … `frames_may/` (January to May 2027), `data/3d/frames/` (June 2027), `frames_jul/` … `frames_nov/` (July to November 2027) and `data/3d/frames_dec/` (December 2027): sunlit / Earth-visible frames every 4 h on a 500 m grid, from `lunar/` (LOLA LDEM_80S_80MPP_ADJ + LDEM_60S_240MPP_ADJ, NASA GSFC PGDA; Sun/Earth from JPL DE421).
 - Three.js r187 + OrbitControls, https://threejs.org, MIT (`map3d/vendor/LICENSE`).
