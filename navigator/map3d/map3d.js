@@ -510,6 +510,7 @@ export function mountLunarMap(container, options = {}) {
   // directions from the pole (azimuth, elevation from the frame metadata); sizes are enlarged to be seen.
   const R_MOON = 1737.4;
   const moonGroup = new THREE.Group();
+  const gSun = { value: new THREE.Vector4() }, gEarth = { value: new THREE.Vector4() }, gC = { value: new THREE.Vector3() };   // globe shading (glow)
   const moonMat = new THREE.MeshBasicMaterial({ color: 0x3a3e46 });   // dark, so the lit south-pole patch stands out
   if (opt.moonUrl) new THREE.TextureLoader().load(opt.moonUrl, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; moonMat.map = tx; moonMat.color.set(0x2f3239); moonMat.needsUpdate = true; dirty = true; });
   // glow: the globe has an opening under the curved patch (6 deg = 182 km around the pole), so the patch's craters show
@@ -518,6 +519,21 @@ export function mountLunarMap(container, options = {}) {
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vW;').replace('#include <project_vertex>', '#include <project_vertex>\nvW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vW;').replace('void main() {', 'void main() {\nfloat eW = pow(pow(abs(vW.x), 4.0) + pow(abs(vW.z), 4.0), 0.25);\nif (vW.y > -2000.0 && eW < 166.0) discard;\ngl_FragDepth = vW.y > -2000.0 && eW < 202.0 ? gl_FragCoord.z + 0.5 * (1.0 - gl_FragCoord.z) : gl_FragCoord.z;');
     // under the patch's faded rim (166-200 km) the globe is drawn as if twice as far, so the fading terrain always lies over it
+    // Sun / Earth beyond the patch: the same colours as the patch where the globe faces them (no terrain there, a smooth
+    // terminator), fading out 450-900 km from the pole, so the light runs on past the patch's edge
+    Object.assign(sh.uniforms, { gSun, gEarth, gC, uSunW: uniforms.uSunW, uEarthW: uniforms.uEarthW, cNone: uniforms.cNone, cSun: uniforms.cSun, cEarth: uniforms.cEarth, cBoth: uniforms.cBoth });
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec4 gSun, gEarth;\nuniform vec3 gC, cNone, cSun, cEarth, cBoth;\nuniform float uSunW, uEarthW;')
+      .replace('#include <opaque_fragment>', `{
+  vec3 gN = normalize(vW - gC);
+  float gP = acos(clamp(gN.y, -1.0, 1.0)) * 1737.4;
+  float gR = 1.0 - smoothstep(450.0, 900.0, gP);
+  float gs = smoothstep(-0.01, 0.05, dot(gN, gSun.xyz)) * gSun.w * uSunW;
+  float ge = smoothstep(-0.002, 0.006, dot(gN, gEarth.xyz)) * gEarth.w * uEarthW;
+  vec3 gT = mix(mix(cNone * 0.75, cEarth * 0.8, ge), mix(cSun, cBoth, ge), gs) * 0.7;
+  float gD = clamp(dot(outgoingLight, vec3(0.3, 0.59, 0.11)) / 0.075, 0.35, 2.2);
+  outgoingLight = mix(outgoingLight, gT * gD, gR * (0.35 + 0.35 * gs));
+}
+#include <opaque_fragment>`);
   };
   const moonMesh = new THREE.Mesh(moonGeo, moonMat);
   moonMesh.rotation.x = Math.PI;          // south pole to +y
@@ -563,10 +579,12 @@ export function mountLunarMap(container, options = {}) {
   function placeSky(tt) {
     for (const k of ['sun', 'earth']) {
       const b = bodyAt(`${k}_az_el_at_pole`, tt), sp = sky[k];
-      if (!b) { sp.visible = false; continue; }
+      const gd = k === 'sun' ? gSun : gEarth;
+      if (!b) { sp.visible = false; gd.value.w = 0; continue; }
       const a = b.az * DEG, e = b.el * DEG;
       sp.position.set(Math.sin(a) * Math.cos(e) * SKY_D, Math.sin(e) * SKY_D, -Math.cos(a) * Math.cos(e) * SKY_D);
       sp.visible = true;
+      gd.value.set(sp.position.x / SKY_D, sp.position.y / SKY_D, sp.position.z / SKY_D, 1);
       if (k === 'sun') { sunLight.position.copy(sp.position); sunLight.target.position.copy(earthMesh.position); }
     }
     earthMesh.lookAt(0, 0, 0);
@@ -575,7 +593,7 @@ export function mountLunarMap(container, options = {}) {
     if (!Number.isFinite(hMin)) return;
     // globe top just under the lowest terrain, so the patch sits on it and nothing pokes through
     const top = glow ? 0 : (hMin / 1000 - 1.5) * exagV + 4;
-    moonGroup.position.set(0, top - R_MOON, 0);
+    moonGroup.position.set(0, top - R_MOON, 0); gC.value.copy(moonGroup.position);
     moonGroup.visible = true;
   }
 
