@@ -16,6 +16,7 @@ import * as chain from './chain.js';
 import * as orient from './orient.js';
 import * as pin from './pin.js';
 import * as view3d from './view3d.js';
+import * as search from './search.js';
 
 const $ = id => document.getElementById(id);
 const data = { index: null, site: null };
@@ -39,6 +40,7 @@ function render(st) {
   }
   document.documentElement.lang = new URLSearchParams(location.search).get('lang') || 'en';
   $('main').dataset.view = st.view;
+  document.body.dataset.view = st.view;
   $('main').dataset.zoomed = st.zoom > 1.01 ? '1' : '';
   // map side = height of the middle band
   const main = $('main');
@@ -46,6 +48,7 @@ function render(st) {
   header.render(st, data);
   calendar.render(st, data);
   if (st.view === 'compare') compare.render(st, data);
+  search.render(st);
   if (st.view === 'sites' && !$('sites').firstChild) $('sites').innerHTML = '<iframe src="selection.html" title="selection"></iframe>';
   map.render(st, data);
   view3d.render(st);
@@ -89,6 +92,7 @@ async function boot() {
   calendar.init($('cal-panel'), data);
   map.init($('map'), data, openPin);
   view3d.init($('map-panel'), data);
+  search.init($('search'), data);
   globe.init($('globe'), data);
   metrics.init($('metrics-panel'));
   sky.init($('sky'), $('countdowns'));
