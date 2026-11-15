@@ -69,6 +69,7 @@ export function calendarFrom(sky, crit, mission = 14) {
   return { go, count };
 }
 export const skyCached = (col, row) => skies.has(row * 800 + col);
+export const skyGet = (col, row) => skies.get(row * 800 + col) || null;
 export function drawPinSky(svg, st) {
   if (!state.pin || !svg) return;
   const sky = skies.get(state.pin.row * 800 + state.pin.col);

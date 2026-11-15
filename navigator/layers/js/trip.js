@@ -30,6 +30,9 @@ const TX = {
     wait: n => `GO in ${n} d`, noFix: 'NO FIX',
     whySun: (v, c) => `Sun ${v} % of the stay (need ${c})`, whyEarth: (v, c) => `Earth in view ${v} % (need ${c})`, whyDark: (v, c) => `Longest dark ${v} h (max ${c})`,
     stayD: n => `${n} d`, wd: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
+    ans: (day, n, km2, where) => `If you land on <b>${day}</b> and stay <b>${n} days</b>, <b>${km2} km²</b>${where ? ` of ${where}` : ''} keeps power and Earth contact.`,
+    ansNone: (day, n, where) => `If you land on <b>${day}</b> and stay <b>${n} days</b>, no ground${where ? ` in ${where}` : ''} keeps power and Earth contact.`,
+    ansBest: s => ` Best spot: <a data-rank="1">${s}</a>.`, ansNext: (n, s) => ` Soonest: <a data-rank="1">${s}</a>, in ${n} d.`,
     r: { shackleton: 'Shackleton area', mouton: 'Mons Mouton', malapert: 'Malapert · Haworth', nobile: 'Nobile', cabeus: 'Cabeus', all: 'Whole south pole' },
   },
   ko: {
@@ -39,6 +42,9 @@ const TX = {
     wait: n => `${n}일 후`, noFix: '해법 없음',
     whySun: (v, c) => `햇빛 ${v} % (기준 ${c})`, whyEarth: (v, c) => `지구 보임 ${v} % (기준 ${c})`, whyDark: (v, c) => `가장 긴 어둠 ${v}시간 (최대 ${c})`,
     stayD: n => `${n}일`, wd: ['일', '월', '화', '수', '목', '금', '토'],
+    ans: (day, n, km2, where) => `<b>${day}</b>에 착륙해 <b>${n}일</b> 머물면 ${where ? `${where}에서 ` : ''}<b>${km2} km²</b>가 전력과 지구 교신을 유지해요.`,
+    ansNone: (day, n, where) => `<b>${day}</b>에 착륙해 <b>${n}일</b> 머물면 ${where ? `${where}에는 ` : ''}전력과 지구 교신을 유지하는 땅이 없어요.`,
+    ansBest: s => ` 최적 지점: <a data-rank="1">${s}</a>.`, ansNext: (n, s) => ` 가장 빨리 되는 곳: <a data-rank="1">${s}</a>, ${n}일 뒤.`,
     r: { shackleton: '섀클턴 일대', mouton: '몽스 무통', malapert: '말라퍼트 · 하워스', nobile: '노빌레', cabeus: '카베우스', all: '남극 전체' },
   },
 };
@@ -138,7 +144,7 @@ export function rank(p, d, crit) {
 }
 
 // ---- UI ----
-let bar, pop, list, opts = {}, ranked = [], calMonth = null, rkey = '';
+let bar, pop, list, ans, opts = {}, ranked = [], calMonth = null, rkey = '';
 export const tripRanked = () => ranked;
 export const currentRegion = () => state.region || 'all';
 export function initTrip(header, listEl, d, o = {}) {
@@ -146,6 +152,8 @@ export function initTrip(header, listEl, d, o = {}) {
   bar = document.createElement('div'); bar.className = 'lyr-trip';
   bar.innerHTML = `<button class="lyr-tb" data-pop="date"><span>${tt('when')}</span><b class="lyr-tbd"></b></button><button class="lyr-tb" data-pop="region"><span>${tt('where')}</span><b class="lyr-tbr"></b></button>`;
   header.append(bar);
+  ans = document.createElement('p'); ans.className = 'lyr-ans'; ans.setAttribute('aria-live', 'polite'); header.append(ans);
+  ans.onclick = e => { if (e.target.closest('[data-rank]') && ranked[0]) opts.pick && opts.pick(ranked[0]); };
   pop = document.createElement('div'); pop.className = 'lyr-pop'; pop.hidden = true; document.body.append(pop);
   bar.onclick = e => { const b = e.target.closest('[data-pop]'); if (b) open(pop.dataset.kind === b.dataset.pop && !pop.hidden ? null : b.dataset.pop); };
   document.addEventListener('pointerdown', e => { if (!pop.hidden && !pop.contains(e.target) && !bar.contains(e.target)) open(null); });
@@ -225,7 +233,33 @@ export function renderTrip(st) {
   if (!p.ready) p.promise.then(() => setState({}, 'panel'));
   if (k !== rkey) { rkey = k; ranked = p.ready ? rank(p, st.tDay, st.crit) : []; drawList(st, p); if (p.ready) opts.ranked && opts.ranked(ranked); }
   else for (const r of list.querySelectorAll('[data-rank]')) r.classList.toggle('hot', +r.dataset.rank === st.hoverTrip || (st.pin && ranked[+r.dataset.rank - 1] && ranked[+r.dataset.rank - 1].col === st.pin.col && ranked[+r.dataset.rank - 1].row === st.pin.row));
+  drawAnswer(st, rid, p);
   if (!pop.hidden) { const pk = `${pop.dataset.kind}|${st.tDay}|${st.mission}|${maskKey()}`; if (pop.dataset.k !== pk) { pop.dataset.k = pk; drawPop(); } }
+}
+// one sentence at the top: the answer for the chosen day, stay, region and criteria
+let akey = '';
+function regionArea(rid) {
+  if (!failBase) return null;
+  const reg = REGIONS.find(r => r.id === rid), bb = reg && reg.r ? regionBBox(rid) : [0, 0, N - 1, N - 1];
+  let n = 0;
+  for (let row = Math.max(0, bb[1]); row <= Math.min(N - 1, bb[3]); row++) for (let col = Math.max(0, bb[0]); col <= Math.min(N - 1, bb[2]); col++) {
+    if (failBase[row * N + col] !== 0) continue;
+    if (reg && reg.r) { const { x, y } = cellToXY(col, row), dx = x / 1000 - reg.x, dy = y / 1000 - reg.y; if (dx * dx + dy * dy > reg.r * reg.r) continue; }
+    n++;
+  }
+  return n * PX * PX / 1e6;
+}
+function drawAnswer(st, rid, p) {
+  if (!ans) return;
+  const k = `${rid}|${st.mission}|${st.tDay}|${maskKey()}|${p.ready}|${ranked.length && ranked[0].title}`;
+  if (k === akey) return; akey = k;
+  if (!p.ready) { ans.textContent = tt('loading'); return; }
+  const km = regionArea(rid), where = st.region && st.region !== 'all' ? regionName(rid) : '', day = dayText(st.tDay), r0 = ranked[0];
+  const km2 = km == null ? '' : km >= 100 ? String(Math.round(km / 10) * 10) : km >= 10 ? String(Math.round(km)) : km.toFixed(1);
+  let h = km ? tt('ans', day, st.mission, km2, where) : tt('ansNone', day, st.mission, where);
+  if (r0 && r0.go) h += tt('ansBest', r0.title);
+  else if (r0 && r0.wait != null) h += tt('ansNext', r0.wait, r0.title);
+  ans.innerHTML = h;
 }
 function drawList(st, p) {
   const c = st.crit;
