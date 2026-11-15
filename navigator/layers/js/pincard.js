@@ -57,7 +57,8 @@ function fixLine(v, inf) {
   return b.length ? `<div class="lyr-vfx">${b.join('')}</div>` : '';
 }
 // the ground around the spot, 3 km each way on the 500 m map: GO cells in blue, the spot in the middle, Earth up
-function moveGrid(inf, v) {
+// the checks (and the GO-days count) sit left of the grid, so the sky above gets the height
+function moveGrid(inf, v, side = '') {
   const R = 6, S = 10, n = 2 * R + 1, cells = [];
   for (let dr = -R; dr <= R; dr++) for (let dc = -R; dc <= R; dc++) {
     if (dc * dc + dr * dr > R * R + R) continue;
@@ -69,7 +70,7 @@ function moveGrid(inf, v) {
   const ring = mv ? `<rect x="${(mv.col - inf.col + R) * S - 1}" y="${(mv.row - inf.row + R) * S - 1}" width="${S + 1.4}" height="${S + 1.4}" fill="none" stroke="#fff" stroke-width="1.2"/>` : '';
   const head = v.goNow ? `<b style="color:var(--ok)">${W2.here}</b>` : v.move && !v.move.here && v.move.km != null ? `<i>${W2.near}</i> <b>${v.move.km.toFixed(1)}</b> km ${arrowOf(v.move.col - inf.col, v.move.row - inf.row)}` : `<i>${W2.near}</i> —`;
   const C = R * S + S / 2;
-  return `<div class="lyr-mv"><div class="lyr-mvh">${head}</div><svg viewBox="-4 -4 ${n * S + 8} ${n * S + 8}" class="lyr-mvg">${cells.join('')}<circle cx="${C}" cy="${C}" r="${R * S + 3}" fill="none" stroke="rgba(255,255,255,.25)" stroke-dasharray="2 3"/>${ring}<circle cx="${C}" cy="${C}" r="4.2" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="${C}" cy="${C}" r="1.4" fill="#fff"/><text x="0" y="7" class="lyr-mvt">↑ ${W2.earth}</text><text x="${n * S}" y="${n * S}" text-anchor="end" class="lyr-mvt">3 km</text></svg></div>`;
+  return `<div class="lyr-mv"><div class="lyr-mvl"><div class="lyr-mvh">${head}</div>${side}</div><svg viewBox="-4 -4 ${n * S + 8} ${n * S + 8}" class="lyr-mvg">${cells.join('')}<circle cx="${C}" cy="${C}" r="${R * S + 3}" fill="none" stroke="rgba(255,255,255,.25)" stroke-dasharray="2 3"/>${ring}<circle cx="${C}" cy="${C}" r="4.2" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="${C}" cy="${C}" r="1.4" fill="#fff"/><text x="0" y="7" class="lyr-mvt">↑ ${W2.earth}</text><text x="${n * S}" y="${n * S}" text-anchor="end" class="lyr-mvt">3 km</text></svg></div>`;
 }
 function verdictHtml(v, inf, st) {
   if (v.pending) return `<i class="lyr-dot" style="background:var(--muted)"></i><span style="color:var(--muted)">…</span>`;
@@ -104,9 +105,8 @@ export function renderPinCard(st) {
 <div class="lyr-dt"><button data-step="-1">◀</button><span class="n">${isoOfDay(st.tDay)}</span><button data-step="1">▶</button></div>
 <div class="lyr-vd">${verdictHtml(v, inf, st)}</div>${fixLine(v, inf)}${winRow(inf, st)}
 <svg class="lyr-sky"></svg><svg class="lyr-dstrip"></svg>
-<div class="lyr-cks">${checks}</div>${adv}
-${moveGrid(inf, v)}
-${inf.go ? `<div class="lyr-cal"><canvas class="lyr-pcal"></canvas><span class="n lyr-go-n">${t('go')} ${t('days', inf.go.count)}</span></div>` : ''}
+${moveGrid(inf, v, `<div class="lyr-cks">${checks}</div>${inf.go ? `<span class="n lyr-go-n">${t('go')} ${t('days', inf.go.count)}</span>` : ''}`)}${adv}
+${inf.go ? `<div class="lyr-cal"><canvas class="lyr-pcal"></canvas></div>` : ''}
 ${cartBtn(inf, st)}<a class="lyr-link" href="${inf.link}">${t('open_cmp')}</a>`;
   drawCal(inf, st);
   renderPinSky(st);
