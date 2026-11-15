@@ -558,3 +558,14 @@ main.full #dock #adv-btn.changed{border-color:var(--accent)}
   header>.hb-ans{order:4;flex:1 1 100%;margin:0;max-height:none;font-size:13px}
 }
 @media (max-width:700px){header>#side-btn{order:5}}
+/* Fixes: MOVE, MAST, WAIT in one row; the map folded under "Map"; ⤢ 2D turns the centre map into the 2D map
+   (the 2D | 3D switch on the map is gone on desktops) */
+#fixes .fxbar{display:flex;justify-content:space-between;gap:6px;padding:4px 0 0}
+#fixes .fxbar button{font:inherit;font-size:12px;padding:3px 10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:0;cursor:pointer}
+#fixes .fxbar button:hover{border-color:var(--muted)}
+#fixes .fxbar .fxfull[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+#fixes .card.local[hidden]{display:none}
+#fixes .fixrow .mdir{font-style:normal;font-size:16px;color:var(--move)}
+@media (min-width:701px){#dim{display:none!important}}
+@media (max-width:700px){#fixes .fxbar .fxfull{display:none}}
+#fixes .fixrow[data-k="move"] .val{white-space:nowrap;padding-right:6px}

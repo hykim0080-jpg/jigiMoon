@@ -8,7 +8,7 @@ const ARROW = ['↑', '↗', '→', '↘', '↓', '↙', '←', '↖'];   // up 
 import { failStats, failReason } from './failreason.js';
 
 const KINDS = ['move', 'mast', 'wait'];
-let root, cards = {}, why;
+let root, cards = {}, why, mrow, fxbar, mapOpen = false;
 
 // MAST and WAIT: one thin strip; below it the local line map of the spot (+-3.5 km), as big as the main map:
 // the spot, the arrow to the nearest GO cell and the 3 km circle. MOVE (3 km grid) is an inset in its corner.
@@ -22,6 +22,10 @@ export function init(node) {
   c.innerHTML = `<div class="left"><h2>${t('move')}</h2><div class="val"><b></b><span></span></div><div class="dir"></div><div class="effort"></div></div><div class="vis"><svg viewBox="0 0 176 168"></svg></div>`;
   cards.move = { c, val: c.querySelector('b'), dir: c.querySelector('.dir'), unit: c.querySelector('.val span'), effort: c.querySelector('.effort'), svg: c.querySelector('svg') };
   const rows = document.createElement('div'); rows.className = 'fixrows';
+  // MOVE as a line too, so the values read in one row while the map is folded
+  mrow = document.createElement('div'); mrow.className = 'fixrow'; mrow.dataset.k = 'move'; mrow.style.setProperty('--fc', 'var(--move)');
+  mrow.innerHTML = `<h2>${t('move')}</h2><div class="val"><b></b><span></span><i class="mdir"></i></div>`;
+  rows.appendChild(mrow);
   for (const k of ['mast', 'wait']) {
     const r = document.createElement('div');
     r.className = 'fixrow'; r.dataset.k = k; r.style.setProperty('--fc', `var(--${k})`);
@@ -32,6 +36,17 @@ export function init(node) {
   // MAST line: click to raise the antenna to the lowest height that works (click again to lower it)
   cards.mast.c.addEventListener('click', () => { const h = cards.mast.c.dataset.h; if (h) setState({ mast: state.mast === +h ? 0 : +h }); });
   root.appendChild(rows);
+  // the map below is folded by default; ⤢ turns the whole centre map into the 2D map (again, or Esc: back to 3D)
+  fxbar = document.createElement('div'); fxbar.className = 'fxbar';
+  fxbar.innerHTML = `<button type="button" class="fxmap" aria-expanded="false">${t('fxMap')}</button><button type="button" class="fxfull" aria-pressed="false"></button>`;
+  fxbar.querySelector('.fxmap').addEventListener('click', () => { mapOpen = !mapOpen; render(state, lastData); dispatchEvent(new Event('resize')); });
+  fxbar.querySelector('.fxfull').addEventListener('click', () => setState({ d3: state.d3 ? 0 : 1 }));
+  addEventListener('keydown', ev => {
+    if (ev.key !== 'Escape' || state.view !== 'focus' || state.d3 || innerWidth <= 700) return;
+    if (document.querySelector('#mast-pop:not([hidden]),#when-pop:not([hidden]),#cal-panel.big')) return;
+    ev.stopImmediatePropagation(); setState({ d3: 1 });
+  }, true);
+  root.appendChild(fxbar);
   const l = document.createElement('div'); l.className = 'card local';
   l.innerHTML = `<svg viewBox="0 0 ${VB} ${VB}" preserveAspectRatio="xMidYMin meet"></svg><div class="seg lmsw"><button data-lm="line">${t('baseLine')}</button><button data-lm="relief">${t('baseShade')}</button></div><div class="seg lzsw"><button data-lz="region">${t('zoomRegion')}</button><button data-lz="site">${t('zoomSite')}</button><button data-lz="spot">${t('zoomSpot')}</button></div>`;
   l.querySelector('.lmsw').addEventListener('click', ev => { const b = ev.target.closest('[data-lm]'); if (b) setState({ lmap: b.dataset.lm }); });
@@ -50,8 +65,16 @@ export function gridCenter() {
   return { x: ox + conn.cx * k, y: oy + conn.cy * k, r: conn.r * k };
 }
 
+let lastData = null;
 export function render(st, data) {
+  if (!data) return;
+  lastData = data;
   const e = data.index.modes[st.mission].sites[st.site], lim = limitsOf(st);
+  loc.parentNode.hidden = !mapOpen;
+  const mb = fxbar.querySelector('.fxmap'), fb = fxbar.querySelector('.fxfull');
+  mb.setAttribute('aria-expanded', String(mapOpen)); mb.textContent = (mapOpen ? '▾ ' : '▸ ') + t('fxMap');
+  fb.setAttribute('aria-pressed', String(!st.d3)); fb.textContent = '⤢ ' + (st.d3 ? t('fx2d') : t('fx3d'));
+  fb.title = st.d3 ? t('fx2dTip') : t('fx3dTip');
   const f = fixes(e, st.day), best = e.ok[st.day] ? null : bestFix(e, st.day, lim);
   for (const k of KINDS) {
     const v = e.ok[st.day] ? 0 : f[k], avail = v != null && v <= lim[k], card = cards[k];
@@ -66,6 +89,10 @@ export function render(st, data) {
   const near = data.site && f.move != null && !e.ok[st.day] ? nearestOk(data.site, st.day) : null;
   const go = near && near.d > 0 && f.move <= lim.move;
   cards.move.dir.textContent = go ? ARROW[sector(bearing(near.c.dx, near.c.dy))] : '';
+  { const v = e.ok[st.day] ? 0 : f.move, avail = v != null && v <= lim.move;
+    mrow.classList.toggle('best', !!best && best.kind === 'move'); mrow.classList.toggle('na', !avail);
+    mrow.querySelector('b').textContent = avail ? v : '—'; mrow.querySelector('.val span').textContent = avail ? t('unitKm') : '';
+    mrow.querySelector('.mdir').textContent = go ? ' ' + ARROW[sector(bearing(near.c.dx, near.c.dy))] : ''; }
   cards.move.dir.title = go ? movePhrase(near.c.dx, near.c.dy) : '';
   if (!data.site) return;
   // no fix within the limits: say why in one sentence, above the fixes
