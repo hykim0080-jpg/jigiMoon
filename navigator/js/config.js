@@ -27,6 +27,6 @@ export const DEFAULT = {
   pan: ''
 };
 // zoom factor: 1 = +-200 km; presets Region 1, Site 4, Spot (+-3.5 km)
-export const ZOOM = { site: 4, spot: 200 / 3.5, slideMs: 300 };
+export const ZOOM = { site: 4, spot: 200 / 3.5, slideMs: 250 };
 export const RIM_TOL = { km: 3, frac: 0.15 };
 export const ON_MASSIF_KM = 10;

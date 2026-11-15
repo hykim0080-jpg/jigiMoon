@@ -57,7 +57,7 @@ let svg, data, S = 588, ppk = 1.47;
 const vp = { cx: 0, cy: 0, h: R_KM };
 // sites with a PGDA 5 m tile (data/spot5); the rest use the 20 m patch (data/spot)
 const SPOT5 = new Set(['haworth', 'malapert-massif', 'mons-mouton', 'nobile-rim-1', 'nobile-rim-2', 'de-gerlache-rim-2', 'shackleton-rim', 'connecting-ridge']);
-let anim = null, hill = 'data/hillshade.jpg', instant = false;
+let anim = null, hill = 'data/hillshade.jpg', instant = false, nextDur = 250;
 const px = x => (x - vp.cx + vp.h) / (2 * vp.h) * S;
 const py = y => (vp.cy + vp.h - y) / (2 * vp.h) * S;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -137,21 +137,23 @@ export function init(node, d, openPin) {
     if (g.lander) { landerCard(g.lander, e); return; }
     landerCard(null);
     if (g.id) { if (g.shift) togglePin(g.id); else setState({ site: g.id }); return; }
-    if (g.expo) { const [x, y] = g.expo.split(',').map(Number); if (pinOpener) pinOpener(x, y); return; }
-    const w = world(e); clearTimeout(clickTimer); clickTimer = setTimeout(() => openSpot(w), 250);
+    if (g.expo) { const [x, y] = g.expo.split(',').map(Number); pendingAt({ x: x / 1000, y: y / 1000 }); openSpot({ x: x / 1000, y: y / 1000 }); return; }
+    // the ring shows at once; the work starts once a second click (= zoom) has had its chance
+    const w = world(e); clearTimeout(clickTimer); pendingAt(w);
+    clickTimer = setTimeout(() => openSpot(w), 250);
   };
   svg.addEventListener('pointerup', endDrag); svg.addEventListener('pointercancel', endDrag);
   // double-click: zoom one step (x2) about that point
   svg.addEventListener('dblclick', e => {
     if (e.target.dataset.id || e.target.dataset.lander || state.view === 'compare') return;
-    clearTimeout(clickTimer);
+    clearTimeout(clickTimer); pendingAt(null);
     const w = world(e), z = clamp(state.zoom * 2, 1, ZOOM.spot), h = R_KM / z;
     setState({ zoom: z, pan: `${(w.x - w.u * h).toFixed(2)},${(w.y + w.v * h).toFixed(2)}` });
   });
   svg.addEventListener('wheel', e => {
     e.preventDefault(); clearTimeout(clickTimer);
     const w = world(e), z = clamp(state.zoom * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.002)), 1, ZOOM.spot), h = R_KM / z;
-    instant = true;
+    nextDur = 120;
     setState(z <= 1.001 ? { zoom: 1, pan: '' } : { zoom: z, pan: `${(w.x - w.u * h).toFixed(2)},${(w.y + w.v * h).toFixed(2)}` });
   }, { passive: false });
   document.querySelectorAll('#zoom button').forEach(b => b.addEventListener('click', () => setState(b.dataset.z === '1' ? { zoom: 1, pan: '' } : { zoom: b.dataset.z === 'spot' ? ZOOM.spot : Number(b.dataset.z) })));
@@ -185,56 +187,114 @@ export function render(st, d) {
   S = svg.clientWidth;
   if (!S) return;
   svg.setAttribute('viewBox', `0 0 ${S} ${S}`);
-  const tg = targetVp(st);
-  if (anim) { anim.to = tg; return; }
-  const same = ['cx', 'cy', 'h'].every(k => Math.abs(vp[k] - tg[k]) < 1e-6);
-  if (same) return draw(st);
-  if (noMotion() || instant) { instant = false; Object.assign(vp, tg); return draw(st); }
-  const from = { ...vp }, t0 = performance.now();
-  anim = { to: tg };
+  const tg = targetVp(st), dur = nextDur; nextDur = ZOOM.slideMs;
+  const near = (a, b) => ['cx', 'cy', 'h'].every(k => Math.abs(a[k] - b[k]) < 1e-6);
+  if (noMotion() || instant) { instant = false; anim = null; Object.assign(vp, tg); return draw(st); }
+  if (anim && near(anim.to, tg)) return;          // already heading there; the running frame loop draws
+  if (!anim && near(vp, tg)) return draw(st);
+  // (re)start from where the view is now. Zoom is a similarity about its fixed point: the scale moves
+  // geometrically and the point that stays put on screen (the cursor, the clicked spot) really stays put.
+  const from = { ...vp }, running = !!anim;
+  anim = { from, to: tg, t0: performance.now(), dur };
+  if (running) return;
   const step = now => {
-    const p = Math.min(1, (now - t0) / ZOOM.slideMs), e = 1 - Math.pow(1 - p, 3);
-    for (const k of ['cx', 'cy', 'h']) vp[k] = from[k] + (anim.to[k] - from[k]) * e;
+    if (!anim) return;
+    const { from: a, to: b } = anim, p = Math.min(1, (now - anim.t0) / anim.dur), e = 1 - Math.pow(1 - p, 3);
+    const h = a.h * Math.pow(b.h / a.h, e);
+    if (Math.abs(a.h - b.h) > 1e-3 * a.h) {
+      const fx = (b.cx * a.h - a.cx * b.h) / (a.h - b.h), fy = (b.cy * a.h - a.cy * b.h) / (a.h - b.h);
+      const k = (a.h - h) / (a.h - b.h);   // 0..1 along the zoom; the fixed point may sit far off screen, so blend
+      const sx = fx + (a.cx - fx) * h / a.h, sy = fy + (a.cy - fy) * h / a.h;
+      const far = Math.max(Math.abs(fx - a.cx), Math.abs(fy - a.cy)) > 3 * Math.max(a.h, b.h);
+      vp.cx = far ? a.cx + (b.cx - a.cx) * k : sx; vp.cy = far ? a.cy + (b.cy - a.cy) * k : sy;
+    } else { vp.cx = a.cx + (b.cx - a.cx) * e; vp.cy = a.cy + (b.cy - a.cy) * e; }
+    vp.h = h;
+    if (p >= 1) { Object.assign(vp, b); anim = null; }
     draw(state);
-    if (p < 1) requestAnimationFrame(step); else { Object.assign(vp, anim.to); anim = null; draw(state); }
+    if (anim) requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
 }
 
 const overlap = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
 
+// ---- persistent base imagery
+const base = { root: null, layers: [], imgs: new Map() };
+const fetched = new Set();
+function prefetch(href) { if (fetched.has(href) || fetched.size > 4000) return; fetched.add(href); new Image().src = href; }
+function clearOver() {
+  if (!base.root || base.root.parentNode !== svg) {
+    base.root = el('g', { id: 'base' }); base.layers = [0, 1, 2, 3, 4].map(() => el('g', {}, base.root));
+    base.layers[4].id = 'shadow-layer';
+  }
+  for (const n of [...svg.childNodes]) if (n !== base.root) n.remove();
+  if (svg.firstChild !== base.root) svg.prepend(base.root);
+}
+function syncBase(want) {
+  for (const [href, m] of base.imgs) if (!want.has(href) && m.n.parentNode) m.n.remove();
+  for (const [href, w] of want) {
+    let m = base.imgs.get(href);
+    if (!m) {
+      const n = el('image', { href, preserveAspectRatio: 'none' });
+      m = { n, ok: false };
+      n.classList.add('fadein'); n.addEventListener('load', () => { m.ok = true; n.classList.add('ok'); }, { once: true });
+      if (base.imgs.size > 3000) for (const [k, q] of base.imgs) { if (!q.n.parentNode) base.imgs.delete(k); if (base.imgs.size < 2000) break; }
+      base.imgs.set(href, m);
+    }
+    for (const k in w.a) m.n.setAttribute(k, w.a[k]);
+    if (m.n.parentNode !== base.layers[w.layer]) base.layers[w.layer].appendChild(m.n);
+  }
+}
+
 function draw(st) {
   ppk = S / (2 * vp.h);
   const compare = st.view === 'compare', siteLevel = vp.h < R_KM - 1;
-  clear(svg);
+  clearOver();
   document.getElementById('where').textContent = st.pan && !compare && vp.h < R_KM - 1 ? where({ x_m: vp.cx * 1000, y_m: vp.cy * 1000 }) : where(data.index.byId[st.site]);
   { const eb = document.getElementById('expo'); eb.textContent = t('expo', st.mission); eb.setAttribute('aria-pressed', String(!!st.expo)); }
   document.getElementById('zoom').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(Math.abs((b.dataset.z === 'spot' ? ZOOM.spot : Number(b.dataset.z)) / st.zoom - 1) < 0.02)));
 
-  // hillshade, then (later) a shadow layer, then the overlays
-  const iw = 2 * R_KM * ppk;
-    el('image', { href: 'data/hillshade.jpg', x: px(-R_KM), y: py(R_KM), width: iw, height: iw }, svg);
-  if (hill !== 'data/hillshade.jpg') el('image', { href: hill, x: px(-R_KM), y: py(R_KM), width: iw, height: iw }, svg);
+  // base imagery lives in persistent layers (only overlays are rebuilt each frame): an image is created once,
+  // fades in when it has loaded, and the coarser layers underneath stay visible until it has
+  const iw = 2 * R_KM * ppk, want = new Map();
+  const put = (layer, href, x, y, w, h) => want.set(href, { layer, a: { x, y, width: w, height: h } });
+  put(0, 'data/hillshade.jpg', px(-R_KM), py(R_KM), iw, iw);
+  if (hill !== 'data/hillshade.jpg') put(0, hill, px(-R_KM), py(R_KM), iw, iw);
   // LOLA hillshade tiles wherever the view is close enough to need them: 40 m (10 km tiles), 20 m (5 km) when closer
-  for (const [res, T, n, hmax] of [[40, 10, 40, 30], [20, 5, 80, 8]]) {
-    if (vp.h >= hmax) continue;
-    const c0 = Math.max(0, Math.floor((vp.cx - vp.h + R_KM) / T)), c1 = Math.min(n - 1, Math.floor((vp.cx + vp.h + R_KM) / T));
-    const r0 = Math.max(0, Math.floor((R_KM - (vp.cy + vp.h)) / T)), r1 = Math.min(n - 1, Math.floor((R_KM - (vp.cy - vp.h)) / T));
-    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++)
-      el('image', { href: `data/t${res}/${c}_${r}.jpg`, x: px(-R_KM + c * T) - .5, y: py(R_KM - r * T) - .5, width: T * ppk + 1, height: T * ppk + 1, preserveAspectRatio: 'none' }, svg);
+  const tiles = (res, T, n, h, pad) => {
+    const c0 = Math.max(0, Math.floor((vp.cx - h + R_KM) / T) - pad), c1 = Math.min(n - 1, Math.floor((vp.cx + h + R_KM) / T) + pad);
+    const r0 = Math.max(0, Math.floor((R_KM - (vp.cy + h)) / T) - pad), r1 = Math.min(n - 1, Math.floor((R_KM - (vp.cy - h)) / T) + pad);
+    const out = [];
+    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) out.push([`data/t${res}/${c}_${r}.jpg`, c, r]);
+    return out;
+  };
+  for (const [li, res, T, n, hmax] of [[1, 40, 10, 40, 30], [2, 20, 5, 80, 8]]) {
+    if (vp.h < hmax) for (const [href, c, r] of tiles(res, T, n, vp.h, 0))
+      put(li, href, px(-R_KM + c * T) - .5, py(R_KM - r * T) - .5, T * ppk + 1, T * ppk + 1);
+    // prefetch: the ring around the view, and this level's tiles shortly before it is needed
+    if (!anim && vp.h < hmax * 1.6) for (const [href] of tiles(res, T, n, Math.min(vp.h, hmax), vp.h < hmax ? 1 : 0)) prefetch(href);
   }
-  // 20 m LOLA hillshade patches (+-4.5 km) around each site, faded in as you zoom past Site
+  // 20 m / 5 m LOLA hillshade patches (+-4.5 km) around each site, faded in as you zoom past Site
   const sharp = Math.max(0, Math.min(1, (14 - vp.h) / 8));
   if (sharp > 0.01) for (const s of data.index.sites) {
     if (s.isPin) continue;
     const x = s.x_m / 1000, y = s.y_m / 1000;
     if (Math.abs(x - vp.cx) > vp.h + 5 || Math.abs(y - vp.cy) > vp.h + 5) continue;
-    el('image', { href: `data/${SPOT5.has(s.id) ? 'spot5' : 'spot'}/${s.id}.jpg`, x: px(x - 4.5), y: py(y + 4.5), width: 9 * ppk, height: 9 * ppk, opacity: sharp, preserveAspectRatio: 'none' }, svg);
+    put(3, `data/${SPOT5.has(s.id) ? 'spot5' : 'spot'}/${s.id}.jpg`, px(x - 4.5), py(y + 4.5), 9 * ppk, 9 * ppk);
   }
-  const sg = el('g', { id: 'shadow-layer' }, svg), sh = st.expo ? expoFor(st, data) : shadowFor(st, data);
+  base.layers[3].setAttribute('opacity', sharp);
   // the mask grid is 800 px of 500 m, pixel centres from -199.75 km: it spans exactly +-200 km
+  const sh = st.expo ? expoFor(st, data) : shadowFor(st, data);
   const fade = Math.max(0, Math.min(1, (vp.h - 3.5) / 11.5));   // 500 m mask: gone at Spot
-  if (sh && fade > 0.01) el('image', { opacity: fade, href: sh, x: px(-R_KM), y: py(R_KM), width: iw, height: iw, preserveAspectRatio: 'none' }, sg);
+  syncBase(want);
+  { // one mask image, swapped in place as the hour changes
+    const L = base.layers[4], on = sh && fade > 0.01;
+    let n = L.firstChild;
+    if (on && !n) n = el('image', { preserveAspectRatio: 'none' }, L);
+    if (!on && n) n.remove();
+    if (on) { if (n.getAttribute('href') !== sh) n.setAttribute('href', sh); for (const [k, v] of Object.entries({ x: px(-R_KM), y: py(R_KM), width: iw, height: iw })) n.setAttribute(k, v); }
+    L.setAttribute('opacity', fade);
+  }
 
   // graticule and the Earth line (0 deg spoke)
   const g = el('g', { stroke: '#fff', 'stroke-opacity': .5, fill: 'none', 'stroke-width': 1 }, svg);
@@ -441,6 +501,7 @@ function draw(st) {
   el('circle', { cx: S / 2, cy: 16, r: compare ? 5 : 6, fill: 'var(--earth)', stroke: '#fff', 'stroke-width': 1.5 }, em);
   el('path', { d: `M${S / 2 - 4},${9} L${S / 2},${5} L${S / 2 + 4},${9}`, fill: 'none', stroke: '#fff', 'stroke-width': 1.5 }, em);
   if (!compare) text(em, t('earthWord'), { x: S / 2 + 12, y: 20, class: 'tick', style: `fill:#fff;${halo}letter-spacing:.08em` });
+  if (pending) placePending();
   document.dispatchEvent(new Event('mapframe'));
 }
 
@@ -474,8 +535,25 @@ function landerCard(id, e) {
 
 // single click on empty map (no second click within 250 ms): open that point as the pin, in place
 function openSpot(w) {
-  if (!w || Math.abs(w.x) > R_KM || Math.abs(w.y) > R_KM || !pinOpener) return;
-  pinOpener(Math.round(w.x * 1000), Math.round(w.y * 1000));
+  if (!w || Math.abs(w.x) > R_KM || Math.abs(w.y) > R_KM || !pinOpener) { pendingAt(null); return; }
+  const mine = pending;
+  Promise.resolve(pinOpener(Math.round(w.x * 1000), Math.round(w.y * 1000))).finally(() => { if (pending === mine) pendingAt(null); });
+}
+
+// ring at the clicked point until its numbers are ready; follows the view while it moves
+let pending = null;
+function pendingAt(w) {
+  pending = w && Math.abs(w.x) <= R_KM && Math.abs(w.y) <= R_KM ? { x: w.x, y: w.y } : null;
+  placePending();
+}
+function placePending() {
+  const panel = document.getElementById('map-panel');
+  let n = document.getElementById('pending-pin');
+  if (!pending) { if (n) n.remove(); return; }
+  if (!n) { n = document.createElement('div'); n.id = 'pending-pin'; panel.appendChild(n); }
+  const b = panel.getBoundingClientRect(), r = svg.getBoundingClientRect(), k = r.width / S;
+  n.style.left = (r.left - b.left + px(pending.x) * k) + 'px';
+  n.style.top = (r.top - b.top + py(pending.y) * k) + 'px';
 }
 
 // shrinking ring under a held pointer (zoom-out cue); appears only once the press lasts

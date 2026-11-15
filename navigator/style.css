@@ -215,3 +215,16 @@ main[data-zoomed="1"]:not([data-view="compare"]) #map{cursor:grab}
 #map{touch-action:none}
 #hold-ring{position:absolute;z-index:4;width:56px;height:56px;margin:-28px 0 0 -28px;border:2px solid #fff;border-radius:50%;pointer-events:none;opacity:0;animation:holdring .5s linear .15s infinite;box-shadow:0 0 0 1px rgba(0,0,0,.4)}
 @keyframes holdring{0%{transform:scale(1);opacity:.9}100%{transform:scale(.25);opacity:.2}}
+/* smooth map: tiles fade in over the coarser layer; clear cursors */
+#map image.fadein{opacity:0;transition:opacity .22s ease-out}
+#map image.fadein.ok{opacity:1}
+main:not([data-view="compare"]) #map{cursor:crosshair}
+#map [data-id],#map [data-lander],#map [data-expo]{cursor:pointer}
+main[data-zoomed="1"]:not([data-view="compare"]) #map [data-id],main[data-zoomed="1"]:not([data-view="compare"]) #map [data-lander]{cursor:pointer}
+#map.grabbing,#map.grabbing *{cursor:grabbing!important}
+#pending-pin{position:absolute;width:18px;height:18px;margin:-9px 0 0 -9px;border:2px solid #fff;border-radius:50%;pointer-events:none;z-index:4;box-shadow:0 0 0 2px rgba(0,0,0,.45)}
+#pending-pin::after{content:"";position:absolute;inset:-8px;border:2px solid #fff;border-radius:50%;opacity:0;animation:pp 1s ease-out infinite}
+@keyframes pp{0%{transform:scale(.4);opacity:.9}100%{transform:scale(1.4);opacity:0}}
+@media (prefers-reduced-motion: reduce){#map image.fadein{transition:none}#pending-pin::after{animation:none}}
+#metrics-panel,#sky-panel,#fixes,#chain{transition:opacity .15s}
+main[data-loading="1"] #metrics-panel,main[data-loading="1"] #sky-panel,main[data-loading="1"] #fixes,main[data-loading="1"] #chain{opacity:.55}

@@ -48,6 +48,9 @@ function render(st) {
   if (st.view === 'sites' && !$('sites').firstChild) $('sites').innerHTML = '<iframe src="selection.html" title="selection"></iframe>';
   map.render(st, data);
   globe.render(st, data);
+  // while the site's file loads, keep the last numbers in place (dimmed) instead of emptying the panels
+  main.dataset.loading = data.site || st.view === 'compare' ? '' : '1';
+  if (!data.site && st.view !== 'compare') return;
   metrics.render(st, data);
   fixes.render(st, data);
   if (st.view === 'focus') { sky.render(st, data); timeline.render(st, data); chain.render(); }
@@ -55,7 +58,7 @@ function render(st) {
 
 // open any point as the pin without reloading (map click)
 async function openPin(x, y) {
-  $('busy').hidden = false;
+  // no full-screen wait: the map shows a ring at the point until this resolves
   await new Promise(r => requestAnimationFrame(() => setTimeout(r, 30)));
   try {
     const i = data.index.sites.findIndex(s => s.id === 'pin');
@@ -65,7 +68,6 @@ async function openPin(x, y) {
     for (const k in applied) delete applied[k];
     setState({ site: 'pin', pinXY: `${x},${y}`, pinned: state.pinned.filter(id => id !== 'pin'), zoom: Math.max(state.zoom, ZOOM.site) });
   } catch (e) { console.error(e); }
-  $('busy').hidden = true;
 }
 
 async function boot() {
