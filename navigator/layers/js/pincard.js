@@ -10,7 +10,7 @@ import { skyAt, skyCached, drawPinSky } from './time.js';
 import { critName, critValue } from './criteria.js';
 import { statsCached, statsFor, whyNoFix, tt } from './trip.js';
 import { WIN_IDS, useWin } from './window.js';
-import { inCart, toggleCart, ct, MAX } from './cart.js';
+import { inCart, toggleCart, ct, MAX, compareWith } from './cart.js';
 import { zoomSvg } from './zoom.js';
 import { hue, N } from './config.js';
 import { failCount } from './compose.js';
@@ -107,7 +107,7 @@ export function renderPinCard(st) {
 <svg class="lyr-sky"></svg><svg class="lyr-dstrip"></svg>
 ${moveGrid(inf, v, `<div class="lyr-cks">${checks}</div>${inf.go ? `<span class="n lyr-go-n">${t('go')} ${t('days', inf.go.count)}</span>` : ''}`)}${adv}
 ${inf.go ? `<div class="lyr-cal"><canvas class="lyr-pcal"></canvas></div>` : ''}
-${cartBtn(inf, st)}<a class="lyr-link" href="${inf.link}">${t('open_cmp')}</a>`;
+${cartBtn(inf, st)}<a class="lyr-link" target="_top" href="${compareWith(st, inf.col, inf.row)}">${t('open_cmp')}</a>`;
   drawCal(inf, st);
   renderPinSky(st);
 }
