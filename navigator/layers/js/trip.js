@@ -4,7 +4,7 @@
 // (time.js skyAt), the same series the pin card and the GO calendar use.
 import { N, PX } from './config.js';
 import { state, setState } from './state.js';
-import { skyAt, skyCached, ensure } from './time.js';
+import { skyAt, skyCached, ensure, horizonOf, bodiesData } from './time.js';
 import { cellToXY, xyToCell } from './geo.js';
 import { describe, anchorOf } from './orient.js';
 import { decode } from './data.js';
@@ -76,9 +76,27 @@ async function statsAsync(col, row, mission) {
   const sky = await skyAt(col, row), w = windowStats(sky, mission); w.sky = sky; stats.set(k, w); return w;
 }
 const mastStats = new Map();
-async function mastAsync(col, row, mission, mast) {   // the same with a 10 m / 20 m mast (null if that set is missing)
+// the same with a 10 m / 20 m mast (null if that set is missing), worked out by a small pool of workers
+// (layers/js/skyworker.js, the same maths as skyAt + windowStats) so several spots run at once beside the page
+const SW = Math.max(2, Math.min(4, (navigator.hardwareConcurrency || 4) - 1)), swq = [], swJobs = new Map();
+let sws = null, swId = 0;
+function swPool() {
+  if (sws) return sws;
+  const B = bodiesData(); sws = [];
+  for (let i = 0; i < SW; i++) {
+    const wk = new Worker(new URL('./skyworker.js', import.meta.url)); wk.postMessage({ type: 'init', S: B.S, E: B.E, n: B.n });
+    wk.busy = false; wk.onmessage = e => { const j = swJobs.get(e.data.id); swJobs.delete(e.data.id); wk.busy = false; j.res(e.data); swNext(); };
+    sws.push(wk);
+  }
+  return sws;
+}
+function swNext() { for (const wk of swPool()) { if (wk.busy || !swq.length) continue; const j = swq.shift(); wk.busy = true; wk.postMessage(j.msg); } }
+const swRun = msg => new Promise(res => { const id = ++swId; swJobs.set(id, { res }); swq.push({ msg: { ...msg, id } }); swNext(); });
+async function mastAsync(col, row, mission, mast) {
   const k = `${row * N + col}|${mission}|${mast}`; if (mastStats.has(k)) return mastStats.get(k);
-  const sky = await skyAt(col, row, mast), w = sky ? windowStats(sky, mission) : null; mastStats.set(k, w); return w;
+  const hz = await horizonOf(col, row, mast);
+  const w = hz ? await swRun({ x: hz.x, y: hz.y, vals: hz.vals, mission }) : null;
+  const r = w ? { sun: w.sun, earth: w.earth, dark: w.dark } : null; mastStats.set(k, r); return r;
 }
 export const statsFor = statsAsync;
 export const statsCached = (col, row, mission) => stats.get(`${row * N + col}|${mission}`) || null;
@@ -103,7 +121,7 @@ export function whyNoFix(col, row, day, crit, mission) {
 }
 
 // ---- candidate spots of a region: flat cells with the most GO landing days in the year, spaced out ----
-let D = null; const pools = new Map();
+let D = null; const pools = new Map(), WAIT = { cells: [], ready: false, done: 0, promise: new Promise(() => {}) };
 // the 3D map's terrain is a rounded square (map3d.js: |x|^4 + |y|^4 norm, relief fades out from 190 km): spots stay 15 km inside it
 const PATCH = 185, inPatch = (x, y) => ((Math.abs(x / 1000) ** 4) + (Math.abs(y / 1000) ** 4)) ** 0.25;
 function poolCells(rid, mission) {
@@ -134,23 +152,39 @@ function poolCells(rid, mission) {
 export function poolOf(rid, mission) {
   // the candidates follow the judged stay: wait until it is worked out instead of ranking the yearly fallback first and
   // then all over again (that second run looked like a stall)
-  if (pending(state)) return { cells: [], ready: false, done: 0, promise: new Promise(r => setTimeout(r, 400)) };
+  // (one shared placeholder that never settles: the finished stay redraws the panel by itself, so no polling)
+  if (pending(state)) return WAIT;
   const k = `${rid}|${mission}|${maskKey()}`; if (pools.has(k)) return pools.get(k);
   if (pools.size > 40) pools.clear();
   const p = { cells: poolCells(rid, mission), ready: false, done: 0 };
-  p.promise = (async () => { await ensure(); let n = 0; for (const c of p.cells) { c.w = await statsAsync(c.col, c.row, mission); if (++n % 12 === 0) { p.done = n / p.cells.length; showPct(); await new Promise(r => setTimeout(r, 0)); } } p.ready = true;
-    // then the mast heights, for the ranking (a spot that needs a mast ranks below ground spots); the list redraws when done
-    n = 0; for (const c of p.cells) { c.w10 = await mastAsync(c.col, c.row, mission, 10); c.w20 = await mastAsync(c.col, c.row, mission, 20); if (++n % 8 === 0) { p.mdone = n / p.cells.length; showPct(); await new Promise(r => setTimeout(r, 0)); } }
+  p.promise = (async () => { await ensure(); let n = 0; for (const c of p.cells) { c.w = await statsAsync(c.col, c.row, mission); if (++n % 12 === 0) { p.done = n / p.cells.length; showPct(); await new Promise(r => setTimeout(r, 0)); } } p.ready = true; setState({}, 'panel');
+    // then the mast heights, for the ranking (a spot that needs a mast ranks below ground spots). Only a spot that is
+    // NO-GO from the ground on the shown day needs them for that day's list, so those go first (the list shows as soon
+    // as they are in); the rest follow in the background, for other days
+    const needs = c => !c.m && !c.busy && !isGo(c.w, state.tDay, state.crit);
+    const next = () => p.cells.find(needs) || p.cells.find(x => !x.m && !x.busy);
+    const lane = async () => {
+      for (let c; (c = next()); ) {
+        c.busy = true;
+        [c.w10, c.w20] = await Promise.all([mastAsync(c.col, c.row, mission, 10), mastAsync(c.col, c.row, mission, 20)]); c.m = true;
+        showPct(); const dk = state.tDay + JSON.stringify(state.crit);
+        if (p.okKey !== dk && mastsFor(p, state.tDay, state.crit)) { p.okKey = dk; setState({}, 'panel'); }
+      }
+    };
+    await Promise.all(Array.from({ length: SW }, lane));
     p.mready = true; setState({}, 'panel'); })();
   pools.set(k, p); return p;
 }
-// one count for the steps of the ranked list: the stay worked out (to 40 %), the candidate spots from the ground
-// (to 60 %), then with a 10 m and 20 m mast (to 100 %, the slowest part)
+// the masts the list of day d needs are in: every spot that is NO-GO from the ground that day has its 10 m / 20 m stats
+const mastsFor = (p, d, crit) => p.mready || p.cells.every(c => c.m || !c.w || isGo(c.w, d, crit));
+const listReady = p => p.ready;   // the list shows from the ground stats; it re-ranks when the masts it needs are in (mastsFor)
+// one count for the steps of the ranked list: the stay worked out (to 40 %), then the candidate spots from the ground
+// (to 100 %); the 10 m / 20 m mast stats follow in the background and re-rank the list when in
 export function loadPct(st) {
   if (pending(st)) return Math.floor(40 * winProgress(st));
   const p = pools.get(`${currentRegion()}|${st.mission}|${maskKey()}`);
   if (!p) return 40;
-  return Math.min(99, Math.floor(p.ready ? 60 + 40 * (p.mdone || 0) : 40 + 20 * p.done));
+  return Math.min(99, Math.floor(p.ready ? 100 : 40 + 60 * p.done));
 }
 const showPct = () => { const v = loadPct(state) + ' %'; document.querySelectorAll('.ld-pct').forEach(e => { e.textContent = v; }); };
 const maskKey = () => JSON.stringify([state.crit, state.threshold, state.on.mask, state.mode, winToken(state)]);
@@ -270,11 +304,11 @@ export function renderTrip(st) {
   bar.querySelector('.lyr-tbd').textContent = `${dayText(st.tDay)} · ${tt('stayD', st.mission)}`;
   bar.querySelector('.lyr-tbr').textContent = st.region ? regionName(st.region) : regionName('all');
   bar.querySelector('[data-pop="region"]').classList.toggle('unset', !st.region);
-  const rid = currentRegion(), p = poolOf(rid, st.mission), k = `${rid}|${st.mission}|${st.tDay}|${maskKey()}|${p.ready}|${!!p.mready}|${JSON.stringify(st.cart)}`;
+  const rid = currentRegion(), p = poolOf(rid, st.mission), k = `${rid}|${st.mission}|${st.tDay}|${maskKey()}|${p.ready}|${mastsFor(p, st.tDay, st.crit)}|${JSON.stringify(st.cart)}`;
   if (!p.ready) p.promise.then(() => setState({}, 'panel'));
   if (findBtn && !findBtn.isConnected && list.parentNode) list.parentNode.append(findBtn);
   list.classList.toggle('lyr-hide', !shown);
-  if (k + shown !== rkey) { rkey = k + shown; ranked = p.ready ? rank(p, st.tDay, st.crit) : []; drawList(st, p); if (p.ready && shown) opts.ranked && opts.ranked(ranked); }
+  if (k + shown !== rkey) { rkey = k + shown; ranked = listReady(p, st) ? rank(p, st.tDay, st.crit) : []; drawList(st, p); if (listReady(p, st) && shown) opts.ranked && opts.ranked(ranked); }
   else for (const r of list.querySelectorAll('[data-rank]')) r.classList.toggle('hot', +r.dataset.rank === st.hoverTrip || (st.pin && ranked[+r.dataset.rank - 1] && ranked[+r.dataset.rank - 1].col === st.pin.col && ranked[+r.dataset.rank - 1].row === st.pin.row));
   drawAnswer(st, rid, p);
   if (!pop.hidden) { const pk = `${pop.dataset.kind}|${st.tDay}|${st.mission}|${maskKey()}`; if (pop.dataset.k !== pk) { pop.dataset.k = pk; drawPop(); } }
@@ -294,9 +328,10 @@ function regionArea(rid) {
 }
 function drawAnswer(st, rid, p) {
   if (!ans) return;
-  const k = `${rid}|${st.mission}|${st.tDay}|${maskKey()}|${p.ready}|${ranked.length && ranked[0].title}|${shown}`;
+  const lr = listReady(p, st), k = `${rid}|${st.mission}|${st.tDay}|${maskKey()}|${lr}|${ranked.length && ranked[0].title}|${shown}`;
   if (k === akey) return; akey = k;
-  if (!p.ready || pending(st)) { ans.innerHTML = tt('loading') + ` <span class="ld-pct">${loadPct(st)} %</span>`; return; }   // the stay window is still being computed: no area from the yearly fallback
+  // the area needs only the judged stay; the best spot needs the ranked list
+  if (pending(st) || (shown && !lr)) { ans.innerHTML = tt('loading') + ` <span class="ld-pct">${loadPct(st)} %</span>`; return; }   // the stay window is still being computed: no area from the yearly fallback
   const km = regionArea(rid), where = st.region && st.region !== 'all' ? regionName(rid) : '', day = dayText(st.tDay), r0 = ranked[0];
   const km2 = km == null ? '' : km >= 100 ? String(Math.round(km / 10) * 10) : km >= 10 ? String(Math.round(km)) : km.toFixed(1);
   let h = km ? tt('ans', day, st.mission, km2, where) : tt('ansNone', day, st.mission, where);
@@ -308,7 +343,7 @@ function drawList(st, p) {
   const c = st.crit, sm = D.layers.find(m => m.id === 'slope'), slim = sm ? Math.round(st.threshold[sm.id] ?? sm.threshold) : 8;
   const iceOn = !!st.on.mask.ice, ilim = st.threshold.ice;
   const head = `<div class="lyr-trh"><div><b>${regionName(currentRegion())}</b><span class="n">${dayText(st.tDay)} · ${tt('stayD', st.mission)}</span></div><span class="lyr-trgo n">${ranked.filter(r => r.go0).length} GO</span></div>`;
-  if (!p.ready) { list.innerHTML = head + `<p class="lyr-tri">${tt('loading')} <span class="ld-pct">${loadPct(st)} %</span></p>`; return; }
+  if (!listReady(p, st)) { list.innerHTML = head + `<p class="lyr-tri">${tt('loading')} <span class="ld-pct">${loadPct(st)} %</span></p>`; return; }
   if (!shown) { list.innerHTML = head; return; }
   const top5 = ranked.slice(0, 5);
   // one row of numbers per spot, the same columns for all; a value that misses its limit in red

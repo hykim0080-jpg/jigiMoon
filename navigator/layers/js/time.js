@@ -38,7 +38,14 @@ function series(x, y, h720, Bd) {   // copy of navigator/js/pin.js series()
   }
   return { frac, vis, az, el };
 }
-export const bodiesData = () => B;   // hourly Sun/Earth vectors (S, E, n) for the window worker
+export const bodiesData = () => B;
+export const prefetchMasts = () => shadow.loadExtra();
+// the 64 horizon values (deg) of a cell for a mast height, for the stats worker (null if that set is missing)
+export async function horizonOf(col, row, mast) {
+  await ensure();
+  const buf = mast === 2 ? undefined : (await shadow.loadExtra()).sets[mast]; if (mast !== 2 && !buf) return null;
+  const [x, y] = shadow.pixelXY(col, row); return { x, y, vals: Float64Array.from(shadow.horizonValues(x, y, buf)) };
+}   // hourly Sun/Earth vectors (S, E, n) for the window worker
 export const ensure = () => loading || (loading = Promise.all([shadow.load(), bodies()]).then(([, b]) => { B = b; }));
 
 // sky object of mode A (see navigator/js/data.js loadSky) for a pixel
