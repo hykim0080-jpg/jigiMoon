@@ -22,10 +22,18 @@ export function metricRows(site, day, mission, mast, crit = THRESHOLDS, notes = 
     + row(t('noComm'), nc, t('h', Math.round(nc)), { frac: nc / (mission * 24) }, false, n('noComm', ''), L.noComm);
 }
 
+// one compact line: ☀ Sun · ⊕ Earth · ☾ Dark · ∠ Slope, a value past its limit in red; limits and reasons in the tooltip
+const item = (ic, color, txt, fail, tip) => `<span class="mi${fail ? ' fail' : ''}" title="${tip.replace(/"/g, '&quot;')}"><i style="color:${color}">${ic}</i>${txt}</span>`;
 export function render(st, data) {
   const s = data.site;
   if (!s) return;
+  const { cal } = s, m = st.mast && s.mast, c = st.crit || THRESHOLDS, d = st.day, w = t('why'), L = t('whyLong');
+  const sun = m ? m.sun[st.mast][d] : cal.sun[d], earth = m ? m.earth[st.mast][d] : cal.earth[d], dark = m ? m.dark[st.mast][d] : cal.dark[d], nc = cal.noComm[d];
   const sl = data.index.byId[st.site]?.slope_deg, lim = 8;
-  root.innerHTML = metricRows(s, st.day, st.mission, st.mast, st.crit || THRESHOLDS, true)
-    + (sl == null ? '' : row(t('slopeL'), sl, `${sl.toFixed(1)}°`, { frac: sl / 20, tick: lim / 20, color: 'var(--muted)' }, sl > lim, `≤ ${lim}° · ${t('why').slope}`, t('whyLong').slope));
+  root.innerHTML = `<div class="mline">`
+    + item('☀', 'var(--sun)', t('pct', Math.round(sun)), sun < c.sun, `${t('sun')} ≥ ${c.sun} % · ${w.sun}\n${L.sun}`)
+    + item('⊕', 'var(--earth)', t('pct', Math.round(earth)), earth < c.earth, `${t('earth')} ≥ ${c.earth} % · ${w.earth}\n${t('noComm')}: ${t('h', Math.round(nc))}\n${L.earth}`)
+    + item('☾', 'var(--muted)', t('h', Math.round(dark)), dark > c.dark, `${t('dark')} ≤ ${c.dark} h · ${w.dark}\n${L.dark}`)
+    + (sl == null ? '' : item('∠', 'var(--muted)', `${sl.toFixed(1)}°`, sl > lim, `${t('slopeL')} ≤ ${lim}° · ${w.slope}\n${L.slope}`))
+    + `</div>`;
 }

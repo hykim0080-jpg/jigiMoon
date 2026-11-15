@@ -11,7 +11,7 @@ let geom = null;
 export function drawSky(svg, S, st, opts = {}) {
   const w = opts.w || svg.clientWidth, h = opts.h || svg.clientHeight;
   if (!w || !h) return null;
-  const compact = !!opts.compact, sk = S.sky;
+  const compact = !!opts.compact, sk = S.sky, lw = opts.lw || 2;
   svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
   clear(svg);
   const i0 = st.day * 24, n = st.mission * 24;
@@ -127,7 +127,7 @@ export function drawSky(svg, S, st, opts = {}) {
     }
     for (const r of runs) {
       el('path', {
-        d: 'M' + r.pts.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join('L'), fill: 'none', stroke: s.color, 'stroke-width': 2,
+        d: 'M' + r.pts.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join('L'), fill: 'none', stroke: s.color, 'stroke-width': lw,
         ...(r.v ? {} : { 'stroke-dasharray': '4 3', 'stroke-opacity': .4 })
       }, root);
     }
@@ -142,21 +142,13 @@ export function drawSky(svg, S, st, opts = {}) {
 
   // scrubbed hour: show what blocks each hidden body
   const b = blockage(sk, ih);
-  const used = [];   // label boxes, so two ridge labels never sit on top of each other
   for (const k of ['sun', 'earth']) {
     const bb = b[k];
     if (!bb) continue;
     const bx = X(bb.az), top = Y(bb.h), by = Y(bb.el);
     const edge = hp.filter(p => Math.abs(p[0] - bx) < 3 / 360 * pw).map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1));
-    if (edge.length > 1) el('path', { d: 'M' + edge.join('L'), fill: 'none', stroke: 'var(--block)', 'stroke-width': 3 }, root);
+    if (edge.length > 1) el('path', { d: 'M' + edge.join('L'), fill: 'none', stroke: 'var(--block)', 'stroke-width': lw + 1 }, root);
     el('line', { x1: bx, x2: bx, y1: by, y2: top, stroke: 'var(--block)', 'stroke-width': 1 }, root);
-    if (!compact) {
-      const end = bx > x1 - 150;
-      let ly = Math.max(y0 + 10, top - 6);
-      while (used.some(u => Math.abs(u - ly) < 14)) ly += 14;
-      used.push(ly);
-      text(svg, t('ridge', Math.round(bb.az), bb.short.toFixed(1)), { x: end ? bx - 6 : bx + 6, y: ly, 'text-anchor': end ? 'end' : 'start', class: 'lbl red pro-only' });
-    }
   }
 
   geom = { x0, x1, y0, y1, X, Y, hi, lo, sk, pw };

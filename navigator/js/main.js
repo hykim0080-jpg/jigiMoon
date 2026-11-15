@@ -41,9 +41,7 @@ function render(st) {
   document.documentElement.lang = new URLSearchParams(location.search).get('lang') || 'en';
   $('main').dataset.view = st.view;
   document.body.dataset.view = st.view;
-  document.body.dataset.pro = st.pro ? '1' : '';
-  if (st.view === 'search' || (!st.pro && st.view === 'sites')) { setState({ view: 'focus' }); return; }
-  if (!st.pro && st.expo) { setState({ expo: 0 }); return; }
+  if (st.view === 'search') { setState({ view: 'focus' }); return; }
   $('main').dataset.zoomed = st.zoom > 1.01 ? '1' : '';
   // map side = height of the middle band
   const main = $('main');
