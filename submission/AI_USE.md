@@ -1,6 +1,6 @@
 # Draft — "Use of Super Intelligence (SI)" field, and AI record for the README
 
-Living record, last updated 2026-11-14. (This field is not shown to judges; the README version is public.)
+Living record, last updated 2026-11-15. (This field is not shown to judges; the README version is public.)
 
 ## Short text for the form
 
@@ -15,7 +15,8 @@ The problem, the idea and the direction are ours. Our two-person team chose the 
 | Computation code (`lunar/*.py`) | Specified the method, thresholds, sites rule, mast limits; reviewed outputs | Wrote the code (ephemeris, horizon, terrain stack, prescriptions, calendar, validation) and ran it |
 | Validation | Asked for and judged the comparison with PGDA maps | Ran the comparison and reported errors |
 | Web tool (`navigator/`, `lunar/map3d/`, `web/`) | Layout direction, design principles, feature choices, testing | Wrote HTML/CSS/JS, proposed visual designs, made screenshots |
-| Documents and slides | Final wording and approval | Drafted READMEs, this record, source list, submission text |
+| Documents and slides | Final wording and approval | Drafted READMEs, this record, source list, submission text, the 7-slide demo deck and the NYC judging one-pager (from screenshots of our own site) |
+| Verdict API (`functions/`, `api/`) and layout fixes | Asked for the API for the Cloudflare award; reviews and merges the pull requests | Wrote the Pages Functions, the tests (`api/test.mjs`) and the header CSS fix, and checked them against the page |
 | Images | — | Team photo was AI-generated/edited (`team-moon-photo-maximal.png`) — visible watermark required if shown |
 
 ## Metadata / code acknowledgement
