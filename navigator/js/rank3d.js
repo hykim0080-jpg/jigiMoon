@@ -16,7 +16,11 @@ async function poolOf(mission) {
     const [days, slope] = await Promise.all([get(mission === 6 ? 'days6.wasm' : 'days14.wasm'), get('slope.wasm')]);
     if (!days || !slope) return [];
     const cand = [];
-    for (let i = 0; i < N * N; i++) { const v = days[i]; if (v > 0 && v <= 250 && slope[i] <= 50) cand.push(i); }
+    for (let i = 0; i < N * N; i++) {
+      const v = days[i]; if (!(v > 0 && v <= 250 && slope[i] <= 50)) continue;
+      const c = i % N, r = (i - c) / N, x = Math.abs((c + .5) * .5 - 200), y = Math.abs(200 - (r + .5) * .5);
+      if ((x ** 4 + y ** 4) ** 0.25 <= 185) cand.push(i);   // inside the 3D terrain (as layers/js/trip.js poolCells)
+    }
     cand.sort((a, b) => days[b] - days[a]);
     const out = [];
     for (const i of cand) {

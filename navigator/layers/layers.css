@@ -654,3 +654,6 @@ html.panels,html.panels body,.panels .lyr-app,.panels .lyr-main{background:trans
 /* controls at least 28 x 28 px */
 .lyr-left .lyr-tradd{width:28px;height:28px}
 .lyr-pclose{min-width:28px;min-height:28px}
+/* a ranked spot that misses a criterion (red value): its number grey, not GO green */
+.lyr-left .lyr-tr:has(.lyr-trc b.bad) .lyr-trn,.lyr-left .lyr-tr.top:has(.lyr-trc b.bad) .lyr-trn{color:#7d8597}
+.lyr-left .lyr-tr.top:has(.lyr-trc b.bad){border-left-color:#7d8597}

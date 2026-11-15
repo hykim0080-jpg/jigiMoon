@@ -16,7 +16,7 @@ const en = {
     slope: 'A lander touching down on a steep slope can tip over, as IM-1 and IM-2 did. 8° is a conservative limit (Apollo LM: 12°). LOLA slope at 15 m scale.'
   },
   legendGo: 'GO', legendNone: 'no fix',
-  okPct: 'OK %', iceTip: 'Distance to the nearest permanently shadowed region (PSR), where water ice may be (not proven). A preference, not a must.', spaceHint: 'Space: back to the site', introSub: 'Find where to land at the lunar south pole', introGo: 'Click or press any key', mastPole: h => `${h} m mast`, calOpen: 'Open large', calClose: 'Close', dock: { sky: 'Sky', metrics: 'Numbers', fixes: 'Map', cal: 'Year' }, layoutFull: 'Full map', layoutGrid: 'All panels', planMark: 'plan', planAxisTip: 'Click to move the planned landing date',
+  okPct: 'OK %', iceTip: 'Distance to the nearest permanently shadowed region (PSR), where water ice may be (not proven). A preference, not a must.', spaceHint: 'Space: back to the site', introSub: 'Find where to land at the lunar south pole', introGo: 'Click or press any key', mastPole: h => `${h} m mast`, calOpen: 'Open large', calClose: 'Close', dock: { sky: 'Sky', metrics: 'Numbers', fixes: 'Map', cal: 'Calendar' }, layoutFull: 'Full map', layoutGrid: 'All panels', planMark: 'plan', planAxisTip: 'Click to move the planned landing date',
   hiddenBy: { sun: 'Sun hidden by ridge', earth: 'Earth hidden by ridge' }, moveToGo: v => `Move ${v} km to GO`, hiddenRidge: 'hidden by ridge',
   km: v => `${v} km`, m: v => `${v} m`, d: v => `${v} d`, h: v => `${v} h`, pct: v => `${v} %`,
   unitKm: 'km', unitM: 'm', unitD: 'd',
@@ -89,7 +89,7 @@ const ko = {
     slope: '경사가 가파르면 착륙선이 넘어질 수 있어요 (IM-1·IM-2 사례). 8°는 보수적인 기준이에요 (Apollo LM 12°). LOLA 15 m 경사.'
   },
   legendGo: '가능', legendNone: '해법 없음',
-  okPct: '가능 %', iceTip: '가장 가까운 영구 그늘(PSR)까지 거리. 물 얼음이 있을 수 있는 곳이에요(확정 아님). 필수 조건이 아니라 선호 조건이에요.', spaceHint: '스페이스: 선택 지점으로', introSub: '달 남극에서 착륙할 곳 찾기', introGo: '클릭하거나 아무 키나 누르세요', mastPole: h => `마스트 ${h} m`, calOpen: '크게 보기', calClose: '닫기', dock: { sky: '하늘', metrics: '수치', fixes: '지도', cal: '연간' }, layoutFull: '지도 크게', layoutGrid: '모든 패널', planMark: '계획', planAxisTip: '클릭하면 계획한 착륙일을 옮겨요',
+  okPct: '가능 %', iceTip: '가장 가까운 영구 그늘(PSR)까지 거리. 물 얼음이 있을 수 있는 곳이에요(확정 아님). 필수 조건이 아니라 선호 조건이에요.', spaceHint: '스페이스: 선택 지점으로', introSub: '달 남극에서 착륙할 곳 찾기', introGo: '클릭하거나 아무 키나 누르세요', mastPole: h => `마스트 ${h} m`, calOpen: '크게 보기', calClose: '닫기', dock: { sky: '하늘', metrics: '수치', fixes: '지도', cal: '착륙 달력' }, layoutFull: '지도 크게', layoutGrid: '모든 패널', planMark: '계획', planAxisTip: '클릭하면 계획한 착륙일을 옮겨요',
   hiddenBy: { sun: '능선에 가려진 태양', earth: '능선에 가려진 지구' }, moveToGo: v => `${v} km 이동하면 GO`, hiddenRidge: '능선에 가려짐',
   km: v => `${v} km`, m: v => `${v} m`, d: v => `${v}일`, h: v => `${v}시간`, pct: v => `${v} %`,
   unitKm: 'km', unitM: 'm', unitD: '일',
