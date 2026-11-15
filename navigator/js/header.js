@@ -13,7 +13,6 @@ const seg = (items, key) => `<div class="seg" data-key="${key}">${items.map(([v,
 export function init(el, data) {
   root = el;
   root.innerHTML = `
-    <nav class="seg pages"><a href="#" aria-current="page">${t('modeCompare')}</a><a href="layers/index.html" id="find-link">${t('modeFind')}</a></nav>
     <span class="app-name">${t('app')}</span>
     <select id="site-select">${data.index.sites.map(s => `<option value="${s.id}">${siteName(s)}</option>`).join('')}</select>
     ${seg([['date', t('modeDate')], ['site', t('modeSite')]], 'mode')}
@@ -28,7 +27,7 @@ export function init(el, data) {
     <a id="api-link" class="api-link" target="_blank" rel="noopener" title="${t('apiTip')}">${t('apiLabel')}</a>
     <div class="adv"><button id="adv-btn" aria-label="${t('advanced')}" aria-expanded="false">⋯</button>
       <div id="adv-panel" hidden>${[['sun', '≥', '%'], ['earth', '≥', '%'], ['dark', '≤', 'h']].map(([k, op, u]) => `<div class="crit" data-c="${k}"><span>${t(k)} ${op}</span><span class="cseg">${LEVELS[k].map(v => `<button data-v="${v}">${v}</button>`).join('')}</span><span>${u}</span></div>`).join('')}<hr>${[['moveMax','maxMove',0.25,6,0.25],['mastMax','maxMast',MAST_SLIDER.min,MAST_SLIDER.max,1],['waitMax','maxWait',0,120,1]].map(([k,l,mn,mx,sp])=>`<label>${t(l)}<span class="rw"><input type="range" min="${mn}" max="${mx}" step="${sp}" data-k="${k}"></span><input class="n" type="number" min="${mn}" max="${mx}" step="${sp}" data-k="${k}"></label>`).join('')}</div></div>
-    ${seg([['focus', t('focus')], ['compare', t('compare')], ['sites', t('sites')]], 'view')}`;
+    ${seg([['find', t('modeFind')], ['focus', t('focus')], ['compare', t('compare')], ['sites', t('sites')]], 'view')}`;
   refs = {
     select: root.querySelector('#site-select'),
     date: root.querySelector('.date'),
@@ -60,17 +59,19 @@ export function init(el, data) {
   }));
 }
 
+// Find a site (the layer viewer) at the selected site and month
+export function findHref(st, data, atSite) {
+  const s = data.index.byId[st.site], mon = dateOf(st.day).getUTCMonth() + 1;
+  const l = new URLSearchParams(location.hash.slice(1)).get('lang') || new URLSearchParams(location.search).get('lang') || 'en';
+  return `layers/index.html?embed=1&lang=${l}#` + (atSite && s ? `pin=${Math.round(s.x_m)},${Math.round(s.y_m)}&mon=${mon}&lang=${l}${critQuery(st.crit)}` : `lang=${l}`);
+}
+
 export function render(st, data) {
   { // the pin can be (re)created from the map: keep the options in step with the index
     const html = data.index.sites.map(s => `<option value="${s.id}">${siteName(s)}</option>`).join('');
     if (refs.select.dataset.html !== html) { refs.select.innerHTML = html; refs.select.dataset.html = html; }
   }
   refs.select.value = st.site;
-  { // link to the layer viewer at the selected site and month
-    const s = data.index.byId[st.site], mon = dateOf(st.day).getUTCMonth() + 1;
-    const l = new URLSearchParams(location.hash.slice(1)).get('lang') || new URLSearchParams(location.search).get('lang') || 'en';
-    root.querySelector('#find-link').href = `layers/index.html#pin=${Math.round(s.x_m)},${Math.round(s.y_m)}&mon=${mon}&lang=${l}${critQuery(st.crit)}`;
-  }
   refs.adv.querySelectorAll('.crit').forEach(r => r.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(st.crit[r.dataset.c] === Number(b.dataset.v)))));
   root.querySelector('#adv-btn').classList.toggle('changed', !isDefault(st.crit));
   refs.date.textContent = isoDate(st.day);

@@ -411,3 +411,10 @@ input[type=range]{accent-color:var(--accent)}
 [data-theme="dark"] .card.inset{background:rgba(24,29,40,.94)}
 [data-theme="dark"] .locl,[data-theme="dark"] .card.local .lname,[data-theme="dark"] .card.local .tick{stroke:#0f131b}
 .mastlab{font-size:12px;font-weight:600;fill:#fff;paint-order:stroke;stroke:#0f131b;stroke-width:3px}
+/* Find a site as a view of this page (the layer viewer in a frame) */
+#find{display:none;grid-area:find;padding:0;overflow:hidden;border:0}
+#find iframe{width:100%;height:100%;border:0;display:block;background:var(--bg)}
+main[data-view="find"]{display:block}
+main[data-view="find"]>*:not(#find){display:none!important}
+main[data-view="find"] #find{display:block;position:absolute;inset:0}
+body[data-view="find"] header>*:not(.app-name):not([data-key="view"]):not(.grow){display:none}

@@ -33,6 +33,7 @@ function criteriaReady(st) {
   return false;
 }
 
+let findAtSite = false;   // first open of Find a site from another view: start at the selected site
 function render(st) {
   if (!criteriaReady(st)) return;
   data.site = getSite(st.site, st.mission);
@@ -52,6 +53,8 @@ function render(st) {
   header.render(st, data);
   calendar.render(st, data);
   if (st.view === 'compare') compare.render(st, data);
+  if (st.view === 'find' && !$('find').firstChild) $('find').innerHTML = `<iframe src="${header.findHref(st, data, findAtSite)}" title="Find a site"></iframe>`;
+  if (st.view !== 'find') findAtSite = true;
   if (st.view === 'sites' && !$('sites').firstChild) $('sites').innerHTML = '<iframe src="selection.html" title="selection"></iframe>';
   map.render(st, data);
   view3d.render(st);
@@ -127,6 +130,7 @@ async function boot() {
   subscribe(render);
   render(state);
   addEventListener('resize', () => render(state));
+  addEventListener('hashchange', () => location.reload());   // a link from Find a site (in its frame) into this page
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => render(state));
   addEventListener('keydown', onKey);
   document.addEventListener('mapframe', () => { if (state.view === 'focus') chain.render(); });
@@ -145,6 +149,7 @@ function onKey(e) {
     const i = ids.indexOf(state.site) + (e.key === 'ArrowUp' ? -1 : 1);
     setState({ site: ids[(i + ids.length) % ids.length] });
   } else if (e.key === ' ') { e.preventDefault(); if (view3d.isOn()) { if (!e.target.closest('#map3d')) view3d.recenter(); } else setState({ playing: !state.playing }); }
+  else if (e.key === '0') setState({ view: 'find' });
   else if (e.key === '1') setState({ view: 'focus' });
   else if (e.key === '2') setState({ view: 'compare' });
   else if (e.key === '3') setState({ view: 'sites' });

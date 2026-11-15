@@ -8,7 +8,7 @@
 <title>Lunar Landing Site Navigator</title>
 <link rel="preload" href="fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts/inter.css">
-<script>if (!location.hash) location.replace("layers/index.html" + location.search);</script>
+<script>if (!location.hash) location.replace(location.pathname + location.search + "#v=find");</script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -32,6 +32,7 @@
     <div id="fixes"></div>
     <section class="panel" id="compare"></section>
     <section class="panel" id="sites"></section>
+    <section class="panel" id="find"></section>
     <section class="panel" id="cal-panel"><canvas id="cal"></canvas><div id="cal-overlay"></div><button id="cal-big" type="button">⤢</button></section><div id="cal-back" hidden></div>
     <svg id="chain"></svg>
   </main>

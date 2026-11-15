@@ -18,7 +18,7 @@ let el, data, key = '', drag = false, fixOf = {};
 function applyFix(k) {
   if (k === 'move' && fixOf.move) setState({ pin: { col: fixOf.move.col, row: fixOf.move.row }, autoPin: false }, 'panel');
   else if (k === 'wait' && fixOf.wait != null) setState({ tDay: Math.min(364, state.tDay + fixOf.wait), tTouched: true }, 'time');
-  else if (k === 'mast' && fixOf.mast) location.href = fixOf.mast;
+  else if (k === 'mast' && fixOf.mast) (window.top || window).location.href = new URL(fixOf.mast, location.href).href;
 }
 const KIND = { go: 'ok', wait: 'wait', move: 'move', mast: 'mast', none: 'block' };
 const doy = m => (Date.UTC(2027, m, 1) - Date.UTC(2027, 0, 1)) / 864e5;
