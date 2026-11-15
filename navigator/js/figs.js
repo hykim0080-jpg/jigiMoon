@@ -70,3 +70,25 @@ export function mastSide(h, target = 'earth') {
   s += `<text x="${XA}" y="${G + 15}" text-anchor="middle" class="ms-tick">1.8</text><text x="${(XL + 2 * k).toFixed(1)}" y="${G + 15}" text-anchor="middle" class="ms-tick">4</text>`;
   return s + '</svg>';
 }
+
+// the MAST fix as it would stand, at k px per metre: the lander with the mast rising from its deck, a pair of solar
+// panels at the top, and the astronaut beside it. The panels' centre is h m above the ground, the height the
+// calculation uses; a mast lower than the deck (2-3 m) shows as panels just above it. Ground centre of the lander
+// is at the middle of the bottom edge.
+export function MAST_RIG(h, k) {
+  const top = Math.max(h, 4.3), W = 3.3, H = h > 0 ? top + 0.85 : 4.1;
+  const pw = Math.max(0.14, 2 / k), deck = 3.55;
+  const panel = (s) => {   // one wing, outer edge lifted a little: tilted up toward the low Sun
+    const x0 = s * (pw / 2 + 0.06), x1 = s * 1.45, y = -top;
+    const pts = `${x0},${y - 0.6} ${x1},${y - 0.72} ${x1},${y + 0.48} ${x0},${y + 0.6}`;
+    const mid = (x0 + x1) / 2;
+    return `<polygon points="${pts}" fill="#1f3f72" stroke="#9fc1ef" stroke-width="${Math.max(0.03, 1 / k)}"/>`
+      + `<path d="M${mid} ${y - 0.66}V${y + 0.54}M${x0} ${y}L${x1} ${y - 0.12}" stroke="#9fc1ef" stroke-width="${Math.max(0.02, 0.7 / k)}" opacity=".7"/>`;
+  };
+  const svg = `<svg width="${(2 * W * k).toFixed(1)}" height="${(H * k).toFixed(1)}" viewBox="${-W} ${-H} ${2 * W} ${H}">`
+    + `<g transform="translate(2.65 0)">${ASTRO}</g>${LANDER}`
+    + (h > 0 ? (top > deck ? `<rect x="${-pw / 2}" y="${-top}" width="${pw}" height="${top - deck}" fill="#4fc0c9"/>` : '')
+      + panel(-1) + panel(1) + `<rect x="${-pw}" y="${-top - 0.08}" width="${2 * pw}" height="0.16" fill="#4fc0c9"/>` : '')
+    + '</svg>';
+  return { svg, w: 2 * W * k, h: H * k };
+}

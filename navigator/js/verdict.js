@@ -8,6 +8,8 @@ import { status, nearestOk, blockage } from './logic.js';
 import { failStats, failReason } from './failreason.js';
 import { sector, bearing } from './orient.js';
 
+// one decimal, rounded down so a miss never reads as the limit (48.8 %, as the API gives it)
+const pct1 = v => (Math.floor(v * 10) / 10).toFixed(1);
 const ARROW = ['↑', '↗', '→', '↘', '↓', '↙', '←', '↖'];
 const lang = () => (document.documentElement.lang || 'en').startsWith('ko') ? 'ko' : 'en';
 
@@ -19,8 +21,8 @@ export function verdictFor(st, data, lim) {
   const sun = m ? m.sun[st.mast][d] : site.cal.sun[d], earth = m ? m.earth[st.mast][d] : site.cal.earth[d], dark = m ? m.dark[st.mast][d] : site.cal.dark[d];
   const b = site.sky ? blockage(site.sky, d * 24 + st.hour) : {}, hid = k => b[k] ? ` · ${t('hiddenRidge')}` : '';   // the ridge that hides it now
   const fails = [];
-  if (sun < c.sun) fails.push({ k: 'sun', text: `${t('sun')} ${Math.floor(sun)} % < ${c.sun} %${hid('sun')}` });
-  if (earth < c.earth) fails.push({ k: 'earth', text: `${t('earth')} ${Math.floor(earth)} % < ${c.earth} %${hid('earth')}` });
+  if (sun < c.sun) fails.push({ k: 'sun', text: `${t('sun')} ${pct1(sun)} % < ${c.sun} %${hid('sun')}` });
+  if (earth < c.earth) fails.push({ k: 'earth', text: `${t('earth')} ${pct1(earth)} % < ${c.earth} %${hid('earth')}` });
   if (dark > c.dark) fails.push({ k: 'dark', text: `${t('dark')} ${Math.ceil(dark)} h > ${c.dark} h` });
   const s = status(e, d, st.mast, lim);
   let fix = '', why = '';

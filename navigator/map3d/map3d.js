@@ -23,7 +23,7 @@
 
 import * as THREE from './vendor/three.module.js';
 import { OrbitControls } from './vendor/OrbitControls.js';
-import { SCALE_FIGS } from '../js/figs.js';
+import { MAST_RIG } from '../js/figs.js';
 
 const R_MOON = 1737400; // m
 const DEG = Math.PI / 180;
@@ -44,12 +44,10 @@ const CSS = `
   --bg:#0f131b;--surface:#181d28;--ink:#e8eaf0;--muted:#98a1b4;--line:#2b3242;--sun:#f0a531;--earth:#74a2f2;--ok:#4cbf82;
   font:12px/1.3 Inter,"Apple SD Gothic Neo",system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;user-select:none;-webkit-user-select:none;outline:none;
   --lmap-mono:Inter,system-ui,sans-serif}
-.lmap-mast{position:absolute;left:0;top:0;pointer-events:none;cursor:pointer;z-index:3;display:flex;flex-direction:column;align-items:center;transform-origin:50% 100%}
-.lmap-mast i{display:block;width:3px;background:var(--mast,#4fc0c9);box-shadow:0 0 0 1px #0f131b}
-.lmap-mast .cmp{position:absolute;bottom:0;left:calc(50% + 4px);display:none;align-items:flex-end}
-.lmap-mast .cmp svg{display:block;stroke:none;overflow:visible}
-.lmap-mast b{display:block;width:12px;height:12px;border:2px solid var(--mast,#4fc0c9);border-radius:50%;border-bottom-color:transparent;transform:rotate(45deg);margin-bottom:-2px}
-.lmap-mast span,.lmap-mast i{pointer-events:auto}.lmap-mast span{font:600 11px/1 Inter,system-ui,sans-serif;color:#fff;background:rgba(15,19,27,.85);border:1px solid var(--mast,#4fc0c9);padding:2px 5px;margin-bottom:3px;white-space:nowrap}
+.lmap-mast{position:absolute;left:0;top:0;pointer-events:none;cursor:pointer;z-index:3;display:flex;flex-direction:column;align-items:center}
+.lmap-mast .rig svg{display:block;overflow:visible}.lmap-mast .rig{pointer-events:auto}
+.lmap-mast b{display:block;width:8px;height:8px;border-radius:50%;background:var(--mast,#4fc0c9);box-shadow:0 0 0 2px #0f131b;margin-top:2px}
+.lmap-mast span{pointer-events:auto;font:600 11px/1 Inter,system-ui,sans-serif;color:#fff;background:rgba(15,19,27,.85);border:1px solid var(--mast,#4fc0c9);padding:2px 5px;margin-bottom:3px;white-space:nowrap}
 .lmap *,.lmap *::before,.lmap *::after{box-sizing:border-box;font-variant-numeric:tabular-nums!important}
 .lmap canvas.lmap-gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
 .lmap-ov{position:absolute;inset:0;pointer-events:none;overflow:hidden}
@@ -496,7 +494,7 @@ export function mountLunarMap(container, options = {}) {
   ctl3.enableDamping = true;
   ctl3.dampingFactor = 0.12;
   ctl3.maxPolarAngle = 88 * DEG;
-  ctl3.minDistance = 0.15;   // down to a few hundred metres across: the hillshade patches carry the detail there
+  ctl3.minDistance = 0.03;   // down to a few tens of metres (Lander view); the hillshade patches carry the detail there
   ctl3.maxDistance = 2500;
   ctl3.zoomToCursor = true;
   const ctl2 = new OrbitControls(cam2, canvas);
@@ -1205,24 +1203,26 @@ export function mountLunarMap(container, options = {}) {
     }
     if (mastPt) {
       if (!mastEl) {
-        mastEl = el('div', 'lmap-mast', `<span></span><b></b><i></i><div class="cmp">${SCALE_FIGS(6)}</div>`); ov.appendChild(mastEl);
+        mastEl = el('div', 'lmap-mast', '<span></span><div class="rig"></div><b></b>'); ov.appendChild(mastEl);
         mastEl.addEventListener('pointerdown', (ev) => ev.stopPropagation());
         mastEl.addEventListener('click', (ev) => { ev.stopPropagation(); opt.onMastClick?.(); });
       }
       worldOf(mastPt.x, mastPt.y, v3);
-      // true scale, same as the terrain: px per metre on the ground × the height exaggeration. From afar the pole is too
-      // small to see and only the label and the ground mark remain; close up the astronaut and lander stand beside it
+      // true scale, same as the terrain: px per metre on the ground × the height exaggeration. From afar the rig is too
+      // small to see and only the label and a ground dot remain; close up the lander, the mast rising from it with its
+      // solar panels on top, and the astronaut stand at the place
       const ppm = camera === cam3 ? canvas.clientHeight / (2 * camera.position.distanceTo(v3) * Math.tan(FOV * DEG / 2)) / 1000 : 0;
-      const k = ppm * exagV, px = Math.round(Math.min(mastPt.h, 20) * k), figs = k * 1.8 >= 9;
-      const key = mastPt.h + ':' + px + ':' + (figs ? k.toFixed(1) : '-');
+      const k = ppm * exagV, rig = Math.max(mastPt.h, 4.3) * k >= 14;
+      const key = mastPt.h + ':' + (rig ? k.toFixed(2) : '-');
       const ok = project(v3);
       if (mastEl._h !== key) {
         mastEl.firstChild.textContent = mastPt.label; mastEl._h = key;
-        const pole = mastEl.querySelector('i'); pole.style.height = px + 'px'; pole.style.display = px >= 3 ? '' : 'none';
-        const c = mastEl.querySelector('.cmp'); c.style.display = figs ? 'flex' : 'none'; if (figs) c.innerHTML = SCALE_FIGS(k);
+        const r = mastEl.querySelector('.rig'); r.innerHTML = rig ? MAST_RIG(Math.min(mastPt.h, 100), k).svg : '';
+        mastEl.querySelector('b').style.display = rig || !mastPt.h ? 'none' : '';
+        mastEl.firstChild.style.display = mastPt.h ? '' : 'none';
       }
-      const hh = mastEl.offsetHeight || px + 30, mw = mastEl.offsetWidth || 40, mx = v3.x - mw / 2, my = v3.y - hh;
-      const on = ok && inView(v3.x, v3.y);
+      const hh = mastEl.offsetHeight || 30, mw = mastEl.offsetWidth || 40, mx = v3.x - mw / 2, my = v3.y - hh + (rig ? 0 : 6);
+      const on = ok && inView(v3.x, v3.y) && (rig || mastPt.h > 0);
       place(mastEl, mx, my, on);
       if (on) boxes.push([mx, my, mx + mw, v3.y + 4]);
     } else if (mastEl) place(mastEl, 0, 0, false);
@@ -1666,7 +1666,9 @@ export function mountLunarMap(container, options = {}) {
     setMarks(list) { marks = list || []; dirty = true; },
     setCells,
     setDetail(list) { clearDetail(); for (const d of list || []) addDetail(d); dirty = true; },
-    setMast(h, x_m, y_m, label) { mastPt = h > 0 ? { h, x: x_m, y: y_m, label: label || `${h} m` } : null; if (mastEl) mastEl._h = null; dirty = true; },
+    // h = 0: no mast, only the lander and astronaut close up (nothing from afar)
+    setMast(h, x_m, y_m, label) { mastPt = x_m != null && y_m != null ? { h: h > 0 ? h : 0, x: x_m, y: y_m, label: h > 0 ? label || `${h} m` : '' } : null; if (mastEl) mastEl._h = null; dirty = true; },
+    exaggeration: () => exagV,
     selectSite(id) { selSite = sites.find((s) => s.id === id) ?? null; stripDirty = true; dirty = true; },
     loaded: () => ({ loaded: ds.loaded, total: ds.n }),
     destroy() {
