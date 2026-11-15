@@ -697,3 +697,7 @@ main:not([data-view="find"]) #map3d .lmap-scale{margin-top:-40px}   /* the scale
 /* Map panel: the map only (현기 11-16) — no reason box above it, no MOVE grid in its corner (the fix buttons say it) */
 #fixes>#why,#fixes .card.local>.card.inset{display:none!important}
 #vbadge>.vfail{min-width:min(150px,100%)}   /* a narrow verdict box (All panels): the reasons go under NO-GO instead of a bare "…" */
+/* Limits pop-up inside the full-map dock: its level buttons are not dock buttons (no 84 px minimum, no dock frame), so every level fits */
+main.full #dock #adv-panel .cseg button{flex:1;min-width:0;width:auto;height:auto;min-height:24px;margin:0;padding:2px 4px;text-align:center;border:0;background:transparent;color:var(--ink);backdrop-filter:none;font-size:12px}
+main.full #dock #adv-panel .cseg button+button{border-left:1px solid var(--ink)}
+main.full #dock #adv-panel .cseg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
