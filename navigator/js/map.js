@@ -65,11 +65,6 @@ const noMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export function init(node, d, openPin) {
   svg = node; data = d; pinOpener = openPin;
-  // sharp hillshade when present, the 700 px one otherwise
-  const im = new Image();
-  im.onload = () => { hill = 'data/hillshade_4000.jpg'; render(state, data); };
-  im.src = 'data/hillshade_4000.jpg';
-  shadow.load().then(() => render(state, data));
   const eb = document.getElementById('expo');
   eb.addEventListener('click', () => setState({ expo: state.expo ? 0 : 1 }));
   svg.addEventListener('pointerdown', e => {
@@ -182,8 +177,21 @@ function targetVp(st) {
   return { cx: clamp(s.x_m / 1000, -lim, lim), cy: clamp(s.y_m / 1000, -lim, lim), h };
 }
 
+// heavy map data (sharp hillshade 1.8 MB, horizon tiles for the shadow layer 23 MB): only once a map is on screen,
+// so the search screen opens light
+let heavy = false;
+function loadHeavy() {
+  heavy = true;
+  const im = new Image();
+  im.onload = () => { hill = 'data/hillshade_4000.jpg'; render(state, data); };
+  im.src = 'data/hillshade_4000.jpg';
+  shadow.load().then(() => render(state, data));
+}
+
 export function render(st, d) {
   data = d;
+  if (st.view === 'search' || st.view === 'sites') return;
+  if (!heavy) loadHeavy();
   S = svg.clientWidth;
   if (!S) return;
   svg.setAttribute('viewBox', `0 0 ${S} ${S}`);
