@@ -3,6 +3,7 @@ import { N, SIMPLE, ZONE, RAMPS, MASK_COLORS, SCORE_RAMP, FAIL_AT_255, PX, HALF 
 import { buildRampLUT, layerColor, colorAt, hex } from './ramps.js';
 import { decode, valueOf } from './data.js';
 import { winPass, winAt } from './window.js';
+import { initFactor, fxImage } from './factor.js';
 
 const NPX = N * N;
 let D, comp, ctx, maskCv, maskCtx, maskImg, maskU32, halo, haloCtx, tmpCv, tmpCtx, D2, img, u32, light, ramp = {}, scoreLut, sitesCells = {}, last = { st: null, nCrit: 0, passPx: 0 };
@@ -68,7 +69,7 @@ export function scoreLUT(meta, thr) {
 }
 
 export function initCompose(data) {
-  D = data;
+  D = data; initFactor(data);
   comp = document.createElement('canvas'); comp.width = comp.height = N;
   ctx = comp.getContext('2d'); img = ctx.createImageData(N, N); u32 = new Uint32Array(img.data.buffer);
   light = new Float32Array(256); for (let h = 0; h < 256; h++) light[h] = .45 + .55 * h / 255;
@@ -125,6 +126,7 @@ export function compose(st) {
     maskU32.fill(0);
     const hb = ids.map(id => { const b = hatchMask(id); b.u32.fill(0); return b.u32; }), HK = 0xff000000;
     if (simple) { const bo = baseOf(st); if (bo) { BL = baseLUT(bo); BL.arr = D.bytes[bo.id]; } }
+    const FX = simple ? fxImage(st) : null, fa = FX && FX.rgba;   // one factor on the map (factor.js) instead of the GO ground
     if (!n) { for (let i = 0; i < NPX; i++) { const h = hill[i]; out[i] = pack(h, h, h); failCount[i] = 0; failBase[i] = 0; failYear[i] = 0; } }
     else for (let i = 0; i < NPX; i++) {
       let f = 0, nd = 0, lk = -1;
@@ -137,6 +139,16 @@ export function compose(st) {
       if (o === 1) { f = 0; nd = 0; } else if (o === -1) { f = f > 1 ? f : 2; nd = 0; }
       failCount[i] = nd ? 255 : f;
       const h = hill[i];
+      if (fa) {   // the factor's colour steps; ground that misses its limit dimmed
+        const o = i * 4, a = fa[o + 3], L = light[h];
+        if (!nd && f === 0) passPx++;
+        let br, bg, bb;
+        if (a === 255) { br = h * .18 + fa[o] * L * .82; bg = h * .18 + fa[o + 1] * L * .82; bb = h * .18 + fa[o + 2] * L * .82; }
+        else if (a) { br = (h * .6 + fa[o] * L * .4) * .38; bg = (h * .6 + fa[o + 1] * L * .4) * .38; bb = (h * .6 + fa[o + 2] * L * .4) * .38; }
+        else { br = bg = bb = h * .4; }
+        out[i] = pack(br | 0, bg | 0, bb | 0);
+        continue;
+      }
       if (simple) {
         let br = h, bg = h, bb = h;
         if (BL) { const v = BL.arr[i]; if (v <= 250) { const A = BL.a[v], L = light[h]; br = h * (1 - A) + BL.r[v] * L * A; bg = h * (1 - A) + BL.g[v] * L * A; bb = h * (1 - A) + BL.b[v] * L * A; } }
@@ -151,7 +163,15 @@ export function compose(st) {
       const L = light[h] * a, b = h * (1 - a);
       out[i] = pack((b + C[0] * L) | 0, (b + C[1] * L) | 0, (b + C[2] * L) | 0);
     }
-    if (simple) {   // suitable ground over the base: thin solid outline, low-alpha fill inside
+    if (fa) {   // the limit as a line: met ground next to missed ground
+      const W = pack(245, 247, 252);
+      for (let i = 0; i < NPX; i++) {
+        if (fa[i * 4 + 3] !== 255) continue;
+        const c = i % N, q = j => fa[j * 4 + 3] === 128;
+        if ((c > 0 && q(i - 1)) || (c < N - 1 && q(i + 1)) || (i >= N && q(i - N)) || (i < NPX - N && q(i + N))) out[i] = W;
+      }
+      buildHalo();
+    } else if (simple) {   // suitable ground over the base: thin solid outline, low-alpha fill inside
       const SPc = SP, fill = .3, edge = SIMPLE.passA;
       for (let i = 0; i < NPX; i++) {
         if (!maskU32[i]) continue;

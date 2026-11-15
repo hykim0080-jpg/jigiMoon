@@ -67,5 +67,15 @@ export function winPass(st) {
   passCache = { key: k, p: { sun_days: s, earth_days: e, dark_days: d } };
   return passCache.p;
 }
+// the window arrays for the chosen day and stay, from any criteria (the values barely depend on them): for the factor map
+let wvId = 0; const wvIds = new WeakMap();
+export function winVals(st) {
+  if (!useWin(st)) return null;
+  const pre = `${st.tDay}|${st.mission}|`;
+  let w = cache.get(keyOf(st)); if (!w) for (const [k, x] of cache) if (k.startsWith(pre)) { w = x; break; }
+  if (!w) return null;
+  if (!wvIds.has(w)) wvIds.set(w, ++wvId);
+  return { sun: w.sun, earth: w.earth, dark: w.dark, id: wvIds.get(w) };
+}
 // window values at a pixel: { sun %, earth %, dark h }
 export function winAt(st, i) { const w = winOf(st); return w && useWin(st) ? { sun: w.sun[i] / 2, earth: w.earth[i] / 2, dark: w.dark[i] } : null; }

@@ -663,3 +663,10 @@ html.panels,html.panels body,.panels .lyr-app,.panels .lyr-main{background:trans
 .lyr-findbest:hover,.lyr-findbest:focus-visible{background:#7ff0b0;outline:none}
 .lyr-findbest[hidden]{display:none}
 @media (min-width:701px){.lyr-main>.lyr-left:has(>.lyr-tripl.lyr-hide){bottom:auto}}
+/* factor on the map (js/factor.js): the row name is a toggle; the active row's track is the colour scale */
+.lyr-cpl .lyr-cpk{background:none;border:0;border-radius:0;padding:2px 0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer;text-decoration:underline dotted #5a6378;text-underline-offset:3px}
+.lyr-cpl .lyr-cpk:hover{color:#fff}
+.lyr-cpl .lyr-cpk[aria-pressed="true"]{color:#fff;font-weight:600;text-decoration:none}
+.lyr-cpl.fx input::-webkit-slider-runnable-track{height:8px;background:var(--trk)}
+.lyr-cpl.fx input::-moz-range-track{height:8px;background:var(--trk)}
+.lyr-cpl.fx input::-webkit-slider-thumb{margin-top:-4px;box-shadow:0 0 0 1px #0f131b}
