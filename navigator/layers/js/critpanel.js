@@ -1,6 +1,7 @@
 // Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
-// The criteria, folded under the ranked spots in the left panel: five plain sliders (Sun, Earth, longest dark, slope,
-// ice) with the limit on the right; "Reset" shows when any differs from the default. Sun / Earth / dark move between
+// Layers, at the top of the left panel: 'All' (the GO ground of every criterion, the default) and one row per factor
+// (Sun, Earth, longest dark, slope, ice). A row picks that factor's map (factor.js); its slider is the limit, its track
+// the factor's gradient; "Reset" shows when any differs from the default. Sun / Earth / dark move between
 // the computed levels (layers.json criterion_levels); slope and ice are thresholds; ice at 0 is off.
 import { state, setState } from './state.js';
 import { hue } from './config.js';
@@ -8,16 +9,21 @@ import { lang } from './strings.js';
 import { defaults, isDefault } from './crit.js';
 import { FX, trackCss } from './factor.js';
 
-const TX = { en: { darkTip: 'Longest stretch without sunlight', lim: 'Limit', title: 'Criteria', reset: 'Reset', off: 'Off', sun: 'Sun', earth: 'Earth', dark: 'Dark', slope: 'Slope', ice: 'Ice' }, ko: { darkTip: '햇빛이 한 번에 가장 오래 끊긴 시간', lim: '기준선', title: '기준', reset: '초기화', off: '끔', sun: '햇빛', earth: '지구', dark: '어둠', slope: '경사', ice: '얼음' } }[lang === 'ko' ? 'ko' : 'en'];
-let el, data, setCrit, rows = {}, open = true;
+const TX = { en: { darkTip: 'Longest stretch without sunlight', lim: 'Limit', title: 'Layers', all: 'All', allTxt: 'GO', reset: 'Reset', off: 'Off', sun: 'Sun', earth: 'Earth', dark: 'Dark', slope: 'Slope', ice: 'Ice' }, ko: { darkTip: '햇빛이 한 번에 가장 오래 끊긴 시간', lim: '기준선', title: '레이어', all: '전체', allTxt: 'GO', reset: '초기화', off: '끔', sun: '햇빛', earth: '지구', dark: '어둠', slope: '경사', ice: '얼음' } }[lang === 'ko' ? 'ko' : 'en'];
+let el, data, setCrit, rows = {}, allRow = null;
+export const LAYER_KEYS = [null, 'sun', 'earth', 'dark', 'slope', 'ice'];   // keys 0-5
+const pick = k => { if (state.factor !== k) setState({ factor: k }, 'pixels'); };
 
 export function initCritPanel(host, d, setCritFn) {
   data = d; setCrit = setCritFn;
   el = document.createElement('section'); el.className = 'lyr-cp';
-  el.innerHTML = `<div class="lyr-cph"><button class="lyr-cpt" aria-expanded="true"><i>▾</i>${TX.title}</button><span><button class="lyr-cplim" aria-pressed="true" hidden>${TX.lim}</button><button class="lyr-cpr" hidden>${TX.reset}</button></span></div><div class="lyr-cpb"></div>`;
-  host.append(el);
+  el.innerHTML = `<div class="lyr-cph"><h3 class="lyr-cpt">${TX.title}</h3><span><button class="lyr-cplim" aria-pressed="true" hidden>${TX.lim}</button><button class="lyr-cpr" hidden>${TX.reset}</button></span></div><div class="lyr-cpb"></div>`;
+  host.prepend(el);
   const body = el.querySelector('.lyr-cpb');
-  el.querySelector('.lyr-cpt').onclick = () => { open = !open; render(state); };
+  allRow = document.createElement('div'); allRow.className = 'lyr-cpl all'; allRow.tabIndex = 0; allRow.setAttribute('role', 'button');
+  allRow.innerHTML = `<span class="lyr-cpk">${TX.all}</span><i class="lyr-cpg"></i><b class="n">${TX.allTxt}</b>`;
+  allRow.onclick = () => pick(null); allRow.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(null); } };
+  body.append(allRow);
   // with a factor on the map: show or hide its limit (dimming + line); off = the plain gradient
   el.querySelector('.lyr-cplim').onclick = () => setState({ fxLimit: state.fxLimit === false }, 'pixels');
   el.querySelector('.lyr-cpr').onclick = async () => {
@@ -30,12 +36,13 @@ export function initCritPanel(host, d, setCritFn) {
   for (const k of ['sun', 'earth', 'dark', 'slope', 'ice']) {
     const id = layerOf(k); if (!id) continue;
     const cl = Object.entries(CL).find(([lid]) => hue(lid) === k);
-    const r = document.createElement('label'); r.className = 'lyr-cpl';
-    r.innerHTML = `<button type="button" class="lyr-cpk" aria-pressed="false">${TX[k]}</button><input type="range"><b class="n"></b>`;
+    const r = document.createElement('div'); r.className = 'lyr-cpl';
+    r.innerHTML = `<button type="button" class="lyr-cpk" aria-pressed="false">${TX[k]}</button><input type="range" aria-label="${TX[k]}"><b class="n"></b>`;
     if (k === 'dark') r.title = TX.darkTip;   // the longest single stretch without sunlight (same wording as the spot card)
     const inp = r.querySelector('input'), m = data.layers.find(q => q.id === id), f = FX[k];
-    // the name shows this factor on the map (again: off)
-    r.querySelector('.lyr-cpk').onclick = e => { e.preventDefault(); setState({ factor: state.factor === k ? null : k }, 'pixels'); };
+    // the whole row picks this layer (again: back to All); touching its slider picks it too
+    r.onclick = e => { if (e.target === inp) return; setState({ factor: state.factor === k ? null : k }, 'pixels'); };
+    inp.addEventListener('pointerdown', () => pick(k)); inp.addEventListener('focus', () => pick(k));
     if (cl) {
       // the track is the value scale (same as the colour steps); the thumb snaps to the computed levels
       const lv = Object.keys(cl[1].levels).map(Number).sort((a, b) => a - b), P = cl[1].param;
@@ -65,15 +72,14 @@ const layerOf = k => data.layers.find(m => m.threshold != null && hue(m.id) === 
 
 export function render(st) {
   if (!el) return;
-  el.classList.toggle('closed', !open);
-  el.querySelector('.lyr-cpt').setAttribute('aria-expanded', String(open));
+  allRow.classList.toggle('fx', !st.factor); allRow.setAttribute('aria-pressed', String(!st.factor));
   let changed = !isDefault(data.meta, st.crit);
   for (const [k, r] of Object.entries(rows)) {
     const g = r.get(); if (+r.inp.value !== g.i && document.activeElement !== r.inp) r.inp.value = String(g.i);
     r.inp.style.setProperty('--p', ((g.i - r.inp.min) / (r.inp.max - r.inp.min) * 100).toFixed(1) + '%');
     r.b.textContent = g.txt;
     const fx = st.factor === k; r.row.classList.toggle('fx', fx); r.row.querySelector('.lyr-cpk').setAttribute('aria-pressed', String(fx));
-    if (fx) r.inp.style.setProperty('--trk', trackCss(st, k)); else r.inp.style.removeProperty('--trk');
+    r.inp.style.setProperty('--trk', trackCss(st, k));
     if (k === 'slope') { const m = data.layers.find(q => q.id === layerOf('slope')); if (m && Math.round(st.threshold[m.id]) !== m.threshold) changed = true; }
     if (k === 'ice' && st.on.mask[layerOf('ice')]) changed = true;
   }
