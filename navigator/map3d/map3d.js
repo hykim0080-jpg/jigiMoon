@@ -1203,6 +1203,29 @@ export function mountLunarMap(container, options = {}) {
         place(scaleEl, 14, limitB - 44, true);
       } else place(scaleEl, 0, 0, false);
     }
+    if (mastPt) {
+      if (!mastEl) {
+        mastEl = el('div', 'lmap-mast', `<span></span><b></b><i></i><div class="cmp">${SCALE_FIGS(6)}</div>`); ov.appendChild(mastEl);
+        mastEl.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+        mastEl.addEventListener('click', (ev) => { ev.stopPropagation(); opt.onMastClick?.(); });
+      }
+      worldOf(mastPt.x, mastPt.y, v3);
+      // true scale, same as the terrain: px per metre on the ground × the height exaggeration. From afar the pole is too
+      // small to see and only the label and the ground mark remain; close up the astronaut and lander stand beside it
+      const ppm = camera === cam3 ? canvas.clientHeight / (2 * camera.position.distanceTo(v3) * Math.tan(FOV * DEG / 2)) / 1000 : 0;
+      const k = ppm * exagV, px = Math.round(Math.min(mastPt.h, 20) * k), figs = k * 1.8 >= 9;
+      const key = mastPt.h + ':' + px + ':' + (figs ? k.toFixed(1) : '-');
+      const ok = project(v3);
+      if (mastEl._h !== key) {
+        mastEl.firstChild.textContent = mastPt.label; mastEl._h = key;
+        const pole = mastEl.querySelector('i'); pole.style.height = px + 'px'; pole.style.display = px >= 3 ? '' : 'none';
+        const c = mastEl.querySelector('.cmp'); c.style.display = figs ? 'flex' : 'none'; if (figs) c.innerHTML = SCALE_FIGS(k);
+      }
+      const hh = mastEl.offsetHeight || px + 30, mw = mastEl.offsetWidth || 40, mx = v3.x - mw / 2, my = v3.y - hh;
+      const on = ok && inView(v3.x, v3.y);
+      place(mastEl, mx, my, on);
+      if (on) boxes.push([mx, my, mx + mw, v3.y + 4]);
+    } else if (mastEl) place(mastEl, 0, 0, false);
     {
       let html = '';
       for (const m of marks) {
@@ -1216,30 +1239,17 @@ export function mountLunarMap(container, options = {}) {
         html += `<path d="${d}" fill="none" stroke="#000" stroke-opacity=".5" stroke-width="${(m.w || 2) + 2}"/><path d="${d}" fill="none" stroke="${m.color}" stroke-width="${m.w || 2}"${m.dash ? ` stroke-dasharray="${m.dash}"` : ''}/>`;
         if (m.end === 'ring') html += `<circle cx="${ex}" cy="${ey}" r="8" fill="none" stroke="#000" stroke-opacity=".5" stroke-width="4"/><circle cx="${ex}" cy="${ey}" r="8" fill="none" stroke="#fff" stroke-width="2"/>`;
         else if (m.end) html += `<circle cx="${ex}" cy="${ey}" r="7" fill="${m.end}" stroke="${m.color}" stroke-width="1.5"/><line x1="${ex - 7}" y1="${ey + 4}" x2="${ex + 7}" y2="${ey - 4}" stroke="${m.color}" stroke-width="1.5"/>`;
-        const [sx] = pts[0].split(',').map(Number), lt = ex < sx;   // label on the far side of the end, away from the line
-        if (m.label) html += `<text x="${lt ? ex - 11 : ex + 11}" y="${ey + 4}"${lt ? ' text-anchor="end"' : ''} font-size="12" font-weight="600" fill="#fff" paint-order="stroke" stroke="#0f131b" stroke-width="3">${m.label}</text>`;
+        const [sx] = pts[0].split(',').map(Number), lt = ex < sx;
+        if (m.end) boxes.push([ex - 9, ey - 9, ex + 9, ey + 9]);   // label on the far side of the end, away from the line
+        if (m.label) {   // first free spot of: beyond the end, before it, below, above; reserved so place labels move away from it
+          const w = m.label.length * 6.8, cand = [[lt ? ex - 11 - w : ex + 11, ey - 8], [lt ? ex + 11 : ex - 11 - w, ey - 8], [ex - w / 2, ey + 12], [ex - w / 2, ey - 28]];
+          const [lx, ly] = cand.find(([x, y]) => x > 2 && x + w < W - 2 && !hit([x - 3, y - 1, x + w + 3, y + 17])) || cand[0];
+          boxes.push([lx - 3, ly - 1, lx + w + 3, ly + 17]);
+          html += `<text x="${lx.toFixed(1)}" y="${(ly + 12).toFixed(1)}" font-size="12" font-weight="600" fill="#fff" paint-order="stroke" stroke="#0f131b" stroke-width="3">${m.label}</text>`;
+        }
       }
       if (marksSvg._h !== html) { marksSvg.innerHTML = html; marksSvg._h = html; }
     }
-    if (mastPt) {
-      if (!mastEl) {
-        mastEl = el('div', 'lmap-mast', `<span></span><b></b><i></i><div class="cmp">${SCALE_FIGS(6)}</div>`); ov.appendChild(mastEl);
-        mastEl.addEventListener('pointerdown', (ev) => ev.stopPropagation());
-        mastEl.addEventListener('click', (ev) => { ev.stopPropagation(); opt.onMastClick?.(); });
-      }
-      worldOf(mastPt.x, mastPt.y, v3);
-      // the pole never draws smaller than 6 px per metre; close up it is at true size, with the astronaut and lander beside it
-      const ppm = camera === cam3 ? canvas.clientHeight / (2 * camera.position.distanceTo(v3) * Math.tan(FOV * DEG / 2)) / 1000 : 0;
-      const real = ppm >= 6, k = Math.max(ppm, 6), key = mastPt.h + ':' + (real ? k.toFixed(1) : '6');
-      const ok = project(v3);
-      const px = Math.round(Math.min(mastPt.h, 20) * k);
-      if (mastEl._h !== key) {
-        mastEl.firstChild.textContent = mastPt.label; mastEl.querySelector('i').style.height = px + 'px'; mastEl._h = key;
-        const c = mastEl.querySelector('.cmp'); c.style.display = real ? 'flex' : 'none'; if (real) c.innerHTML = SCALE_FIGS(k);
-      }
-      const hh = mastEl.offsetHeight || px + 30;
-      place(mastEl, v3.x - (mastEl.offsetWidth || 40) / 2, v3.y - hh, ok && inView(v3.x, v3.y));
-    } else if (mastEl) place(mastEl, 0, 0, false);
     const vis = [];
     for (const s of sites) {
       const ok = project(worldOf(s.x_m, s.y_m, v3));
