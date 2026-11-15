@@ -2,7 +2,9 @@
 import { N, PX, HALF, GRATICULE_LATS, SCORE_RAMP } from './config.js';
 import { state, setState } from './state.js';
 import { latRadius, cellToLatLon, cellToXY } from './geo.js';
-import { sample, scoreColor, failCount, score100, critIds } from './compose.js';
+import { sample, scoreColor, failCount, score100, critIds, hatchList } from './compose.js';
+import { layerColor } from './ramps.js';
+import { hue } from './config.js';
 import { t, layerName, unitOf, lang } from './strings.js';
 import { fmt } from './data.js';
 import { rampCss } from './ramps.js';
@@ -47,7 +49,7 @@ export function initMap(el, d, compCanvas) {
   bd.sr.onpointerdown = e => { e.stopPropagation(); e.preventDefault(); bd.sr.setPointerCapture(e.pointerId); setCut(e); bd.sr.onpointermove = setCut; };
   bd.sr.onpointerup = () => { bd.sr.onpointermove = null; };
   bd.sr.ondblclick = e => { e.stopPropagation(); setState({ cutoff: 70 }, 'zones'); };
-  legend = Object.assign(document.createElement('div'), { className: 'lyr-legend n' }); legend.innerHTML = '<span class="l1"><i></i><span class="lt"></span></span><em class="lbr"><span class="bt"></span><b>0</b><u></u><b class="hi"></b></em>';
+  legend = Object.assign(document.createElement('div'), { className: 'lyr-legend n' }); legend.innerHTML = '<span class="l1"><i></i><span class="lt"></span></span><em class="lbr"><span class="bt"></span><b>0</b><u></u><b class="hi"></b></em><em class="lhl"></em>';
   homeBtn = Object.assign(document.createElement('button'), { className: 'lyr-home', textContent: t('home'), hidden: true });
   homeBtn.onclick = e => { e.stopPropagation(); reset(); };
   homeBtn.onpointerdown = homeBtn.ondblclick = e => e.stopPropagation();
@@ -89,6 +91,7 @@ export function blit() {
     ctx.save(); ctx.imageSmoothingEnabled = true; ctx.globalCompositeOperation = 'multiply';
     ctx.drawImage(shade, (cx - w / 2) * f, (cy - w / 2) * f, w * f, w * f, 0, 0, canvas.width, canvas.height); ctx.restore();
   }
+  if (state.mode === 'mask') drawHatch(k, cx, cy, w);
   if (!state.adv && state.mode === 'mask') {
     const ga = SIMPLE.haloA * Math.max(0, Math.min(1, (6 - k) / 4));
     if (ga > 0) { ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = ga; ctx.drawImage(haloCanvas(), cx - w / 2, cy - w / 2, w, w, 0, 0, canvas.width, canvas.height); ctx.restore(); }
@@ -96,6 +99,35 @@ export function blit() {
   const sc = shadowCanvas(); if (sc) ctx.drawImage(sc, cx - w / 2, cy - w / 2, w, w, 0, 0, canvas.width, canvas.height);
   homeBtn.hidden = k <= 1.0001;
   panel.querySelectorAll('.lyr-basem button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.b === (state.basemap === 'shade' ? 'shade' : 'line'))));
+}
+// stacked layers: each criterion hatches where it fails, in its colour and its own direction
+export const HATCH_DIR = { sun: '/', earth: '\\', dark: '-', slope: '|' };
+const pats = {};
+function hatchPattern(g, id) {
+  const d = HATCH_DIR[hue(id)] || '/', col = layerColor(id, false), key = id + d + col + dpr;
+  if (pats[key]) return pats[key];
+  const s = Math.round(14 * dpr), c = document.createElement('canvas'); c.width = s; c.height = s;
+  const q = c.getContext('2d'); q.strokeStyle = col; q.lineWidth = 1.3 * dpr; q.lineCap = 'square'; q.beginPath();
+  if (d === '/') { q.moveTo(-1, s + 1); q.lineTo(s + 1, -1); q.moveTo(-1, 1); q.lineTo(1, -1); q.moveTo(s - 1, s + 1); q.lineTo(s + 1, s - 1); }
+  else if (d === '\\') { q.moveTo(-1, -1); q.lineTo(s + 1, s + 1); q.moveTo(s - 1, -1); q.lineTo(s + 1, 1); q.moveTo(-1, s - 1); q.lineTo(1, s + 1); }
+  else if (d === '-') { q.moveTo(0, s / 2); q.lineTo(s, s / 2); }
+  else { q.moveTo(s / 2, 0); q.lineTo(s / 2, s); }
+  q.stroke();
+  return pats[key] = g.createPattern(c, 'repeat');
+}
+let hatchTmp = null;
+function drawHatch(k, cx, cy, w) {
+  const L = hatchList; if (!L.length) return;
+  if (!hatchTmp) hatchTmp = document.createElement('canvas');
+  if (hatchTmp.width !== canvas.width || hatchTmp.height !== canvas.height) { hatchTmp.width = canvas.width; hatchTmp.height = canvas.height; }
+  const g = hatchTmp.getContext('2d'), fc = state.focusCrit, lineBase = state.basemap !== 'shade';
+  for (const { id, canvas: m } of L) {
+    if (!state.on.mask[id]) continue;
+    g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, hatchTmp.width, hatchTmp.height);
+    g.imageSmoothingEnabled = k < 3; g.drawImage(m, cx - w / 2, cy - w / 2, w, w, 0, 0, hatchTmp.width, hatchTmp.height);
+    g.globalCompositeOperation = 'source-in'; g.fillStyle = hatchPattern(g, id); g.fillRect(0, 0, hatchTmp.width, hatchTmp.height);
+    ctx.save(); ctx.globalAlpha = fc ? (fc === id ? .95 : .1) : lineBase ? .5 : .65; ctx.drawImage(hatchTmp, 0, 0); ctx.restore();
+  }
 }
 function reset() { fly({ k: 1, cx: N / 2, cy: N / 2 }); }
 function fly(target) {
@@ -272,6 +304,8 @@ export function renderBadge(passPx, readoutScore) {
   legend.hidden = state.adv || state.mode !== 'mask';
   legend.querySelector('.lt').textContent = useWin(state) ? t('legStay', state.mission || 14, km2) : t('legYear', km2);   // the legend in words
   legend.querySelector('.bt').textContent = (t('legBase') || {})[state.base] || '';
+  const ang = { sun: 135, earth: 45, dark: 0, slope: 90 }, hl = hatchList.filter(h => state.on.mask[h.id]);
+  legend.querySelector('.lhl').innerHTML = hl.length ? `<span>${t('legHatch')}</span>` + hl.map(h => { const c = layerColor(h.id, true); return `<i style="background:repeating-linear-gradient(${ang[hue(h.id)] ?? 135}deg,${c} 0 1.6px,transparent 1.6px 4.5px);border-color:${c}"></i>${(t('legName') || {})[hue(h.id)] || ''}`; }).join('') : '';
   const bi = baseInfo(state); if (bi) { legend.querySelector('u').style.background = bi.css; legend.querySelector('.hi').textContent = bi.hi; }
   bd.s.hidden = !sc; bd.t.textContent = state.adv && state.mode === 'mask' && critIds(state).length + (state.month != null ? 1 : 0) ? km2 + ' km²' : '';
   if (sc) {

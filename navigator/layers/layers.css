@@ -439,3 +439,10 @@ h2{margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spaci
 @media (max-width:700px){.lyr-cart{left:0;right:0;bottom:0;transform:none;max-width:none}.lyr-cgo .t{display:none}.lyr-cgo b{margin:0}.lyr-cgo2{margin-left:auto}}
 @media (max-width:700px){.has-cart .lyr-app,.lyr-app.has-cart{padding-bottom:64px}}
 .lyr-vec .sight .lead{stroke:var(--block);stroke-width:1}
+/* criteria as map layers: the swatch is the layer's hatch; empty box = layer off */
+.lyr-cr .lyr-tg{width:16px;height:16px;border:1.5px solid var(--c)}
+.lyr-cr .lyr-tg[aria-pressed="true"]{background:var(--hatch,var(--c));border-color:var(--c)}
+.lyr-legend .lhl{display:flex;align-items:center;gap:5px;font-style:normal;font-size:12px;font-weight:500;margin-left:20px}
+.lyr-legend .lhl:empty{display:none}
+.lyr-legend .lhl span{margin-right:2px}
+.lyr-legend .lhl i{display:block;width:12px;height:12px;border:1px solid;margin-left:6px;box-shadow:none}
