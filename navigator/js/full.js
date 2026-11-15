@@ -16,11 +16,13 @@ export function init(m) {
   dock.id = 'dock';
   for (const [k] of PANELS) {
     const b = document.createElement('button');
-    b.type = 'button'; b.textContent = t('dock')[k];
+    b.type = 'button'; b.textContent = t('dock')[k]; b.dataset.dk = k;
     b.onclick = () => { open.has(k) ? open.delete(k) : open.add(k); sync(); dispatchEvent(new Event('resize')); };
     btns[k] = b; dock.appendChild(b);
   }
   main.appendChild(dock);
+  addEventListener('resize', () => { if (isFull(state)) fitDock(); });
+  setInterval(() => { if (isFull(state)) fitDock(); }, 1000);   // the 3D legend and the verdict height arrive later
   layoutBtn = document.createElement('button');
   layoutBtn.id = 'layout-btn'; layoutBtn.type = 'button';
   layoutBtn.onclick = () => setState({ full: state.full ? 0 : 1 });
@@ -52,4 +54,13 @@ export function render(st) {
   if (!on) requestAnimationFrame(() => { const d = document.getElementById('dim'); if (d) layoutBtn.style.right = (parseFloat(d.style.right || getComputedStyle(d).right) + d.offsetWidth + 6) + 'px'; });
   else layoutBtn.style.right = '';
   sync();
+  if (on) requestAnimationFrame(fitDock);
+}
+// keep the dock clear of the 3D Sun / Earth / Both legend at the lower left: if the stack would reach it,
+// the page controls go beside the panel buttons instead of under them
+function fitDock() {
+  dock.classList.remove('tight');
+  const leg = main.querySelector('.lmap-seg'); if (!leg || !leg.offsetParent) return;
+  const lr = leg.getBoundingClientRect(), dr = dock.getBoundingClientRect();
+  if (lr.height && dr.bottom > lr.top - 8 && dr.left < lr.right) dock.classList.add('tight');
 }
