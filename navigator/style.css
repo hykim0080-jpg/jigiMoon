@@ -454,6 +454,9 @@ main[data-view="find"] #map-panel>:not(#map3d):not(#note3d){display:none!importa
 main[data-view="find"] #map3d .lmap-bar,main[data-view="find"] #map3d .lmap-tl,main[data-view="find"] #map3d .lmap-tr,main[data-view="find"] #map3d .lmap-strip{display:none!important}
 main[data-view="find"] #map3d{left:0!important;top:0!important;width:100%!important;height:100%!important}
 main[data-view="find"] #find{display:block;position:absolute;inset:0;z-index:40;pointer-events:none;background:transparent}
+/* phones: the page grows with its content, and Find a site holds only absolutely placed layers, so give it the
+   screen below the header (else it collapses to 0 px and the tab is blank) */
+@media (max-width:700px){main[data-view="find"]{position:relative;height:calc(100dvh - 54px);min-height:440px}}
 body[data-view="find"] header>*:not(.app-name):not([data-key="view"]):not(.grow){display:none}
 #space-hint{position:absolute;right:12px;bottom:86px;z-index:6;font-size:11px;color:#c9cfdb;background:rgba(15,19,27,.75);padding:3px 7px;pointer-events:none}
 #space-hint[hidden]{display:none}
