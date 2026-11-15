@@ -8,7 +8,7 @@ const ARROW = ['↑', '↗', '→', '↘', '↓', '↙', '←', '↖'];   // up 
 import { failStats, failReason } from './failreason.js';
 
 const KINDS = ['move', 'mast', 'wait'];
-let root, cards = {}, why, mrow, fxbar, mapOpen = false;
+let root, cards = {}, why, mrow, fxbar, mapOpen = true;   // the panel is the map now: always open
 
 // MAST and WAIT: one thin strip; below it the local line map of the spot (+-3.5 km), as big as the main map:
 // the spot, the arrow to the nearest GO cell and the 3 km circle. MOVE (3 km grid) is an inset in its corner.
@@ -35,6 +35,7 @@ export function init(node) {
   }
   // MAST line: click to raise the antenna to the lowest height that works (click again to lower it)
   // MAST: the height only, no switch (the verdict stays on the ground); over 10 m in orange
+  rows.hidden = true;   // the MOVE / MAST / WAIT line lives under the verdict; kept here only for the values below
   root.appendChild(rows);
   // the map below is folded by default. Esc on the 2D centre map (⤢ 2D in the view buttons): back to 3D
   fxbar = document.createElement('div'); fxbar.className = 'fxbar';
@@ -45,6 +46,7 @@ export function init(node) {
     if (document.querySelector('#mast-pop:not([hidden]),#when-pop:not([hidden]),#cal-panel.big')) return;
     ev.stopImmediatePropagation(); setState({ d3: 1 });
   }, true);
+  fxbar.hidden = true;
   root.appendChild(fxbar);
   const l = document.createElement('div'); l.className = 'card local';
   l.innerHTML = `<svg viewBox="0 0 ${VB} ${VB}" preserveAspectRatio="xMidYMin meet"></svg><div class="seg lmsw"><button data-lm="line">${t('baseLine')}</button><button data-lm="relief">${t('baseShade')}</button></div><div class="seg lzsw"><button data-lz="region">${t('zoomRegion')}</button><button data-lz="site">${t('zoomSite')}</button><button data-lz="spot">${t('zoomSpot')}</button></div>`;

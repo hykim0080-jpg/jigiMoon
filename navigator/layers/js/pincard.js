@@ -12,6 +12,10 @@ import { statsCached, statsFor, whyNoFix, tt } from './trip.js';
 import { WIN_IDS, useWin } from './window.js';
 import { inCart, toggleCart, ct, MAX } from './cart.js';
 import { zoomSvg } from './zoom.js';
+import { hue } from './config.js';
+// the checks use the Criteria panel's own short words, so nothing is cut off in the card
+const SHORT = { en: { sun: 'Sun', earth: 'Earth', dark: 'Dark', slope: 'Slope', ice: 'Ice' }, ko: { sun: '햇빛', earth: '지구', dark: '어둠', slope: '경사', ice: '얼음' } }[lang === 'ko' ? 'ko' : 'en'];
+const shortName = m => SHORT[hue(m.id)] || critName(m);
 
 let el, data, key = '', drag = false, fixOf = {};
 // a fix row applies itself: MOVE moves the spot, WAIT moves the landing day, MAST opens the spot in Compare (the pole height is chosen there)
@@ -54,11 +58,11 @@ export function renderPinCard(st) {
     if (wk) {   // judged over this stay: the stay's own value against the criterion (bar 0-100 %, dark 0-stay h)
       const c = st.crit[wk], raw = ws ? ws[wk][dd] : null, val = raw == null ? null : wk === 'dark' ? Math.ceil(raw) : Math.floor(raw), mx = wk === 'dark' ? st.mission * 24 : 100;
       const fail = val != null && (wk === 'dark' ? val > c : val < c), pc = x => Math.max(0, Math.min(100, 100 * x / mx));
-      return `<div class="lyr-ck${st.on.mask[m.id] ? '' : ' off'}"><i class="lyr-tg" style="--c:${layerColor(m.id, false)}"></i><span class="lyr-nm">${critName(m)}</span><span class="lyr-ckb"><b style="width:${val == null ? 0 : pc(val)}%;background:${fail ? 'var(--block)' : layerColor(m.id, false)}"></b><u style="left:${pc(c)}%"></u></span><span class="n lyr-ckv${fail ? ' fail' : ''}">${val == null ? '–' : val + (wk === 'dark' ? ' h' : ' %')}</span></div>`;
+      return `<div class="lyr-ck${st.on.mask[m.id] ? '' : ' off'}"><i class="lyr-tg" style="--c:${layerColor(m.id, false)}"></i><span class="lyr-nm" title="${critName(m)}">${shortName(m)}</span><span class="lyr-ckb"><b style="width:${val == null ? 0 : pc(val)}%;background:${fail ? 'var(--block)' : layerColor(m.id, false)}"></b><u style="left:${pc(c)}%"></u></span><span class="n lyr-ckv${fail ? ' fail' : ''}">${val == null ? '–' : val + (wk === 'dark' ? ' h' : ' %')}</span></div>`;
     }
     const val = inf.values[m.id], fail = (!m.optional || st.on.mask[m.id]) && state.threshold[m.id] != null && val != null && (m.direction === '<=' ? val > st.threshold[m.id] : val < st.threshold[m.id]);
     const pc = x => Math.max(0, Math.min(100, 100 * (x - m.min) / (m.max - m.min)));
-    return `<div class="lyr-ck${st.on.mask[m.id] ? '' : ' off'}"><i class="lyr-tg" style="--c:${layerColor(m.id, false)}"></i><span class="lyr-nm">${critName(m)}</span><span class="lyr-ckb"><b style="width:${val == null ? 0 : pc(val)}%;background:${fail ? 'var(--block)' : layerColor(m.id, false)}"></b><u style="left:${pc(st.threshold[m.id])}%"></u></span><span class="n lyr-ckv${fail ? ' fail' : ''}">${val == null ? '–' : fmt(m, val) + unitOf(m)}</span></div>`;
+    return `<div class="lyr-ck${st.on.mask[m.id] ? '' : ' off'}"><i class="lyr-tg" style="--c:${layerColor(m.id, false)}"></i><span class="lyr-nm" title="${critName(m)}">${shortName(m)}</span><span class="lyr-ckb"><b style="width:${val == null ? 0 : pc(val)}%;background:${fail ? 'var(--block)' : layerColor(m.id, false)}"></b><u style="left:${pc(st.threshold[m.id])}%"></u></span><span class="n lyr-ckv${fail ? ' fail' : ''}">${val == null ? '–' : fmt(m, val) + unitOf(m)}</span></div>`;
   }).join('');
   const adv = st.adv ? `<div class="lyr-tbl">${data.layers.map(m => { const val = inf.values[m.id]; return `<span>${layerName(m)}</span><span class="n">${val == null ? '–' : (val === Infinity ? '>' : '') + fmt(m, val) + unitOf(m)}</span>`; }).join('')}<span>${t('lat')}</span><span class="n">${Math.abs(inf.ll.lat).toFixed(2)}°${inf.ll.lat < 0 ? 'S' : 'N'} ${Math.abs(inf.ll.lon).toFixed(1)}°${inf.ll.lon < 0 ? 'W' : 'E'}</span></div>` : '';
   el.innerHTML = `<div class="lyr-pt">${inf.title}</div>

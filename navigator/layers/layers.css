@@ -9,13 +9,13 @@
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --bg:#0f131b; --surface:#181d28; --ink:#e8eaf0; --muted:#98a1b4; --line:#2b3242;
-    --sun:#f0a531; --earth:#74a2f2; --ok:#4cbf82; --move:#74a2f2; --mast:#4fc0c9; --accent:#6f9cf0; --wait:#8d6a2c; --none:#394052;
+    --sun:#f0a531; --earth:#74a2f2; --ok:#4cbf82; --move:#74a2f2; --mast:#4fc0c9; --accent:#6f9cf0; --wait:#c9a35a; --none:#394052;
     --box:#e8bd3a; --block:#f0655a; color-scheme:dark;
   }
 }
 :root[data-theme="dark"],[data-theme="dark"]{
   --bg:#0f131b; --surface:#181d28; --ink:#e8eaf0; --muted:#98a1b4; --line:#2b3242;
-  --sun:#f0a531; --earth:#74a2f2; --ok:#4cbf82; --move:#74a2f2; --mast:#4fc0c9; --accent:#6f9cf0; --wait:#8d6a2c; --none:#394052;
+  --sun:#f0a531; --earth:#74a2f2; --ok:#4cbf82; --move:#74a2f2; --mast:#4fc0c9; --accent:#6f9cf0; --wait:#c9a35a; --none:#394052;
   --box:#e8bd3a; --block:#f0655a; color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -611,7 +611,7 @@ html.panels,html.panels body,.panels .lyr-app,.panels .lyr-main{background:trans
 .lyr-left .lyr-trh b{display:block;font-size:13px;font-weight:500;color:#c3c9d6}
 .lyr-left .lyr-trh .n{display:block;font-size:12px;color:#a3abbb;margin-top:3px}
 .lyr-left .lyr-trh .lyr-trgo{font-size:13px;font-weight:600;color:#74a2f2;margin:0}
-.lyr-left .lyr-tr{display:grid;grid-template-columns:22px 1fr 22px;column-gap:6px;row-gap:6px;padding:10px 16px 10px 14px;border:0;border-left:2px solid transparent;cursor:pointer;background:transparent}
+.lyr-left .lyr-tr{display:grid;grid-template-columns:22px 1fr 28px;column-gap:6px;row-gap:6px;padding:10px 16px 10px 14px;border:0;border-left:2px solid transparent;cursor:pointer;background:transparent}
 .lyr-left .lyr-tr:hover,.lyr-left .lyr-tr:focus-visible{background:rgba(255,255,255,.04);outline:0}
 .lyr-left .lyr-tr.top{background:#121a28;border-left-color:#46e58c;padding:14px 16px 14px 14px;border-bottom:1px solid var(--line)}
 .lyr-left .lyr-trn{grid-row:auto;width:auto;height:auto;border-radius:0;background:none;color:#46e58c;font-size:13px;font-weight:600;line-height:1.3;text-align:left}
@@ -648,3 +648,9 @@ html.panels,html.panels body,.panels .lyr-app,.panels .lyr-main{background:trans
 .lyr-left .lyr-tr:not(.top){padding:5px 16px 5px 14px;row-gap:2px}
 .lyr-left .lyr-trc{column-gap:8px}
 .lyr-left .lyr-trt .lyr-trm{font-size:12px;font-weight:400;color:#a3abbb;white-space:nowrap}
+/* ?panels=1: the spot card starts below the main page's Earth compass and Pole … Lander view row, so it covers neither */
+@media (min-width:701px){.panels .lyr-main>.lyr-pinp{top:142px}}
+@media (min-width:701px) and (max-width:1179px){.panels .lyr-main>.lyr-pinp{top:124px}}
+/* controls at least 28 x 28 px */
+.lyr-left .lyr-tradd{width:28px;height:28px}
+.lyr-pclose{min-width:28px;min-height:28px}

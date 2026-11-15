@@ -10,13 +10,13 @@
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#0f131b; --surface:#181d28; --ink:#e8eaf0; --muted:#98a1b4; --line:#2b3242;
-    --sun:#f0a531; --earth:#74a2f2; --ok:#4cbf82; --move:#74a2f2; --mast:#4fc0c9; --accent:#6f9cf0; --wait:#8d6a2c; --none:#394052;
+    --sun:#f0a531; --earth:#74a2f2; --ok:#4cbf82; --move:#74a2f2; --mast:#4fc0c9; --accent:#6f9cf0; --wait:#c9a35a; --none:#394052;
     --box:#e8bd3a; --block:#f0655a; color-scheme:dark;
   }
 }
 :root[data-theme="dark"],[data-theme="dark"]{
   --bg:#0f131b; --surface:#181d28; --ink:#e8eaf0; --muted:#98a1b4; --line:#2b3242;
-  --sun:#f0a531; --earth:#74a2f2; --ok:#4cbf82; --move:#74a2f2; --mast:#4fc0c9; --accent:#6f9cf0; --wait:#8d6a2c; --none:#394052;
+  --sun:#f0a531; --earth:#74a2f2; --ok:#4cbf82; --move:#74a2f2; --mast:#4fc0c9; --accent:#6f9cf0; --wait:#c9a35a; --none:#394052;
   --box:#e8bd3a; --block:#f0655a; color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -145,7 +145,7 @@ svg .lbl.red{fill:var(--block);font-family:var(--f-mono);font-size:11px}
 .cmp .cline{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;font-variant-numeric:tabular-nums}
 .cmp .cline .ci{white-space:nowrap}
 .cmp .cline .ci i{font-style:normal;margin-right:4px}
-.cmp .cline .ci small{font-size:10px;color:var(--muted);margin-right:4px;letter-spacing:.04em}
+.cmp .cline .ci small{font-size:11px;color:var(--muted);margin-right:4px;letter-spacing:.04em}
 .cmp .cline .ci.fail{color:var(--block);font-weight:600}
 .cmp .cline .ci.best{font-weight:600}
 .cmp .cline.dim{color:var(--muted)}
@@ -267,7 +267,7 @@ main[data-d3="1"] .map-panel h2{z-index:5}
 .metric{grid-template-columns:62px 62px minmax(60px,1fr) auto}
 .metric .why{font-size:11px;color:var(--muted);white-space:nowrap;min-width:0;text-align:right}
 /* calendar colour key, and the colour chip before each fix title */
-#cal-key{position:absolute;left:12px;top:2px;font-size:10px;color:var(--muted);display:flex;gap:8px;pointer-events:none;line-height:14px}
+#cal-key{position:absolute;left:12px;top:2px;font-size:11px;color:var(--muted);display:flex;gap:8px;pointer-events:none;line-height:14px}
 #cal-key i{display:inline-block;width:8px;height:8px;margin-right:3px;vertical-align:-1px;border-radius:0}
 .card h2::before{content:"";display:inline-block;width:9px;height:9px;margin-right:6px;background:var(--fc);border-radius:0;vertical-align:0}
 /* why there is no fix within the limits */
@@ -305,7 +305,7 @@ header>.api-link .api-txt{display:inline!important}
 /* tablets and small windows (701-1179 px) on the full map: no sideways scroll, the header wraps onto a second row
    (the grid of all panels keeps its 1180 px minimum) */
 @media (min-width:701px) and (max-width:1179px){
-  .app:has(main.full){min-width:0}
+  .app:has(main.full){min-width:0}.app:has(main[data-view="find"]){min-width:0}
   header{height:auto;min-height:48px;flex-wrap:wrap;row-gap:6px}
   header>.grow{display:none}
   header>.verdict{order:5;flex:1 1 100%;max-width:none}
@@ -539,7 +539,7 @@ main[data-view="find"] .tbar .tb-pole{display:block}   /* Find a site tab: Detai
 .hb-trip{position:relative;display:flex}
 .hb-tb{position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;height:40px;min-width:180px;padding:2px 14px;border:1px solid var(--ink);background:var(--surface);color:var(--ink);cursor:pointer;text-align:left;border-radius:0;font:inherit}
 .hb-tb+.hb-tb{border-left:0}
-.hb-tb span{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);line-height:1.2}
+.hb-tb span{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);line-height:1.2}
 .hb-tb b{font-size:14px;font-weight:600;line-height:1.3;white-space:nowrap}
 .hb-tb[aria-expanded="true"]{background:var(--ink);color:var(--bg)}
 .hb-tb[aria-expanded="true"] span{color:var(--bg);opacity:.75}
@@ -576,7 +576,7 @@ main.full #dock #adv-btn.changed{border-color:var(--accent)}
 /* the fixes in one line under the verdict (MOVE · MAST · WAIT): each a button; ⤢ 2D / 3D at the end of the view buttons */
 #vbadge .vfx{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;pointer-events:auto}
 #vbadge .vfx button{font:inherit;font-size:13px;font-weight:600;padding:3px 8px;border:1px solid rgba(255,255,255,.35);background:rgba(15,19,27,.6);color:#fff;border-radius:0;cursor:pointer;white-space:nowrap}
-#vbadge .vfx button i{font-style:normal;font-size:10px;letter-spacing:.08em;color:var(--fc);margin-right:2px}
+#vbadge .vfx button i{font-style:normal;font-size:11px;letter-spacing:.08em;color:var(--fc);margin-right:2px}
 #vbadge .vfx button.best{border-color:var(--fc);box-shadow:inset 3px 0 0 var(--fc)}
 #vbadge .vfx button:hover:not([disabled]){border-color:#fff}
 #vbadge .vfx button[disabled]{opacity:.45;cursor:default}
@@ -588,7 +588,7 @@ main.full #dock #adv-btn.changed{border-color:var(--accent)}
 #vbadge .vfx button.ro{cursor:default}
 #vbadge .vfx button.ro[disabled]:not([data-v=""]){opacity:1}
 #vbadge .vfx button.tall b{color:#f0a531}
-#vbadge .vfx button em{font-style:normal;font-size:10px;font-weight:600;color:#f0a531;letter-spacing:.04em;text-transform:uppercase}
+#vbadge .vfx button em{font-style:normal;font-size:11px;font-weight:600;color:#f0a531;letter-spacing:.04em;text-transform:uppercase}
 .fixrow[data-k="mast"]:not(.na){cursor:default}
 #fixes .fixrow.tall .val b{color:#f0a531}
 #vbadge .vfx b{font-size:inherit;line-height:inherit;font-weight:700;letter-spacing:0;color:inherit}
@@ -600,3 +600,8 @@ main[data-view="find"] .tbar .tb-pole{display:none}
 main[data-view="find"] #zoom .z-dim{display:none}
 #when-pop .hb-any{font:inherit;font-size:13px;padding:5px 10px;border:1px solid var(--ink);background:transparent;color:var(--ink);border-radius:0;cursor:pointer}
 #when-pop .hb-any:hover{background:var(--ink);color:var(--bg)}
+.fixrows[hidden],#fixes .fxbar[hidden]{display:none!important}
+/* controls at least 28 px high (44 px on touch screens) */
+#zoom button,#vbadge .vfx button,#dock button{min-height:28px}
+@media (pointer:coarse){#zoom button,#vbadge .vfx button,#dock button{min-height:44px}}
+.tbar button{height:28px;min-width:28px}
