@@ -74,7 +74,7 @@ export function init(node, d, openPin) {
   eb.addEventListener('click', () => setState({ expo: state.expo ? 0 : 1 }));
   svg.addEventListener('pointerdown', e => {
     const xy = e.target.dataset && e.target.dataset.expo;
-    if (!xy) return;
+    if (!xy || state.view !== 'compare') return;   // in the focus view a marker acts on release (press-and-hold zooms out)
     const [x, y] = xy.split(',').map(Number);
     if (pinOpener) pinOpener(x, y);
   });
@@ -87,8 +87,10 @@ export function init(node, d, openPin) {
     else hideTip();
   });
   svg.addEventListener('pointerleave', () => { setHover(null); hideTip(); });
-  // pick on pointerdown: during playback the map is redrawn every tick, so a click's target is gone by pointerup
+  // compare view: pick on pointerdown. Focus view: the marker is remembered at pointerdown (the map redraws every
+  // playback tick, so the target is gone by pointerup) and acts on a short release; a long press zooms out instead.
   svg.addEventListener('pointerdown', e => {
+    if (state.view !== 'compare') return;
     if (e.target.dataset.lander) { landerCard(e.target.dataset.lander, e); return; }
     landerCard(null);
     const id = e.target.dataset.id;
@@ -100,8 +102,8 @@ export function init(node, d, openPin) {
   let drag = null;
   svg.addEventListener('pointerdown', e => {
     const d = e.target.dataset || {};
-    if (e.button !== 0 || d.id || d.lander || d.expo || state.view === 'compare') return;
-    drag = { x: e.clientX, y: e.clientY, cx: vp.cx, cy: vp.cy, moved: false, id: e.pointerId, held: false };
+    if (e.button !== 0 || state.view === 'compare') return;
+    drag = { x: e.clientX, y: e.clientY, cx: vp.cx, cy: vp.cy, moved: false, id: e.pointerId, held: false, tgt: { id: d.id, lander: d.lander, expo: d.expo, shift: e.shiftKey } };
     // press and hold: zoom out x2 about the point after 500 ms, then every 400 ms down to Region
     const pt = { clientX: e.clientX, clientY: e.clientY }, dg = drag;
     holdRing(state.zoom > 1.001 ? pt : null);
@@ -128,9 +130,15 @@ export function init(node, d, openPin) {
   const endDrag = e => {
     clearTimeout(holdTimer); holdRing(null);
     if (!drag) return;
-    const click = !drag.moved && !drag.held && e.type === 'pointerup';
+    const click = !drag.moved && !drag.held && e.type === 'pointerup' ? drag.tgt : null;
     svg.classList.remove('grabbing'); drag = null;
-    if (click) { const w = world(e); clearTimeout(clickTimer); clickTimer = setTimeout(() => openSpot(w), 250); }
+    if (!click) return;
+    const g = tgtOf(click);
+    if (g.lander) { landerCard(g.lander, e); return; }
+    landerCard(null);
+    if (g.id) { if (g.shift) togglePin(g.id); else setState({ site: g.id }); return; }
+    if (g.expo) { const [x, y] = g.expo.split(',').map(Number); if (pinOpener) pinOpener(x, y); return; }
+    const w = world(e); clearTimeout(clickTimer); clickTimer = setTimeout(() => openSpot(w), 250);
   };
   svg.addEventListener('pointerup', endDrag); svg.addEventListener('pointercancel', endDrag);
   // double-click: zoom one step (x2) about that point
@@ -436,6 +444,7 @@ function draw(st) {
   document.dispatchEvent(new Event('mapframe'));
 }
 
+const tgtOf = g => g || {};
 let lastLanders = [], pinOpener = null, clickTimer = 0, holdTimer = 0;
 
 // spacecraft card: name, what happened, when, what it was for
