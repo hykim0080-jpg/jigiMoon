@@ -421,3 +421,4 @@ body[data-view="find"] header>*:not(.app-name):not([data-key="view"]):not(.grow)
 #space-hint{position:absolute;right:12px;bottom:86px;z-index:6;font-size:11px;color:#c9cfdb;background:rgba(15,19,27,.75);padding:3px 7px;pointer-events:none}
 #space-hint[hidden]{display:none}
 main[data-d3="1"] #zoom{z-index:6}
+.mastcmp{display:flex;align-items:flex-end;gap:3px;height:100%}.mastcmp svg{display:block;fill:#d6dbe6;stroke:#0f131b;stroke-width:.6}

@@ -22,6 +22,7 @@
 
 import * as THREE from './vendor/three.module.js';
 import { OrbitControls } from './vendor/OrbitControls.js';
+import { SCALE_FIGS } from '../js/figs.js';
 
 const R_MOON = 1737400; // m
 const DEG = Math.PI / 180;
@@ -44,6 +45,8 @@ const CSS = `
   --lmap-mono:Inter,system-ui,sans-serif}
 .lmap-mast{position:absolute;left:0;top:0;pointer-events:none;z-index:3;display:flex;flex-direction:column;align-items:center;transform-origin:50% 100%}
 .lmap-mast i{display:block;width:3px;background:var(--mast,#4fc0c9);box-shadow:0 0 0 1px #0f131b}
+.lmap-mast .cmp{position:absolute;bottom:0;left:calc(50% + 6px);display:flex;align-items:flex-end;gap:3px}
+.lmap-mast .cmp svg{display:block;fill:#d6dbe6;stroke:#0f131b;stroke-width:.6}
 .lmap-mast b{display:block;width:12px;height:12px;border:2px solid var(--mast,#4fc0c9);border-radius:50%;border-bottom-color:transparent;transform:rotate(45deg);margin-bottom:-2px}
 .lmap-mast span{font:600 11px/1 Inter,system-ui,sans-serif;color:#fff;background:rgba(15,19,27,.85);border:1px solid var(--mast,#4fc0c9);padding:2px 5px;margin-bottom:3px;white-space:nowrap}
 .lmap *,.lmap *::before,.lmap *::after{box-sizing:border-box;font-variant-numeric:tabular-nums!important}
@@ -419,8 +422,8 @@ export function mountLunarMap(container, options = {}) {
   // directions from the pole (azimuth, elevation from the frame metadata); sizes are enlarged to be seen.
   const R_MOON = 1737.4;
   const moonGroup = new THREE.Group();
-  const moonMat = new THREE.MeshBasicMaterial({ color: 0x8a8f99 });
-  if (opt.moonUrl) new THREE.TextureLoader().load(opt.moonUrl, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; moonMat.map = tx; moonMat.color.set(0x9aa0aa); moonMat.needsUpdate = true; dirty = true; });
+  const moonMat = new THREE.MeshBasicMaterial({ color: 0x3a3e46 });   // dark, so the lit south-pole patch stands out
+  if (opt.moonUrl) new THREE.TextureLoader().load(opt.moonUrl, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; moonMat.map = tx; moonMat.color.set(0x474b54); moonMat.needsUpdate = true; dirty = true; });
   const moonGeo = new THREE.SphereGeometry(R_MOON, 160, 80);
   const moonMesh = new THREE.Mesh(moonGeo, moonMat);
   moonMesh.rotation.x = Math.PI;          // south pole to +y
@@ -1142,9 +1145,9 @@ export function mountLunarMap(container, options = {}) {
       if (marksSvg._h !== html) { marksSvg.innerHTML = html; marksSvg._h = html; }
     }
     if (mastPt) {
-      if (!mastEl) { mastEl = el('div', 'lmap-mast', '<span></span><b></b><i></i>'); ov.appendChild(mastEl); }
+      if (!mastEl) { mastEl = el('div', 'lmap-mast', `<span></span><b></b><i></i><div class="cmp">${SCALE_FIGS(6)}</div>`); ov.appendChild(mastEl); }
       const ok = project(worldOf(mastPt.x, mastPt.y, v3));
-      const px = Math.round(10 + Math.min(mastPt.h, 20) * 3);   // drawn tall enough to see: 3 px per metre
+      const px = Math.round(Math.min(mastPt.h, 20) * 6);   // 6 px per metre, the same scale as the astronaut and lander beside it
       if (mastEl._h !== mastPt.h) { mastEl.firstChild.textContent = mastPt.label; mastEl.lastChild.style.height = px + 'px'; mastEl._h = mastPt.h; }
       const hh = mastEl.offsetHeight || px + 30;
       place(mastEl, v3.x - (mastEl.offsetWidth || 40) / 2, v3.y - hh, ok && inView(v3.x, v3.y));
