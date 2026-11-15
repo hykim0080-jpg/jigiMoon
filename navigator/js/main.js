@@ -18,6 +18,8 @@ import * as orient from './orient.js';
 import * as pin from './pin.js';
 import * as view3d from './view3d.js';
 import * as full from './full.js';
+import * as intro from './intro.js';
+if (intro.shouldPlay()) intro.play();   // opening shot: near side -> south pole
 
 const $ = id => document.getElementById(id);
 const data = { index: null, site: null };

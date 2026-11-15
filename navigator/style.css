@@ -442,3 +442,6 @@ main[data-d3="1"] #zoom{z-index:6}
 .mastside .ms-lab{font-size:12px;font-weight:600;fill:var(--mast)}
 .lmap-mast .cmp{display:none}
 .raylab{font-size:12px;font-weight:600;fill:#fff;paint-order:stroke;stroke:#0f131b;stroke-width:3px}
+#intro{position:fixed;inset:0;z-index:100;background:#000;cursor:pointer;transition:opacity .6s}
+#intro.out{opacity:0;pointer-events:none}
+#intro canvas{display:block}
