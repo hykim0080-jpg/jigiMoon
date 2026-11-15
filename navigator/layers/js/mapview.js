@@ -60,7 +60,7 @@ export function initMap(el, d, compCanvas) {
   bd.sr.onpointerdown = e => { e.stopPropagation(); e.preventDefault(); bd.sr.setPointerCapture(e.pointerId); setCut(e); bd.sr.onpointermove = setCut; };
   bd.sr.onpointerup = () => { bd.sr.onpointermove = null; };
   bd.sr.ondblclick = e => { e.stopPropagation(); setState({ cutoff: 70 }, 'zones'); };
-  legend = Object.assign(document.createElement('div'), { className: 'lyr-legend n' }); legend.innerHTML = '<span class="l1"><i></i><span class="lt"></span></span><em class="lbr"><span class="bt"></span><b>0</b><u></u><b class="hi"></b></em><em class="lhl"></em>';
+  legend = Object.assign(document.createElement('div'), { className: 'lyr-legend n' }); legend.innerHTML = '<span class="l1"><i></i><span class="lt"></span></span><em class="lbr"><span class="bt"></span><b>0</b><u></u><b class="hi"></b></em><em class="lhl"></em><em class="lsh"></em>';
   homeBtn = Object.assign(document.createElement('button'), { className: 'lyr-home', textContent: t('home'), hidden: true });
   homeBtn.onclick = e => { e.stopPropagation(); reset(); };
   homeBtn.onpointerdown = homeBtn.ondblclick = e => e.stopPropagation();
@@ -318,6 +318,7 @@ export function renderBadge(passPx, readoutScore) {
   legend.hidden = state.adv || state.mode !== 'mask';
   legend.querySelector('.lt').textContent = useWin(state) ? t('legStay', state.mission || 14, km2) : t('legYear', km2);   // the legend in words
   legend.querySelector('.bt').textContent = (t('legBase') || {})[state.base] || '';
+  shadowLegend();
   const ang = { sun: 135, earth: 45, dark: 0, slope: 90 }, hl = SHOW_HATCH ? hatchList.filter(h => state.on.mask[h.id]) : [];
   legend.querySelector('.lhl').innerHTML = hl.length ? `<span>${t('legHatch')}</span>` + hl.map(h => { const c = layerColor(h.id, true); return `<i style="background:repeating-linear-gradient(${ang[hue(h.id)] ?? 135}deg,${c} 0 1.6px,transparent 1.6px 4.5px);border-color:${c}"></i>${(t('legName') || {})[hue(h.id)] || ''}`; }).join('') : '';
   const bi = baseInfo(state); if (bi) { legend.querySelector('u').style.background = bi.css; legend.querySelector('.hi').textContent = bi.hi; }
@@ -457,4 +458,11 @@ function landerCard(l, e) {
   card.hidden = false;
   card.style.left = Math.min(x + 12, r.width - 250) + 'px';
   card.style.top = Math.max(8, Math.min(y + 12, r.height - card.offsetHeight - 8)) + 'px';
+}
+
+// what the shadow tint means (sun shadow / Earth shadow), one line in the legend
+export function shadowLegend() {
+  const sh = legend && legend.querySelector('.lsh'); if (!sh) return;
+  const on = state.eshadow ? 'esh' : state.shadow ? 'sh' : '';
+  sh.className = 'lsh ' + on; sh.innerHTML = on ? `<i></i>${(t('legShadow') || {})[on]}` : '';
 }

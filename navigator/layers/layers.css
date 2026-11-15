@@ -480,6 +480,11 @@ input[type=range]{accent-color:var(--accent)}
 .lyr-ans a,.lyr-ans button{color:var(--accent)}
 .lyr-play[aria-pressed="true"]{background:#6f9cf0;border-color:#6f9cf0;color:#000}
 .app-name,.seg a,header a{color:inherit}
+.lyr-legend .lsh{display:flex;align-items:center;gap:6px;font-style:normal;font-size:12px;font-weight:500}
+.lyr-legend .lsh:empty{display:none}
+.lyr-legend .lsh i{display:block;width:12px;height:12px}
+.lyr-legend .lsh.esh i{background:#2459b8;border:1px solid #74a2f2}
+.lyr-legend .lsh.sh i{background:#000;border:1px solid #888}
 .lyr-fx.can{cursor:pointer}
 .lyr-fx.can:hover,.lyr-fx.can:focus-visible{background:var(--bg);outline:none}
 .lyr-fx.can>span:last-child{color:var(--accent,var(--ink))}
