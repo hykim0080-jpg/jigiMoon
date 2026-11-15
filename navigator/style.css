@@ -407,3 +407,5 @@ input[type=range]{accent-color:var(--accent)}
   main.full #cal-panel{left:112px;right:12px;bottom:84px;height:var(--cal,216px)}
   main.full #cal-panel.big{left:5vw;right:5vw;top:6vh;bottom:6vh;height:auto}
 }
+#space-hint{position:absolute;right:12px;bottom:86px;z-index:6;font-size:11px;color:#c9cfdb;background:rgba(15,19,27,.75);padding:3px 7px;pointer-events:none}
+#space-hint[hidden]{display:none}
