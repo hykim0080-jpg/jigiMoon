@@ -15,7 +15,7 @@ const post = m => { try { parent.postMessage({ mj: 1, ...m }, location.origin); 
 const PANELS = 'header,.lyr-left,.lyr-pinp,.lyr-time,.lyr-pop,.lyr-hint,.lyr-cart,.lyr-home';
 const SEE_THROUGH = new Set(['HTML', 'BODY']), isMapArea = t => !t || SEE_THROUGH.has(t.tagName) || (t.classList && (t.classList.contains('lyr-app') || t.classList.contains('lyr-main') || t.classList.contains('lyr-map') || t.id === 'layers-root'));
 
-let lastRects = '', lastRank = '', lastPin = '', lastTime = '', lastView = '', maskDirty = true;
+let lastRects = '', lastRank = '', lastPin = '', lastTime = '', lastView = '', maskDirty = true, synced = false;
 function rects() {
   const out = [];
   for (const e of document.querySelectorAll(PANELS)) {
@@ -31,6 +31,7 @@ export function init() {
   if (!on) return;
   document.documentElement.classList.add('panels');
   state.d3 = false;   // no map of its own
+  synced = !!state.tTouched;   // a link with its own date leads; otherwise the main page's time does
   setInterval(rects, 200); addEventListener('resize', rects);
   // the pointer left the panels: hand it back to the map underneath
   const out = e => { if (isMapArea(e.target)) post({ type: 'out', x: e.clientX, y: e.clientY }); };
@@ -39,7 +40,14 @@ export function init() {
     if (e.source !== parent || !e.data || !e.data.mj) return;
     const m = e.data;
     if (m.type === 'click' || m.type === 'pick') { const c = m.col != null ? { col: m.col, row: m.row } : xyToCell(m.x, m.y); if (c.col >= 0 && c.row >= 0 && c.col < N && c.row < N) setState({ pin: c, autoPin: false }, 'panel'); }
+    if (m.type === 'settime') { synced = true; const mi = m.mission === 6 ? 6 : 14, d = Math.max(0, Math.min(364, m.day)), h = Math.max(0, Math.min(mi * 24 - 1, m.hour)); lastTime = `${d}|${mi}|${h}`; if (d !== state.tDay || mi !== state.mission || h !== state.tHour) setState({ tDay: d, plan: d, tHour: h, mission: mi, tTouched: true }, 'time'); }
     if (m.type === 'hello') { lastRects = ''; lastRank = ''; lastPin = ''; lastTime = ''; maskDirty = true; render(state); }
+  });
+  // a ranked spot under the pointer in the list: its marker on the map stands out
+  let hl = '';
+  addEventListener('pointerover', e => {
+    const tr = e.target.closest && e.target.closest('.lyr-tr[data-rank]'), r = tr ? (tripRanked() || [])[+tr.dataset.rank - 1] : null, k = r ? `${r.col},${r.row}` : '';
+    if (k !== hl) { hl = k; post({ type: 'hl', col: r ? r.col : null, row: r ? r.row : null }); }
   });
   post({ type: 'ready' });
 }
@@ -48,7 +56,7 @@ export function repaint() { if (on) { maskDirty = true; render(state); } }
 export function render(st) {
   if (!on) return;
   rects();
-  const tk = `${st.tDay}|${st.mission}|${st.tHour}`; if (tk !== lastTime) { lastTime = tk; post({ type: 'time', day: st.tDay, mission: st.mission, hour: st.tHour }); }
+  const tk = `${st.tDay}|${st.mission}|${st.tHour}`; if (synced && tk !== lastTime) { lastTime = tk; post({ type: 'time', day: st.tDay, mission: st.mission, hour: st.tHour }); }
   if (maskDirty && failCount && !pending(st)) {
     maskDirty = false;
     const go = new Uint8Array(N * N); for (let i = 0; i < N * N; i++) go[i] = failCount[i] === 0 ? 1 : 0;

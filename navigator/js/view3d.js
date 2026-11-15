@@ -15,6 +15,7 @@ import { initHover, hover } from './hover3d.js';
 import { ranked } from './rank3d.js';
 import { nearestField, nearestOf, linkOf } from './nearestgo.js';
 import * as findlink from './findlink.js';
+import * as timebar from './timebar.js';
 import * as gomask from './gomask3d.js';
 import { loadCam, saveCam, share, onShare } from './cam3d.js';
 import { isDefault } from './criteria.js';
@@ -22,7 +23,8 @@ import { isDefault } from './criteria.js';
 const SETS = [{ label: '2027-02', url: 'data/3d/frames_feb/', y: 2027, m: 1 }, { label: '2027-06', url: 'data/3d/frames/', y: 2027, m: 5 }, { label: '2027-12', url: 'data/3d/frames_dec/', y: 2027, m: 11 }];
 const STEP_H = 4;
 let lastCells = '', mapReady = false, lastZoom = null, onPin = null, hint, box, note, btns, map = null, loading = null, order = null, lastKey = '', lastSite = '', data = null;
-let landerOn = false, landerBtn = null;   // Lander view
+let landerOn = false, landerBtn = null, poleBtn = null;
+export function poleView() { landerOn = false; if (map && mapReady) map.focus(0, 0, 200, { dur: 1300, polar: 0.0005 }); render(state); }   // Lander view
 
 export function init(panel, d, pinAt) {
   data = d; onPin = pinAt;
@@ -35,6 +37,10 @@ export function init(panel, d, pinAt) {
   // Lander view (3D only): down beside the lander, looking toward Earth, close enough to see it and the mast whole
   const zoom = document.getElementById('zoom');
   if (zoom) {
+    // Pole: the whole south pole (±200 km) from straight above, Earth up; the selected place stays selected
+    poleBtn = document.createElement('button'); poleBtn.type = 'button'; poleBtn.className = 'z-pole'; poleBtn.textContent = t('zoomPole');
+    poleBtn.addEventListener('click', e => { e.stopPropagation(); poleView(); });
+    zoom.prepend(poleBtn);
     landerBtn = document.createElement('button'); landerBtn.type = 'button'; landerBtn.dataset.z = 'lander'; landerBtn.textContent = t('zoomLander');
     landerBtn.addEventListener('click', () => { landerOn = true; landerView(); render(state); });
     // Region / Site / Spot leave it: first (capture) so their own move is the usual one; same zoom as before: move back here
@@ -47,6 +53,7 @@ export function init(panel, d, pinAt) {
   hint = document.createElement('div'); hint.id = 'space-hint'; hint.hidden = true; hint.textContent = t('spaceHint'); panel.appendChild(hint);
   note = document.createElement('div'); note.id = 'note3d'; note.hidden = true;
   panel.append(box, note);
+  timebar.init(box, { pole: () => poleView() });   // one time bar for both tabs
   addEventListener('resize', place);
 }
 
@@ -96,7 +103,7 @@ async function mount() {
       moonUrl: 'data/moon.jpg', sunUrl: 'data/sun_sdo_512.png', earthUrl: 'data/earth_bluemarble_1024.jpg', bodyMarkers: false,   // NASA SVS CGI Moon Kit, the globe under the terrain patch
     });
     return map.ready;
-  }).then(() => { box.classList.remove('loading'); lastKey = ''; lastSite = ''; lastCells = ''; mapReady = true; return arrive(); })
+  }).then(() => { if (map.setBottom) map.setBottom(64); box.classList.remove('loading'); lastKey = ''; lastSite = ''; lastCells = ''; mapReady = true; return arrive(); })
     .catch(e => { console.error('[3d]', e); box.classList.remove('loading'); });
   return loading;
 }
@@ -170,6 +177,7 @@ function syncLink(st) {
   if (k === linkKey) return; linkKey = k;
   map.setLink(k ? linkOf(nearestOf(nearCur, c.col, c.row, rankCur), (new URLSearchParams(location.search).get('lang') || 'en').startsWith('ko') ? 'ko' : 'en') : null);
 }
+findlink.onHl((c, r) => { if (map && mapReady && map.highlightPin) map.highlightPin(c, r); });
 findlink.onFly((x, y, half) => { if (map && mapReady) map.focus(x, y, half, { dur: 1400 }); });
 findlink.onChange(() => { if (map && mapReady && state.view === 'find') syncFind(); });
 export const getMap = () => map;
@@ -274,11 +282,13 @@ export function recenter(dur) {
 }
 export const isOn = () => !!box && !box.hidden;
 
+let sentTime = '';
 export function render(st) {
   if (!box) return;
   if (data && data.index) shareOut(st);
   const on = st.view === 'find' || (!!st.d3 && st.view === 'focus');   // Find a site lays its panels over this same map
   btns.forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.d) === (on ? 1 : 0))));
+  if (poleBtn) poleBtn.hidden = !on;
   if (landerBtn) {
     landerBtn.hidden = !on;
     if (!on) landerOn = false;
@@ -287,6 +297,8 @@ export function render(st) {
   }
   document.getElementById('main').dataset.d3 = on ? '1' : '';
   box.hidden = !on;
+  timebar.show(on); timebar.render(st);
+  if (st.view === 'find') { const tk = `${st.day}|${st.mission}|${st.hour}`; if (tk !== sentTime) { sentTime = tk; findlink.send({ type: 'settime', day: st.day, mission: st.mission, hour: st.hour }); } } else sentTime = '';
   hint.hidden = !on;
   if (!on) { note.hidden = true; place(); intro.arrived.then(intro.handOver); return; }
   place();

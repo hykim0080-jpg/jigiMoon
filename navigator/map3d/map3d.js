@@ -76,6 +76,9 @@ const CSS = `
 .lmap-pin.is-rank i{background:#4cbf82;box-shadow:0 0 0 1.5px #0f131b,0 0 12px rgba(76,191,130,.95)}
 .lmap-pin.is-rank::before{background:rgba(76,191,130,.95)}
 .lmap-pin.is-rank span{color:#7fe0aa;font-size:13px}
+.lmap-pin.is-dot::before,.lmap-pin.is-dot span{display:none}
+.lmap-pin.is-dot i{left:-3px;top:27px;width:6px;height:6px;transform:none;border-radius:50%;box-shadow:0 0 0 1px #0f131b}
+.lmap-pin.is-hl{z-index:5}.lmap-pin.is-hl i{transform:rotate(45deg) scale(1.45);background:#9ff0c2}.lmap-pin.is-hl span{color:#fff}
 .lmap-link{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:2;overflow:visible}
 .lmap-link line{stroke:#7fe0aa;stroke-width:1.5;stroke-dasharray:4 3}
 .lmap-link circle{fill:#4cbf82;stroke:#0f131b;stroke-width:1.5}
@@ -1251,7 +1254,7 @@ export function mountLunarMap(container, options = {}) {
   };
 
   // a thin line from a NO-GO spot to its nearest GO ground (host: setLink)
-  let link = null, linkSvg = null;
+  let link = null, linkSvg = null, bottomPad = 0;
   function placeLink() {
     if (!link) { if (linkSvg) linkSvg.style.display = 'none'; return; }
     if (!linkSvg) { linkSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); linkSvg.setAttribute('class', 'lmap-link'); linkSvg.innerHTML = '<line/><circle r="4"/><text/>'; ov.appendChild(linkSvg); }
@@ -1274,8 +1277,18 @@ export function mountLunarMap(container, options = {}) {
         p.el.addEventListener('wheel', passWheel, { passive: false });
         ov.appendChild(p.el);
       }
-      const ok = project(worldOf(p.x, p.y, v3));
-      place(p.el, v3.x, v3.y - 30, ok && v3.x > -6 && v3.x < W + 6 && v3.y > -6 && v3.y < H + 6);
+      const ok = project(worldOf(p.x, p.y, v3)), vis = ok && v3.x > -6 && v3.x < W + 6 && v3.y > -6 && v3.y < H + 6;
+      p.sx = v3.x; p.sy = v3.y; p.vis = vis;
+      place(p.el, v3.x, v3.y - 30, vis);
+    }
+    // markers that would overlap on screen: the best-ranked one keeps its number, the others shrink to a dot
+    // (zoom in and they come apart again); a highlighted one (list hover) always shows in full
+    const full = [];
+    const order = pins.filter(p => p.vis).sort((a, b) => (b.hl ? 1 : 0) - (a.hl ? 1 : 0));
+    for (const p of order) {
+      const dot = !p.hl && full.some(q => Math.hypot(q.sx - p.sx, q.sy - p.sy) < 30);
+      if (!dot) full.push(p);
+      p.el.classList.toggle('is-dot', dot); p.el.classList.toggle('is-hl', !!p.hl);
     }
   }
   function updateOverlay() {
@@ -1283,7 +1296,7 @@ export function mountLunarMap(container, options = {}) {
     if (!grid || !bodies.sun) return;   // grid is set before the overlay is built (await in between)
     const boxes = [];
     const hit = (b) => boxes.some((o) => b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1]);
-    const limitB = H - bar.offsetHeight + 14;
+    const limitB = H - Math.max(bar.offsetHeight, bottomPad) + 14;   // above the host's own time bar when it has one
 
     // Sun / Earth direction as seen from the pole, placed on the map margin
     for (const k of ['sun', 'earth']) {
@@ -1820,6 +1833,8 @@ export function mountLunarMap(container, options = {}) {
     setCamera,
     setMarks(list) { marks = list || []; dirty = true; },
     setLink(l) { link = l || null; dirty = true; },
+    setBottom(px) { bottomPad = px || 0; dirty = true; },
+    highlightPin(col, row) { for (const p of pins) p.hl = col != null && p.col === col && p.row === row; dirty = true; },
     setPins(list) { for (const p of pins) p.el?.remove(); pins = (list || []).map((p) => ({ ...p })); dirty = true; },
     // GO mask from the host: a canvas over +-200 km (row 0 = Earth side), red = GO; null turns it off
     setMask(cv) {

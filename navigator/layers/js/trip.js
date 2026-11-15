@@ -29,7 +29,7 @@ const TX = {
     calNote: 'GO spots per landing day', spots: n => `${n} GO ${n === 1 ? 'spot' : 'spots'}`, noneDay: 'no GO spot',
     nextGo: n => `next GO in ${n} d`, best: 'Best spots', loading: 'Computing…', go: 'GO', nogo: 'NO-GO',
     wait: n => `GO in ${n} d`, noFix: 'NO FIX',
-    whySun: (v, c) => `Sun ${v} % of the stay (need ${c})`, whyEarth: (v, c) => `Earth in view ${v} % (need ${c})`, whyDark: (v, c) => `Longest dark ${v} h (max ${c})`, whyIce: v => `Ice-likely shade ${v} km away (may hold ice, not proven)`, lIce: 'Ice',
+    whySun: (v, c) => `Sun ${v} % of the stay (need ${c})`, whyEarth: (v, c) => `Earth in view ${v} % (need ${c})`, whyDark: (v, c) => `Longest dark ${v} h (max ${c})`, whyIce: v => `Ice-likely shade ${v} km away (may hold ice, not proven)`, lIce: 'Ice', iceNote: '(may hold ice, not proven)',
     stayD: n => `${n} d`, wd: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
     ans: (day, n, km2, where) => `If you land on <b>${day}</b> and stay <b>${n} days</b>, <b>${km2} km²</b>${where ? ` of ${where}` : ''} keeps power and Earth contact.`,
     ansNone: (day, n, where) => `If you land on <b>${day}</b> and stay <b>${n} days</b>, no ground${where ? ` in ${where}` : ''} keeps power and Earth contact.`,
@@ -41,7 +41,7 @@ const TX = {
     calNote: '착륙일별 가능한 지점 수', spots: n => `가능 지점 ${n}곳`, noneDay: '가능 지점 없음',
     nextGo: n => `${n}일 뒤 가능`, best: '추천 지점', loading: '계산 중…', go: '가능', nogo: '불가',
     wait: n => `${n}일 후`, noFix: '해법 없음',
-    whySun: (v, c) => `햇빛 ${v} % (기준 ${c})`, whyEarth: (v, c) => `지구 보임 ${v} % (기준 ${c})`, whyDark: (v, c) => `가장 긴 어둠 ${v}시간 (최대 ${c})`, whyIce: v => `얼음이 있을 수 있는 영구 그늘까지 ${v} km (확정 아님)`, lIce: '얼음',
+    whySun: (v, c) => `햇빛 ${v} % (기준 ${c})`, whyEarth: (v, c) => `지구 보임 ${v} % (기준 ${c})`, whyDark: (v, c) => `가장 긴 어둠 ${v}시간 (최대 ${c})`, whyIce: v => `얼음이 있을 수 있는 영구 그늘까지 ${v} km (확정 아님)`, lIce: '얼음', iceNote: '(얼음 가능성, 확정 아님)',
     stayD: n => `${n}일`, wd: ['일', '월', '화', '수', '목', '금', '토'],
     ans: (day, n, km2, where) => `<b>${day}</b>에 착륙해 <b>${n}일</b> 머물면 ${where ? `${where}에서 ` : ''}<b>${km2} km²</b>가 전력과 지구 교신을 유지해요.`,
     ansNone: (day, n, where) => `<b>${day}</b>에 착륙해 <b>${n}일</b> 머물면 ${where ? `${where}에는 ` : ''}전력과 지구 교신을 유지하는 땅이 없어요.`,
@@ -269,7 +269,9 @@ function drawList(st, p) {
   if (!p.ready) { list.innerHTML = `<div class="lyr-trh"><h2>${tt('best')}</h2></div><p class="lyr-tri">${tt('loading')}</p>`; return; }
   list.innerHTML = `<div class="lyr-trh"><h2>${tt('best')}</h2><span class="n">${regionName(currentRegion())} · ${tt('spots', ranked.filter(r => r.go).length)}</span></div>` + ranked.map((r, i) => {
     const v = r.go ? `<span style="color:var(--ok)">${tt('go')}</span>` : r.wait != null && r.wait <= LIM.wait ? `<span style="color:var(--wait)">${tt('wait', r.wait)}</span>` : `<span style="color:var(--muted)">${tt('nogo')}</span>`;
-    const why = i === 0 ? `<ul class="lyr-why"><li class="${r.sun < c.sun ? 'bad' : ''}"><i style="background:var(--sun)"></i>${tt('whySun', Math.floor(r.sun), c.sun)}</li><li class="${r.earth < c.earth ? 'bad' : ''}"><i style="background:var(--earth)"></i>${tt('whyEarth', Math.floor(r.earth), c.earth)}</li><li class="${r.dark > c.dark ? 'bad' : ''}"><i style="background:var(--muted)"></i>${tt('whyDark', Math.ceil(r.dark), c.dark)}</li>${r.iceKm != null ? `<li><i style="background:#9fe3ff"></i>${tt('whyIce', r.iceKm.toFixed(1))}</li>` : ''}</ul>` : '';
-    return `<div class="lyr-tr${i === 0 ? ' top' : ''}" data-rank="${r.id}"><span class="lyr-trn n">${r.id}</span><div class="lyr-trt">${r.title}</div><div class="lyr-trv">${v}<button class="lyr-tradd${inCart(r.col, r.row) >= 0 ? ' in' : ''}" data-addr="${r.id}" title="${ct(inCart(r.col, r.row) >= 0 ? 'added' : 'add')}">${inCart(r.col, r.row) >= 0 ? '✓' : '+'}</button></div><div class="lyr-trs n">${tt('lSun')} ${Math.floor(r.sun)} % · ${tt('lEarth')} ${Math.floor(r.earth)} % · ${tt('lDark')} ${Math.ceil(r.dark)} h${r.iceKm != null ? ` · ${tt('lIce')} ${r.iceKm.toFixed(1)} km` : ''}</div>${why}</div>`;
+    // the top spot: one line with the limits beside the values (the other spots: values only)
+    const lim = (txt, cls, need) => i === 0 ? `<span class="${cls ? 'bad' : ''}">${txt} <small>(${need})</small></span>` : txt;
+    const why = '';
+    return `<div class="lyr-tr${i === 0 ? ' top' : ''}" data-rank="${r.id}"><span class="lyr-trn n">${r.id}</span><div class="lyr-trt">${r.title}</div><div class="lyr-trv">${v}<button class="lyr-tradd${inCart(r.col, r.row) >= 0 ? ' in' : ''}" data-addr="${r.id}" title="${ct(inCart(r.col, r.row) >= 0 ? 'added' : 'add')}">${inCart(r.col, r.row) >= 0 ? '✓' : '+'}</button></div><div class="lyr-trs n">${lim(`${tt('lSun')} ${Math.floor(r.sun)} %`, r.sun < c.sun, '≥' + c.sun)} · ${lim(`${tt('lEarth')} ${Math.floor(r.earth)} %`, r.earth < c.earth, '≥' + c.earth)} · ${lim(`${tt('lDark')} ${Math.ceil(r.dark)} h`, r.dark > c.dark, '≤' + c.dark)}${r.iceKm != null ? ` · ${tt('lIce')} ${r.iceKm.toFixed(1)} km${i === 0 ? ` <small>${tt('iceNote')}</small>` : ''}` : ''}</div>${why}</div>`;
   }).join('');
 }

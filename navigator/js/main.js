@@ -60,7 +60,7 @@ function render(st) {
   header.render(st, data);
   calendar.render(st, data);
   if (st.view === 'compare') compare.render(st, data);
-  if (st.view === 'find' && !$('find').firstChild) { $('find').innerHTML = `<iframe src="${FH0 != null ? `layers/index.html?embed=1&panels=1&lang=${new URLSearchParams(location.search).get('lang') || 'en'}#${FH0}` : header.findHref(st, data, findAtSite).replace('embed=1', 'embed=1&panels=1')}" title="Find a site" allowtransparency="true"></iframe>`; findlink.attach($('find').firstChild); }   // panels only, over this page's 3D map
+  if (st.view === 'find' && !$('find').firstChild) { $('find').innerHTML = `<iframe src="${FH0 != null ? `layers/index.html?embed=1&panels=1&lang=${new URLSearchParams(location.search).get('lang') || 'en'}#${FH0}` : header.findHref(st, data, findAtSite).replace('embed=1', 'embed=1&panels=1')}" title="Find a site" allowtransparency="true"></iframe>`; findlink.attach($('find').firstChild, { pushTime: FH0 == null }); }   // panels only, over this page's 3D map
   if (st.view !== 'find') findAtSite = true;
   if (st.view === 'sites') { setState({ view: 'focus' }); return; }   // the Selection tab is gone: old links open Detail
   map.render(st, data);

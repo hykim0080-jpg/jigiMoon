@@ -373,6 +373,7 @@ h2{margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spaci
 .lyr-trt{font-weight:600;font-size:12px;min-width:0;line-height:1.25}
 .lyr-trv{font-size:11px;font-weight:600;white-space:nowrap}
 .lyr-trs{grid-column:2/4;font-size:11px;color:var(--muted)}
+.lyr-trs small{font-size:10.5px;color:var(--muted);opacity:.85}.lyr-trs .bad{color:var(--block)}.lyr-tr.top .lyr-trs{color:var(--ink)}
 .lyr-why{grid-column:2/4;list-style:none;margin:4px 0 0;padding:0;font-size:11px}
 .lyr-why li{display:flex;align-items:center;gap:6px}
 .lyr-why li i{width:8px;height:8px;flex:none}
@@ -599,5 +600,5 @@ input[type=range]{accent-color:var(--accent)}
 /* ?panels=1: Find a site's panels over the main page's 3D map (js/panels.js); this page draws no map */
 html.panels,html.panels body,.panels .lyr-app,.panels .lyr-main{background:transparent!important}
 .panels .lyr-map{background:transparent!important;border-color:transparent!important;cursor:default}
-.panels .lyr-map>*:not(.lyr-time){display:none!important}
+.panels .lyr-map>*{display:none!important}   /* the main page's time bar drives the time (js/timebar.js) */
 .panels .lyr-loading{display:none!important}
