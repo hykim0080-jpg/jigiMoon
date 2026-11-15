@@ -19,7 +19,9 @@ import { syncWin, winToken, pending, winProgress, setWinProgress, keyOf, warmWin
 import { initCart, renderCart, readCart, cartHash } from './cart.js';
 import * as g3 from './find3d.js';
 import * as pn from './panels.js';
-import { initCritPanel, render as renderCritPanel } from './critpanel.js';
+import { initCritPanel, render as renderCritPanel, LAYER_KEYS } from './critpanel.js';
+import { initLayerTitle, renderLayerTitle } from './layertitle.js';
+import { onFactorData } from './factor.js';
 
 export async function mount(root, opts = {}) {
   const { dataUrl = './data/', header = true } = opts;
@@ -82,7 +84,7 @@ export async function mount(root, opts = {}) {
     if (!(await applyLevels(data, next, dataUrl))) { await applyLevels(data, state.crit, dataUrl); return false; }
     saveCrit(next); setState({ crit: next }, 'pixels'); return true;
   };
-  initCart(app, data, lang, lq); initCriteria(pCrit, data, setCrit); initCritPanel(main.querySelector('.lyr-left'), data, setCrit); initZones(pZones, data, { pick }); initPinCard(pPin.querySelector('.lyr-pcard'), data); initMap(pMap, data, comp); g3.init(pMap, data); setPick(pick);
+  initCart(app, data, lang, lq); initCriteria(pCrit, data, setCrit); initCritPanel(main.querySelector('.lyr-left'), data, setCrit); initLayerTitle(main); onFactorData(() => setState({}, 'pixels')); initZones(pZones, data, { pick }); initPinCard(pPin.querySelector('.lyr-pcard'), data); initMap(pMap, data, comp); g3.init(pMap, data); setPick(pick);
   { const hd = root.querySelector('.lyr-app header'), tl = main.querySelector('.lyr-tripl');
     initTrip(hd || main, tl, data, { pick, fly: bb => flyToCells(bb, 8), home: () => mapHome(), ranked: rk => { if (state.autoPin && rk[0] && !(state.pin && state.pin.col === rk[0].col && state.pin.row === rk[0].row)) setState({ pin: { col: rk[0].col, row: rk[0].row } }, 'panel'); } });
     setBadges(() => { const r = tripRanked(), g = r.filter(z => z.go).length; return r.slice(0, g ? Math.min(g, 15) : 3); }); }
@@ -120,7 +122,7 @@ export async function mount(root, opts = {}) {
       if (p.has('hover')) { overlay(); readout(); renderZones(state); }
     }
     renderTrip(state);   // after compose(): the ranked spots follow the current mask
-    renderCritPanel(state);
+    renderCritPanel(state); renderLayerTitle(state);
     renderCart(state);
     g3.render(state); pn.render(state);
     const q = new URLSearchParams(); if (state.base !== 'sun') q.set('b', state.base); if (state.adv) { q.set('a', 1); q.set('m', state.mode); } if (state.site) q.set('s', state.site);
@@ -155,6 +157,7 @@ export async function mount(root, opts = {}) {
     if (e.target.matches('input,textarea') || e.altKey || e.ctrlKey || e.metaKey) return;
     const m = state.adv ? { 1: 'layers', 2: 'mask', 3: 'score' }[e.key] : null;
     if (m) setState({ mode: m }, 'pixels');
+    else if (!state.adv && /^[0-5]$/.test(e.key)) setState({ factor: LAYER_KEYS[+e.key] }, 'pixels');   // layers: 0 All, 1 Sun … 5 Ice
     else if (e.key === '0') setState({ view: { k: 1, cx: 400, cy: 400 } }, 'view');
     else if (e.key === 'Escape') { const z = tripRanked()[0] || getZones()[0]; setState({ autoPin: true, pin: z ? { col: z.best.col, row: z.best.row } : state.pin, edit: null }, 'panel'); }
     else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') setState({ tDay: Math.max(0, Math.min(364, state.tDay + (e.key === 'ArrowRight' ? 1 : -1))), tTouched: true }, 'time');

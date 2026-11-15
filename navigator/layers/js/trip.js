@@ -28,7 +28,7 @@ const TX = {
   en: { lSun: 'Sun', lEarth: 'Earth', lDark: 'Dark',
     when: 'When', where: 'Where to?', stay: 'Stay', pickDay: 'Landing day', pickRegion: 'Choose a region',
     calNote: 'GO spots per landing day', spots: n => `${n} GO ${n === 1 ? 'spot' : 'spots'}`, noneDay: 'no GO spot',
-    nextGo: n => `next GO in ${n} d`, best: 'Best spots', findBest: 'Find best spots', loading: 'Computing…', go: 'GO', nogo: 'NO-GO',
+    nextGo: n => `next GO in ${n} d`, best: 'Best spots', findBest: 'Find best spots', hideBest: 'Hide best spots', loading: 'Computing…', go: 'GO', nogo: 'NO-GO',
     wait: n => `GO in ${n} d`, noFix: 'NO FIX',
     whySun: (v, c) => `Sun ${v} % of the stay (need ${c})`, whyEarth: (v, c) => `Earth in view ${v} % (need ${c})`, whyDark: (v, c) => `Longest dark ${v} h (max ${c})`, whyIce: v => `Ice-likely shade ${v} km away (may hold ice, not proven)`, lIce: 'Ice', lSlope: 'Slope', mastM: m => `${m} m mast`, iceNote: '(may hold ice, not proven)',
     stayD: n => `${n} d`, wd: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
@@ -40,7 +40,7 @@ const TX = {
   ko: { lSun: '햇빛', lEarth: '지구', lDark: '어둠',
     when: '언제', where: '어디로?', stay: '체류', pickDay: '착륙일', pickRegion: '지역 고르기',
     calNote: '착륙일별 가능한 지점 수', spots: n => `가능 지점 ${n}곳`, noneDay: '가능 지점 없음',
-    nextGo: n => `${n}일 뒤 가능`, best: '추천 지점', findBest: '최적 지점 찾기', loading: '계산 중…', go: '가능', nogo: '불가',
+    nextGo: n => `${n}일 뒤 가능`, best: '추천 지점', findBest: '최적 지점 찾기', hideBest: '추천 숨기기', loading: '계산 중…', go: '가능', nogo: '불가',
     wait: n => `${n}일 후`, noFix: '해법 없음',
     whySun: (v, c) => `햇빛 ${v} % (기준 ${c})`, whyEarth: (v, c) => `지구 보임 ${v} % (기준 ${c})`, whyDark: (v, c) => `가장 긴 어둠 ${v}시간 (최대 ${c})`, whyIce: v => `얼음이 있을 수 있는 영구 그늘까지 ${v} km (확정 아님)`, lIce: '얼음', lSlope: '경사', mastM: m => `마스트 ${m} m`, iceNote: '(얼음 가능성, 확정 아님)',
     stayD: n => `${n}일`, wd: ['일', '월', '화', '수', '목', '금', '토'],
@@ -217,6 +217,8 @@ let shown = !PANELS || (() => { try { return !!parent.__findLink; } catch (e) { 
 let findBtn = null;
 export const ranksShown = () => shown;
 export function showRanks() { if (shown) return; shown = true; rkey = ''; akey = ''; if (findBtn) findBtn.hidden = true; setState({}, 'panel'); }
+// back to the first look: the GO area and the criteria, no ranks, no picked spot, the Find button again
+export function hideRanks() { if (!shown) return; shown = false; rkey = ''; akey = ''; if (findBtn) findBtn.hidden = false; setState({ pin: null, hoverTrip: null }, 'panel'); }
 export const tripRanked = () => shown ? ranked : [];
 export const currentRegion = () => state.region || 'all';
 export function initTrip(header, listEl, d, o = {}) {
@@ -240,7 +242,7 @@ export function initTrip(header, listEl, d, o = {}) {
   findBtn = document.createElement('button'); findBtn.type = 'button'; findBtn.className = 'lyr-findbest'; findBtn.textContent = tt('findBest'); findBtn.hidden = shown;
   findBtn.onclick = () => showRanks();
   list.parentNode && list.parentNode.append(findBtn);
-  list.onclick = e => { const a = e.target.closest('[data-addr]'); if (a) { e.stopPropagation(); const z = ranked[+a.dataset.addr - 1]; if (z) toggleCart(z.col, z.row); return; } const r = e.target.closest('[data-rank]'); if (r) { const z = ranked[+r.dataset.rank - 1]; if (z) opts.pick && opts.pick(z); } };
+  list.onclick = e => { if (e.target.closest('.lyr-hidebest')) { e.stopPropagation(); hideRanks(); return; } const a = e.target.closest('[data-addr]'); if (a) { e.stopPropagation(); const z = ranked[+a.dataset.addr - 1]; if (z) toggleCart(z.col, z.row); return; } const r = e.target.closest('[data-rank]'); if (r) { const z = ranked[+r.dataset.rank - 1]; if (z) opts.pick && opts.pick(z); } };
   list.onmouseover = e => { const r = e.target.closest('[data-rank]'), id = r ? +r.dataset.rank : null; if (id !== state.hoverTrip) setState({ hoverTrip: id }, 'hover'); };
   list.onmouseleave = () => { if (state.hoverTrip != null) setState({ hoverTrip: null }, 'hover'); };
 }
@@ -342,7 +344,7 @@ function drawAnswer(st, rid, p) {
 function drawList(st, p) {
   const c = st.crit, sm = D.layers.find(m => m.id === 'slope'), slim = sm ? Math.round(st.threshold[sm.id] ?? sm.threshold) : 8;
   const iceOn = !!st.on.mask.ice, ilim = st.threshold.ice;
-  const head = `<div class="lyr-trh"><div><b>${regionName(currentRegion())}</b><span class="n">${dayText(st.tDay)} · ${tt('stayD', st.mission)}</span></div><span class="lyr-trgo n">${ranked.filter(r => r.go0).length} GO</span></div>`;
+  const head = `<div class="lyr-trh"><div><b>${regionName(currentRegion())}</b><span class="n">${dayText(st.tDay)} · ${tt('stayD', st.mission)}</span></div><span class="lyr-trgo n">${ranked.filter(r => r.go0).length} GO${shown && p.ready ? `<button type="button" class="lyr-hidebest">${tt('hideBest')}</button>` : ''}</span></div>`;
   if (!listReady(p, st)) { list.innerHTML = head + `<p class="lyr-tri">${tt('loading')} <span class="ld-pct">${loadPct(st)} %</span></p>`; return; }
   if (!shown) { list.innerHTML = head; return; }
   const top5 = ranked.slice(0, 5);

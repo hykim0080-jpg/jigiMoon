@@ -723,3 +723,34 @@ html.panels,html.panels body,.panels .lyr-app,.panels .lyr-main{background:trans
   .panels .lyr-main>.lyr-pinp{top:118px;right:78px;bottom:76px}
 }
 @media (min-width:701px) and (max-height:820px){.panels .lyr-main>.lyr-pinp{top:110px;right:74px;bottom:72px}}
+/* Layers at the top of the left panel (critpanel.js): one row per factor; the picked row like the #1 spot */
+.lyr-left>.lyr-cp{order:-2;border-top:0;border-bottom:1px solid var(--line);padding:12px 8px 10px}
+.lyr-cp .lyr-cph{padding:0 8px}
+.lyr-cp .lyr-cpt{margin:0;font:600 13px Inter,system-ui,sans-serif;color:#fff;letter-spacing:.02em}
+.lyr-cp .lyr-cpb{gap:2px;margin-top:8px}
+.lyr-cp .lyr-cpl{padding:7px 8px 7px 6px;border-left:2px solid transparent;cursor:pointer}
+.lyr-cp .lyr-cpl:hover{background:#151c29}
+.lyr-cp .lyr-cpl.fx{background:#121a28;border-left-color:#46e58c}
+.lyr-cp .lyr-cpl.fx .lyr-cpk{color:#fff;font-weight:700}
+.lyr-cp .lyr-cpl .lyr-cpk{text-decoration:none;pointer-events:none}
+.lyr-cp .lyr-cpl input::-webkit-slider-runnable-track{height:3px;background:var(--trk)}
+.lyr-cp .lyr-cpl input::-moz-range-track{height:3px;background:var(--trk)}
+.lyr-cp .lyr-cpl.fx input::-webkit-slider-runnable-track{height:8px}
+.lyr-cp .lyr-cpl.fx input::-moz-range-track{height:8px}
+.lyr-cp .lyr-cpl input::-webkit-slider-thumb{margin-top:-6.5px}
+.lyr-cp .lyr-cpl.fx input::-webkit-slider-thumb{margin-top:-4px}
+.lyr-cp .lyr-cpl:focus-visible{outline:1px solid #74a2f2;outline-offset:-1px}
+/* the layer on the map, named large at its top left (layertitle.js) */
+.lyr-ltitle{position:absolute;z-index:5;pointer-events:none;font:700 22px/1.2 Inter,system-ui,sans-serif;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8);white-space:nowrap}
+.lyr-ltitle small{display:block;font-size:13px;font-weight:500;color:#c3c9d6;margin-top:2px}
+.lyr-dstrip{display:block;width:100%;height:30px;flex:none}
+@media (min-width:701px) and (max-height:800px){.panels .lyr-pinp .lyr-sky{height:62px}.panels .lyr-pinp .lyr-mvg{max-width:132px}.lyr-dstrip{height:26px}}
+.lyr-left .lyr-trh .lyr-hidebest{display:block;margin:4px 0 0 auto;padding:0;border:0;background:none;color:#a3abbb;font:500 11px Inter,system-ui,sans-serif;cursor:pointer;text-decoration:underline;text-underline-offset:2px}.lyr-left .lyr-trh .lyr-hidebest:hover,.lyr-left .lyr-trh .lyr-hidebest:focus-visible{color:#e6e9ef;outline:none}
+/* the left panel fits Layers and spots 1-5 without scrolling (1280x800 and up) */
+.lyr-left>.lyr-cp{padding:8px 8px 6px}
+.lyr-cp .lyr-cpb{margin-top:4px;gap:0}
+.lyr-cp .lyr-cpl{padding:3px 8px 3px 6px}
+.lyr-left .lyr-trh{padding:8px 16px 6px}
+.lyr-left .lyr-tr.top{padding:8px 16px 8px 14px;row-gap:2px}
+.lyr-left .lyr-tr.top .lyr-trc:not(.lab){font-size:15px}
+.lyr-left .lyr-tr:not(.top){padding:4px 16px 4px 14px;row-gap:0}

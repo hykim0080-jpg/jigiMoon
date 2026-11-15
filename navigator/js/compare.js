@@ -73,8 +73,8 @@ export function render(st, d) {
   const nums = s => {
     const v = { sun: mv(s, 'sun'), earth: mv(s, 'earth'), dark: mv(s, 'dark') };
     const bad = { sun: v.sun < THRESHOLDS.sun, earth: v.earth < THRESHOLDS.earth, dark: v.dark > THRESHOLDS.dark };
-    const it = (k, ic, txt) => `<span class="ci${bad[k] ? ' fail' : ''}" title="${t(k)}"><i style="color:var(--${k === 'dark' ? 'muted' : k})">${ic}</i>${txt}</span>`;
-    return `<div class="cline">${it('sun', '☀', t('pct', Math.round(v.sun)))}${it('earth', '⊕', t('pct', Math.round(v.earth)))}${it('dark', '☾', t('h', Math.round(v.dark)))}</div>`;
+    const it = (k, ic, txt) => `<span class="ci${bad[k] ? ' fail' : ''}" title="${k === 'dark' ? t('darkTip') : t(k)}"><i style="color:var(--${k === 'dark' ? 'muted' : k})">${ic}</i>${txt}</span>`;
+    return `<div class="cline">${it('sun', '☀', t('pct', Math.round(v.sun)))}${it('earth', '⊕', t('pct', Math.round(v.earth)))}${it('dark', '⟷', t('h', Math.round(v.dark)))}</div>`;
   };
   // one compact line of fixes; GO needs none
   const fixLine = s => {
