@@ -1377,14 +1377,17 @@ export function mountLunarMap(container, options = {}) {
       // solar panels on top, and the astronaut stand at the place
       const ppm = camera === cam3 ? canvas.clientHeight / (2 * camera.position.distanceTo(v3) * Math.tan(FOV * DEG / 2)) / 1000 : 0;
       const k = ppm * exagV, rig = Math.max(mastPt.h, 4.3) * k >= 14;
-      // the slope as seen from here: the downhill direction (height gradient over ±250 m) against the screen's right
+      // the ground under the model as the camera sees it: the terrain's real slope (no height exaggeration) along the
+      // screen's left-right line through the place, projected to the screen. It follows the camera's turn and tilt the
+      // way the ground itself does (seen from above it flattens out); the mast stays plumb
       let gd = 0;
       if (rig && mastPt.fx.ground && heights) {
-        const S = mastPt.fx.ground, d = 250, ex = heightAt(mastPt.x + d, mastPt.y) - heightAt(mastPt.x - d, mastPt.y), ey = heightAt(mastPt.x, mastPt.y + d) - heightAt(mastPt.x, mastPt.y - d), n = Math.hypot(ex, ey);
-        if (n > 0) {
-          const me = camera.matrixWorld.elements, rx = me[0], ry = -me[2], rn = Math.hypot(rx, ry) || 1;   // camera right, in map x / y
-          const cos = -(ex * rx + ey * ry) / (n * rn);                                                     // downhill · right
-          gd = Math.round(Math.atan(Math.tan(S * DEG) * cos) / DEG);
+        const me = camera.matrixWorld.elements, rn = Math.hypot(me[0], me[2]);
+        if (rn > 1e-6) {
+          const L = 250, rx = me[0] / rn * L, ry = -me[2] / rn * L, h0 = heightAt(mastPt.x, mastPt.y);
+          const a = new THREE.Vector3((mastPt.x - rx) / 1000, v3.y + (heightAt(mastPt.x - rx, mastPt.y - ry) - h0) / 1000, -(mastPt.y - ry) / 1000);
+          const b = new THREE.Vector3((mastPt.x + rx) / 1000, v3.y + (heightAt(mastPt.x + rx, mastPt.y + ry) - h0) / 1000, -(mastPt.y + ry) / 1000);
+          if (project(a) && project(b)) gd = Math.round(Math.atan2(b.y - a.y, b.x - a.x) / DEG);
         }
       }
       const key = mastPt.h + ':' + (rig ? k.toFixed(2) : '-') + JSON.stringify(mastPt.fx) + gd + mastPt.label;
