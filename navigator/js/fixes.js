@@ -4,12 +4,14 @@ import { t } from './strings.js';
 import { el, text, clear, bar, showTip, hideTip } from './svg.js';
 import { fixes, bestFix, shortDate, nearestOk } from './logic.js';
 import { movePhrase } from './orient.js';
+import { failStats, failReason } from './failreason.js';
 
 const KINDS = ['move', 'mast', 'wait'];
-let root, cards = {};
+let root, cards = {}, why;
 
 export function init(node) {
   root = node;
+  why = document.createElement('div'); why.id = 'why'; why.hidden = true; root.appendChild(why);
   for (const k of KINDS) {
     const c = document.createElement('div');
     c.className = 'card';
@@ -42,6 +44,17 @@ export function render(st, data) {
   const near = data.site && f.move != null && !e.ok[st.day] ? nearestOk(data.site, st.day) : null;
   cards.move.dir.textContent = near && near.d > 0 && f.move <= lim.move ? movePhrase(near.c.dx, near.c.dy) : '';
   if (!data.site) return;
+  // no fix within the limits: say why in one sentence, above the three empty cards
+  const none = !e.ok[st.day] && !best;
+  why.hidden = !none;
+  if (none) {
+    const key = [st.site, st.day, st.mission, lim.move, lim.mast, lim.wait, st.crit && `${st.crit.sun}/${st.crit.earth}/${st.crit.dark}`, document.documentElement.lang].join('|');
+    if (why.dataset.key !== key) {
+      why.dataset.key = key;
+      try { why.textContent = failReason(failStats(data.site, st.day, st.crit, lim, st.mission), (document.documentElement.lang || 'en').startsWith('ko') ? 'ko' : 'en').text; }
+      catch (err) { console.error(err); why.hidden = true; }
+    }
+  }
   drawMove(cards.move.svg, st, data);
   drawMast(cards.mast.svg, st, e, lim, data);
   drawWait(cards.wait.svg, st, e);

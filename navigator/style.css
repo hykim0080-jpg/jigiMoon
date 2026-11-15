@@ -242,3 +242,13 @@ main[data-view="compare"] #dim{display:none}
 main[data-d3="1"] #zoom,main[data-d3="1"] #expo,main[data-d3="1"] #globe,main[data-d3="1"] #pending-pin,main[data-d3="1"] #lander-card{display:none}
 main[data-d3="1"] #chain{display:none}
 main[data-d3="1"] .map-panel h2{z-index:5}
+/* factor notes: what each limit is for (full reason and source on hover) */
+.metric{grid-template-columns:62px 62px minmax(60px,1fr) auto}
+.metric .why{font-size:11px;color:var(--muted);white-space:nowrap;min-width:0;text-align:right}
+/* calendar colour key, and the colour chip before each fix title */
+#cal-key{position:absolute;left:12px;top:2px;font-size:10px;color:var(--muted);display:flex;gap:8px;pointer-events:none;line-height:14px}
+#cal-key i{display:inline-block;width:8px;height:8px;margin-right:3px;vertical-align:-1px;border-radius:1px}
+.card h2::before{content:"";display:inline-block;width:9px;height:9px;margin-right:6px;background:var(--fc);border-radius:1px;vertical-align:0}
+/* why there is no fix within the limits */
+#why{flex:none;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--none);border-radius:6px;padding:9px 12px;font-size:13px;line-height:1.45}
+#why[hidden]{display:none}

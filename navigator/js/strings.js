@@ -4,6 +4,14 @@ const en = {
   move: 'MOVE', mast: 'MAST', wait: 'WAIT', sky: 'SKY', map: 'MAP', year: 'YEAR',
   sun: 'Sun', earth: 'Earth', dark: 'Dark', noComm: 'No-comm',
   focus: 'Focus', compare: 'Compare',
+  why: { sun: 'solar power', earth: 'radio to Earth', dark: 'battery', noComm: 'longest radio gap' },
+  whyLong: {
+    sun: 'The lander runs on solar panels, so its power comes only when the Sun clears the surrounding hills. Best south-pole spots reach about 92 % (Gläser et al. 2014).',
+    earth: 'The lander can only talk to mission control while Earth is above its horizon. With no relay satellite, a hidden Earth means silence (Bryant 2009).',
+    dark: 'In darkness the lander lives on its batteries and heaters. VIPER survives 50 h; NASA calls a site with ≤ 50 h of darkness a Safe Haven.',
+    noComm: 'Longest unbroken stretch with Earth below the skyline, meaning no radio contact.'
+  },
+  legendGo: 'GO', legendNone: 'no fix',
   okPct: 'OK %', planMark: 'plan', planAxisTip: 'Click to move the planned landing date',
   km: v => `${v} km`, m: v => `${v} m`, d: v => `${v} d`, h: v => `${v} h`, pct: v => `${v} %`,
   unitKm: 'km', unitM: 'm', unitD: 'd',
@@ -59,6 +67,14 @@ const ko = {
   move: '이동', mast: '마스트', wait: '대기', sky: '하늘', map: '지도', year: '연간',
   sun: '태양', earth: '지구', dark: '암흑', noComm: '통신 끊김',
   focus: '집중', compare: '비교',
+  why: { sun: '태양광 전력', earth: '지구와 교신', dark: '배터리 한계', noComm: '가장 긴 교신 두절' },
+  whyLong: {
+    sun: '착륙선은 태양광으로 움직여요. 주변 언덕 위로 해가 보일 때만 전기가 생겨요. 남극 최고 지점은 약 92 % (Gläser et al. 2014).',
+    earth: '지구가 지평선 위에 있을 때만 관제센터와 통신할 수 있어요. 중계 위성이 없으면 지구가 가려지는 순간 연락이 끊겨요 (Bryant 2009).',
+    dark: '어둠 속에서는 배터리로 버텨야 해요. VIPER는 50시간을 버티고, NASA는 어둠 50시간 이하를 Safe Haven이라 불러요.',
+    noComm: '지구가 지형선 아래에 있어 통신이 끊기는 시간이 가장 길게 이어진 길이.'
+  },
+  legendGo: '가능', legendNone: '해법 없음',
   okPct: '가능 %', planMark: '계획', planAxisTip: '클릭하면 계획한 착륙일을 옮겨요',
   km: v => `${v} km`, m: v => `${v} m`, d: v => `${v}일`, h: v => `${v}시간`, pct: v => `${v} %`,
   unitKm: 'km', unitM: 'm', unitD: '일',
