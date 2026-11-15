@@ -14,7 +14,7 @@ import { initPin, setOnCal } from './pin.js';
 import { syncShadow, syncExpo, renderTime, ensure as ensureTime } from './time.js';
 import { xyToCell, cellToXY } from './geo.js';
 import { initTrip, renderTrip, tripRanked, REGIONS, regionBBox } from './trip.js';
-import { mapHome, setBadges } from './mapview.js';
+import { mapHome, setBadges, shadowLegend } from './mapview.js';
 import { syncWin, winToken } from './window.js';
 import { initCart, renderCart, readCart, cartHash } from './cart.js';
 
@@ -94,7 +94,7 @@ export async function mount(root, opts = {}) {
     if (p.has('pixels')) { passPx = compose(state).passPx; if (state.adv) renderPanel(state); renderCriteria(state); renderZones(state); zonesSoon(); syncShadow(); syncExpo(state); renderTime(state); renderPinCard(state); renderPinSky(state); blit(); overlay(); readout(); }
     else {
       if (p.has('view')) { blit(); overlay(); }
-      if (p.has('time')) { syncShadow(); syncExpo(state); renderTime(state); renderPinCard(state); renderPinSky(state); blit(); overlay(); }
+      if (p.has('time')) { syncShadow(); syncExpo(state); renderTime(state); shadowLegend(); renderPinCard(state); renderPinSky(state); blit(); overlay(); }
       if (p.has('zones')) { renderZones(state); zonesSoon(); readout(); }
       if (p.has('panel')) { renderZones(state); renderPinCard(state); renderPinSky(state); overlay(); readout(); }
       if (p.has('site')) { overlay(); readout(); }
