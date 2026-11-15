@@ -14,6 +14,11 @@ const ASTRO = `<g class="fig-astro">
 <rect x="-0.12" y="-1.2" width="0.16" height="0.1" fill="#4fc0c9"/>
 </g>`;
 
+// startled (MAST fix 15 m and up): turned to the mast, leaning back, head tipped up to its top, one arm thrown up
+const ASTRO_UP = ASTRO.replace(`<circle cx="0.04" cy="-1.56" r="0.21" fill="#e6e9ef"/>
+<path d="M0.08 -1.68a0.15 0.15 0 0 1 0.15 0.14 0.15 0.15 0 0 1-0.15 0.11z" fill="#d9a441"/>`, `<g transform="rotate(-32 0.02 -1.38)"><circle cx="0.04" cy="-1.56" r="0.21" fill="#e6e9ef"/>
+<path d="M0.08 -1.68a0.15 0.15 0 0 1 0.15 0.14 0.15 0.15 0 0 1-0.15 0.11z" fill="#d9a441"/></g>`).replace(`<path d="M0.16 -1.3l0.17 0.34-0.05 0.22h-0.09l0.03-0.2-0.12-0.22z" fill="#e6e9ef"/>`, `<g transform="rotate(-125 0.17 -1.28)"><path d="M0.16 -1.3l0.17 0.34-0.05 0.22h-0.09l0.03-0.2-0.12-0.22z" fill="#e6e9ef"/></g>`);
+
 // lander, 4 m tall, ~4 m wide footprint, feet at y=0, centred on x=0
 const LANDER = `<g class="fig-lander">
 <path d="M-1.1 -2.3-1.7 0M1.1 -2.3 1.7 0" stroke="#8c95a6" stroke-width="0.09"/>
@@ -118,7 +123,9 @@ export function MAST_RIG(h, k, fx = {}) {
       + `<path d="M${ox + 1.67} ${oy - 0.87 - lift}l0.46 -0.46" stroke="#f0655a" stroke-width="${lw(2)}"/>`;
   }
   if (tip) lander = `<g transform="rotate(${tip.toFixed(1)} ${1.7 * sg} 0)">${lander}</g>`;
-  const astro = fx.cold ? `<g transform="translate(2.65 0) rotate(7 0 0) scale(1 0.88)">${ASTRO}</g>` : `<g transform="translate(2.65 0)">${ASTRO}</g>`;
+  const astro = fx.cold ? `<g transform="translate(2.65 0) rotate(7 0 0) scale(1 0.88)">${ASTRO}</g>`
+    : h >= 15 ? `<g transform="translate(2.65 0) scale(-1 1)"><g class="fig-startle"><g transform="rotate(-9)">${ASTRO_UP}</g></g></g>`
+    : `<g transform="translate(2.65 0)">${ASTRO}</g>`;
   const ground = g ? `<path d="M${-W} 0H${W}" stroke="#c9cfdb" stroke-width="${lw(1.5)}" opacity=".7"/>` : '';
   const tint = fx.cold ? '<rect x="-3.6" y="-0.02" width="7.2" height="0.02" fill="#bfe3ff"/>' : '';
   const svg = `<svg width="${(2 * W * k).toFixed(1)}" height="${(H * k).toFixed(1)}" viewBox="${-W} ${-H} ${2 * W} ${H}" style="overflow:visible"><g transform="rotate(${g.toFixed(1)})">${ground}${astro}${lander}${tint}</g>${mast}${earth}</svg>`;
