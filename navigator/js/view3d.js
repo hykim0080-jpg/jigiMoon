@@ -57,7 +57,8 @@ async function mount() {
       datasets: order.map(j => ({ label: SETS[j].label, url: SETS[j].url })),
       sitesUrl: 'data/3d/sites.json', landmarksUrl: 'data/orientation/landmarks.json', landersUrl: 'data/orientation/landers.json',
       lang, frame: f.i,
-      onSpace: recenter,   // Space: back to the selected site, Earth side up
+      onSpace: recenter,
+      moonUrl: 'data/moon.jpg',   // NASA SVS CGI Moon Kit, the globe under the terrain patch   // Space: back to the selected site, Earth side up
     });
     return map.ready;
   }).then(() => { box.classList.remove('loading'); lastKey = ''; lastSite = ''; sync(state); })

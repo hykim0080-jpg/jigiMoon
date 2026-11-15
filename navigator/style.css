@@ -349,7 +349,7 @@ main[data-view="compare"] #basemap,main[data-d3="1"] #basemap{display:none}
 .fixrow .dir{grid-column:2/4;font-size:12px;color:var(--muted);min-height:0;line-height:15px}
 .fixrow .dir:empty{display:none}
 .fixrow[data-k="mast"]:not(.na){cursor:pointer}
-.card.local{flex:1;min-height:0;padding:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#fff}
+.card.local{flex:1;min-height:0;padding:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--surface)}
 .card.local svg{height:100%;width:auto;max-width:100%;aspect-ratio:1/1;display:block}
 .card.local .tick{fill:#5a6377;font-size:11px}
 .locl{font-size:12px;font-weight:600;paint-order:stroke;stroke:#fff;stroke-width:3px}
@@ -364,12 +364,12 @@ main[data-view="compare"] #basemap,main[data-d3="1"] #basemap{display:none}
 .fixrow .val b{font-size:20px}
 @media (max-width:700px){.card.local{aspect-ratio:1/1}.card.inset .vis svg{height:84px}.card.inset .left{width:104px}.card.inset .effort{width:100px}.card.inset .val b{font-size:22px}}
 /* right map: whole pole as lines, or the spot up close on relief */
-.card.local .lmsw{position:absolute;right:8px;bottom:8px;z-index:3;background:#fff}
+.card.local .lmsw{position:absolute;right:8px;bottom:8px;z-index:3;background:var(--surface)}
 .card.local .lmsw button{font-size:12px;padding:3px 9px}
 .card.local .locl.dk,.card.local .tick.dk{fill:#fff;paint-order:stroke;stroke:#000;stroke-width:3px}
 .card.local .lname{fill:var(--ink);font-weight:600;paint-order:stroke;stroke:#fff;stroke-width:3px}
 .card.local .tick{paint-order:stroke;stroke:#fff;stroke-width:3px}
-.card.local .lzsw{position:absolute;right:8px;top:8px;z-index:3;background:#fff}
+.card.local .lzsw{position:absolute;right:8px;top:8px;z-index:3;background:var(--surface)}
 .card.local .lzsw[hidden]{display:none}
 .card.local .lzsw button{font-size:12px;padding:3px 9px}
 /* one accent colour (NASA blue) for links and sliders; meaning colours stay as they are */
@@ -407,3 +407,6 @@ input[type=range]{accent-color:var(--accent)}
   main.full #cal-panel{left:112px;right:12px;bottom:84px;height:var(--cal,216px)}
   main.full #cal-panel.big{left:5vw;right:5vw;top:6vh;bottom:6vh;height:auto}
 }
+/* dark theme: cards and labels that were drawn on white paper */
+[data-theme="dark"] .card.inset{background:rgba(24,29,40,.94)}
+[data-theme="dark"] .locl,[data-theme="dark"] .card.local .lname,[data-theme="dark"] .card.local .tick{stroke:#0f131b}

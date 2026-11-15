@@ -403,6 +403,63 @@ export function mountLunarMap(container, options = {}) {
   renderer.setClearColor(0x0f131b, 1);
   const scene = new THREE.Scene();
 
+  // ---------------------------------------------------------------- the whole Moon and the sky
+  // The terrain patch (±200 km around the south pole) sits on a Moon globe (R = 1737.4 km), south pole up,
+  // lon 0 (Earth side) toward -z like the map. Sun and Earth are drawn in the background in their real
+  // directions from the pole (azimuth, elevation from the frame metadata); sizes are enlarged to be seen.
+  const R_MOON = 1737.4;
+  const moonGroup = new THREE.Group();
+  const moonMat = new THREE.MeshBasicMaterial({ color: 0x8a8f99 });
+  if (opt.moonUrl) new THREE.TextureLoader().load(opt.moonUrl, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; moonMat.map = tx; moonMat.color.set(0x9aa0aa); moonMat.needsUpdate = true; dirty = true; });
+  const moonGeo = new THREE.SphereGeometry(R_MOON, 160, 80);
+  const moonMesh = new THREE.Mesh(moonGeo, moonMat);
+  moonMesh.rotation.x = Math.PI;          // south pole to +y
+  moonGroup.rotation.y = Math.PI / 2;     // lon 0 to -z, lon 90E to +x
+  moonGroup.add(moonMesh);
+  moonGroup.visible = false;
+  scene.add(moonGroup);
+  const glowTex = (inner, outer, disc) => {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d'), gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gr.addColorStop(0, inner); gr.addColorStop(disc, inner); gr.addColorStop(disc + 0.04, outer); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+    const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace; return tx;
+  };
+  const earthTex = () => {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d');
+    const halo = g.createRadialGradient(64, 64, 34, 64, 64, 64); halo.addColorStop(0, 'rgba(116,162,242,.55)'); halo.addColorStop(1, 'rgba(116,162,242,0)');
+    g.fillStyle = halo; g.fillRect(0, 0, 128, 128);
+    const d = g.createRadialGradient(52, 50, 4, 64, 64, 36); d.addColorStop(0, '#9cc3ff'); d.addColorStop(.6, '#2f6fd6'); d.addColorStop(1, '#173d82');
+    g.fillStyle = d; g.beginPath(); g.arc(64, 64, 36, 0, 7); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.55)';   // a few cloud bands
+    for (const [x, y, w, h] of [[44, 50, 30, 5], [60, 68, 34, 6], [40, 80, 22, 4]]) { g.beginPath(); g.ellipse(x + w / 2, y, w / 2, h / 2, -.3, 0, 7); g.fill(); }
+    const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace; return tx;
+  };
+  const sky = {
+    sun: new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex('#fff8e0', 'rgba(255,190,80,.35)', 0.22), sizeAttenuation: false, depthWrite: false, transparent: true })),
+    earth: new THREE.Sprite(new THREE.SpriteMaterial({ map: earthTex(), sizeAttenuation: false, depthWrite: false, transparent: true })),
+  };
+  sky.sun.scale.set(0.16, 0.16, 1); sky.earth.scale.set(0.11, 0.11, 1);
+  for (const k in sky) { sky[k].visible = false; sky[k].renderOrder = -1; scene.add(sky[k]); }
+  const SKY_D = 3400;
+  function placeSky(tt) {
+    for (const k of ['sun', 'earth']) {
+      const b = bodyAt(`${k}_az_el_at_pole`, tt), sp = sky[k];
+      if (!b) { sp.visible = false; continue; }
+      const a = b.az * DEG, e = b.el * DEG;
+      sp.position.set(Math.sin(a) * Math.cos(e) * SKY_D, Math.sin(e) * SKY_D, -Math.cos(a) * Math.cos(e) * SKY_D);
+      sp.visible = true;
+    }
+  }
+  function placeMoon() {
+    if (!Number.isFinite(hMin)) return;
+    // globe top just under the lowest terrain, so the patch sits on it and nothing pokes through
+    const top = (hMin / 1000 - 1.5) * exagV + 4;
+    moonGroup.position.set(0, top - R_MOON, 0);
+    moonGroup.visible = true;
+  }
+
   const FOV = 30;
   const cam3 = new THREE.PerspectiveCamera(FOV, 1, 5, 6000);
   const cam2 = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 4000);
@@ -532,6 +589,7 @@ export function mountLunarMap(container, options = {}) {
     scene.add(skirt);
     disposables.push(sgeo);
     uniforms.uBase.value = hMin / 1000 - 1.5;
+    placeMoon();
 
     // slope texture (dh/dx, dh/dy in map axes) for per-pixel relief shading at full resolution
     const gr = new Uint16Array(nx * ny * 2);
@@ -825,6 +883,7 @@ export function mountLunarMap(container, options = {}) {
     uniforms.uB.value = sb.tex;
     uniforms.uMix.value = p.f;
     uniforms.uHasFrame.value = 1;
+    placeSky(t);
     const sun = bodyAt('sun_az_el_at_pole', t);
     if (sun) {
       // direction only: relief is lit from the Sun's azimuth at a fixed, readable elevation
@@ -1220,6 +1279,7 @@ export function mountLunarMap(container, options = {}) {
   function setExag(v) {
     exagV = clamp(+v || 1, 1, 8);
     uniforms.uExag.value = exagV;
+    placeMoon();
     exagIn.value = exagV;
     exagOut.textContent = `×${exagV % 1 ? exagV.toFixed(1) : exagV}`;
     dirty = true;
