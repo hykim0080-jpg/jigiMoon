@@ -1,7 +1,6 @@
 // Part of Moon-jigi Lunar Landing Site Navigator (NASA Space Apps 2026). Written with AI assistance (Anthropic Claude), directed and reviewed by the team.
 import { state, setState, limitsOf, ui, setHover, onHover } from './state.js';
 import { ZOOM } from './config.js';
-import { SCALE_FIGS } from './figs.js';
 import { siteName, t } from './strings.js';
 import { el, text, clear, showTip, hideTip } from './svg.js';
 import { status, fixText, shortDate, blockage, azToMapDir, nearestOk, mastShown } from './logic.js';
@@ -390,6 +389,7 @@ function draw(st) {
       const ex = x0 + dx * (len + 8), ey = y0 - dy * (len + 8);
       el('circle', { cx: ex, cy: ey, r: 6, fill: `var(--${k})`, stroke: 'var(--block)', 'stroke-width': 1.5 }, svg);
       el('line', { x1: ex - 6, y1: ey + 4, x2: ex + 6, y2: ey - 4, stroke: 'var(--block)', 'stroke-width': 1.5 }, svg);
+      text(svg, t('hiddenBy')[k], { x: ex + (dx < 0 ? -10 : 10), y: ey + 4, 'text-anchor': dx < 0 ? 'end' : 'start', class: 'raylab' });
     }
   }
 
@@ -403,6 +403,7 @@ function draw(st) {
       const rr = Math.max(7, 0.2 * ppk);
       el('circle', { cx: x1, cy: y1, r: rr, fill: 'none', stroke: '#000', 'stroke-width': 4, 'stroke-opacity': .5 }, svg);
       el('circle', { cx: x1, cy: y1, r: rr, fill: 'none', stroke: '#fff', 'stroke-width': 2 }, svg);
+      text(svg, t('moveToGo', +n.d.toFixed(1)), { x: x1, y: y1 + rr + 22, 'text-anchor': 'middle', class: 'raylab' });
     }
   }
 
@@ -415,9 +416,6 @@ function draw(st) {
       el('line', { x1: x0, y1: y0, x2: x0, y2: y0 - L, stroke: 'var(--mast)', 'stroke-width': 3 }, g);
       el('path', { d: `M${x0 - 7},${y0 - L - 6}a7 7 0 0 0 14 0`, fill: 'none', stroke: 'var(--mast)', 'stroke-width': 2 }, g);
       text(g, t('mastPole', h), { x: x0 + 10, y: y0 - L - 4, class: 'mastlab' });
-      // an astronaut (1.8 m) and a small lander (4 m) at the same scale, standing on the same ground
-      const fo = el('foreignObject', { x: x0 + 6, y: y0 - 4 * 6, width: 40, height: 4 * 6 + 1 }, g);
-      fo.innerHTML = `<div xmlns="http://www.w3.org/1999/xhtml" class="mastcmp">${SCALE_FIGS(6)}</div>`;
     }
   }
 

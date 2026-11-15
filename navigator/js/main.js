@@ -160,10 +160,10 @@ function onKey(e) {
     const i = ids.indexOf(state.site) + (e.key === 'ArrowUp' ? -1 : 1);
     setState({ site: ids[(i + ids.length) % ids.length] });
   } else if (e.key === ' ') { e.preventDefault(); if (!view3d.isOn()) setState({ playing: !state.playing }); }
-  else if (e.key === '0') setState({ view: 'find' });
   else if (e.key === '1') setState({ view: 'focus' });
-  else if (e.key === '2') setState({ view: 'compare' });
-  else if (e.key === '3') setState({ view: 'sites' });
+  else if (e.key === '2' || e.key === '0') setState({ view: 'find' });
+  else if (e.key === '3') setState({ view: 'compare' });
+  else if (e.key === '4') setState({ view: 'sites' });
   else if (e.key === 'z' || e.key === 'Z') setState({ zoom: state.zoom === 1 ? 4 : 1 });
   else if (e.key === 'Escape') setState({ zoom: 1 });
 }

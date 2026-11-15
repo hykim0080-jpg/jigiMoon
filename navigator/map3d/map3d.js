@@ -1152,7 +1152,8 @@ export function mountLunarMap(container, options = {}) {
         html += `<path d="${d}" fill="none" stroke="#000" stroke-opacity=".5" stroke-width="${(m.w || 2) + 2}"/><path d="${d}" fill="none" stroke="${m.color}" stroke-width="${m.w || 2}"${m.dash ? ` stroke-dasharray="${m.dash}"` : ''}/>`;
         if (m.end === 'ring') html += `<circle cx="${ex}" cy="${ey}" r="8" fill="none" stroke="#000" stroke-opacity=".5" stroke-width="4"/><circle cx="${ex}" cy="${ey}" r="8" fill="none" stroke="#fff" stroke-width="2"/>`;
         else if (m.end) html += `<circle cx="${ex}" cy="${ey}" r="7" fill="${m.end}" stroke="${m.color}" stroke-width="1.5"/><line x1="${ex - 7}" y1="${ey + 4}" x2="${ex + 7}" y2="${ey - 4}" stroke="${m.color}" stroke-width="1.5"/>`;
-        if (m.label) html += `<text x="${ex + 11}" y="${ey + 4}" font-size="12" font-weight="600" fill="#fff" paint-order="stroke" stroke="#0f131b" stroke-width="3">${m.label}</text>`;
+        const [sx] = pts[0].split(',').map(Number), lt = ex < sx;   // label on the far side of the end, away from the line
+        if (m.label) html += `<text x="${lt ? ex - 11 : ex + 11}" y="${ey + 4}"${lt ? ' text-anchor="end"' : ''} font-size="12" font-weight="600" fill="#fff" paint-order="stroke" stroke="#0f131b" stroke-width="3">${m.label}</text>`;
       }
       if (marksSvg._h !== html) { marksSvg.innerHTML = html; marksSvg._h = html; }
     }

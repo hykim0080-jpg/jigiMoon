@@ -433,3 +433,12 @@ main[data-d3="1"] #zoom{z-index:6}
 .card.inset .effort{display:none}
 .card.inset .vis svg{height:128px;max-height:128px}
 @media (max-width:700px){.card.inset .vis svg{height:96px}.card.inset .val b{font-size:14px}}
+
+/* MAST side view: pole, astronaut and lander at one scale, sight line over the ridge */
+.mastside{flex:none;background:var(--surface);border:1px solid var(--line);padding:6px 8px 2px}
+.mastside[hidden]{display:none}
+.mastside svg{display:block;width:100%;height:auto;max-height:200px}
+.mastside .ms-tick{font-size:10px;fill:#8c95a6}
+.mastside .ms-lab{font-size:12px;font-weight:600;fill:var(--mast)}
+.lmap-mast .cmp{display:none}
+.raylab{font-size:12px;font-weight:600;fill:#fff;paint-order:stroke;stroke:#0f131b;stroke-width:3px}

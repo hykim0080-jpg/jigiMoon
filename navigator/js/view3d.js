@@ -93,13 +93,13 @@ function sync(st) {
   if (s && e && data.site) {
     if (!e.ok[st.day]) {
       const n = nearestOk(data.site, st.day);
-      if (n && n.d > 0) marks.push({ x1: s.x_m, y1: s.y_m, x2: s.x_m + n.c.dx * 1000, y2: s.y_m + n.c.dy * 1000, color: '#fff', w: 2, end: 'ring', label: t('km', +n.d.toFixed(1)) });
+      if (n && n.d > 0) marks.push({ x1: s.x_m, y1: s.y_m, x2: s.x_m + n.c.dx * 1000, y2: s.y_m + n.c.dy * 1000, color: '#fff', w: 2, end: 'ring', label: t('moveToGo', +n.d.toFixed(1)) });
     }
     const b = blockage(data.site.sky, st.day * 24 + st.hour), L = 6000;
     for (const k of ['sun', 'earth']) {
       if (!b[k]) continue;
       const [dx, dy] = azToMapDir(s.lon, b[k].az);
-      marks.push({ x1: s.x_m, y1: s.y_m, x2: s.x_m + dx * L, y2: s.y_m + dy * L, color: '#f0655a', w: 1.5, end: k === 'sun' ? '#f0a531' : '#74a2f2' });
+      marks.push({ x1: s.x_m, y1: s.y_m, x2: s.x_m + dx * L, y2: s.y_m + dy * L, color: '#f0655a', w: 1.5, end: k === 'sun' ? '#f0a531' : '#74a2f2', label: t('hiddenBy')[k] });
     }
   }
   if (map.setMarks) map.setMarks(marks);
