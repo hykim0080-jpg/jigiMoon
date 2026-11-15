@@ -31,7 +31,7 @@ export async function mount(root, opts = {}) {
   setWinProgress((key, f) => {
     if (key !== keyOf(state)) return;
     const ld = ldEl(); if (ld && !ld.hidden) ld.textContent = t('computing', state.mission || 14) + pctTxt(f);
-    root.querySelectorAll('.ld-pct').forEach(e => { e.textContent = pctTxt(f).trim(); });
+    root.querySelectorAll('.ld-pct').forEach(e => { e.textContent = pctTxt(0.4 * f).trim(); });   // the stay is the first 40 % of the ranked list (layers/js/trip.js loadPct)
   });
   const main = root.querySelector('.lyr-main'), app = root.querySelector('.lyr-app'), pMap = main.querySelector('.lyr-map'), pLayers = main.querySelector('.lyr-advwrap'), pZones = main.querySelector('.lyr-zones'), pCrit = main.querySelector('.lyr-crit'), pPin = main.querySelector('.lyr-pinp'), advBtn = main.querySelector('.lyr-advb');
 

@@ -132,15 +132,27 @@ function poolCells(rid, mission) {
   return out;
 }
 export function poolOf(rid, mission) {
+  // the candidates follow the judged stay: wait until it is worked out instead of ranking the yearly fallback first and
+  // then all over again (that second run looked like a stall)
+  if (pending(state)) return { cells: [], ready: false, done: 0, promise: new Promise(r => setTimeout(r, 400)) };
   const k = `${rid}|${mission}|${maskKey()}`; if (pools.has(k)) return pools.get(k);
   if (pools.size > 40) pools.clear();
-  const p = { cells: poolCells(rid, mission), ready: false };
-  p.promise = (async () => { await ensure(); let n = 0; for (const c of p.cells) { c.w = await statsAsync(c.col, c.row, mission); if (++n % 12 === 0) await new Promise(r => setTimeout(r, 0)); } p.ready = true;
+  const p = { cells: poolCells(rid, mission), ready: false, done: 0 };
+  p.promise = (async () => { await ensure(); let n = 0; for (const c of p.cells) { c.w = await statsAsync(c.col, c.row, mission); if (++n % 12 === 0) { p.done = n / p.cells.length; showPct(); await new Promise(r => setTimeout(r, 0)); } } p.ready = true;
     // then the mast heights, for the ranking (a spot that needs a mast ranks below ground spots); the list redraws when done
-    n = 0; for (const c of p.cells) { c.w10 = await mastAsync(c.col, c.row, mission, 10); c.w20 = await mastAsync(c.col, c.row, mission, 20); if (++n % 8 === 0) await new Promise(r => setTimeout(r, 0)); }
+    n = 0; for (const c of p.cells) { c.w10 = await mastAsync(c.col, c.row, mission, 10); c.w20 = await mastAsync(c.col, c.row, mission, 20); if (++n % 8 === 0) { p.mdone = n / p.cells.length; showPct(); await new Promise(r => setTimeout(r, 0)); } }
     p.mready = true; setState({}, 'panel'); })();
   pools.set(k, p); return p;
 }
+// one count for the steps of the ranked list: the stay worked out (to 40 %), the candidate spots from the ground
+// (to 60 %), then with a 10 m and 20 m mast (to 100 %, the slowest part)
+export function loadPct(st) {
+  if (pending(st)) return Math.floor(40 * winProgress(st));
+  const p = pools.get(`${currentRegion()}|${st.mission}|${maskKey()}`);
+  if (!p) return 40;
+  return Math.min(99, Math.floor(p.ready ? 60 + 40 * (p.mdone || 0) : 40 + 20 * p.done));
+}
+const showPct = () => { const v = loadPct(state) + ' %'; document.querySelectorAll('.ld-pct').forEach(e => { e.textContent = v; }); };
 const maskKey = () => JSON.stringify([state.crit, state.threshold, state.on.mask, state.mode, winToken(state)]);
 export function goCount(p, d, crit) { let n = 0; for (const c of p.cells) if (c.w && isGo(c.w, d, crit)) n++; return n; }
 
@@ -284,7 +296,7 @@ function drawAnswer(st, rid, p) {
   if (!ans) return;
   const k = `${rid}|${st.mission}|${st.tDay}|${maskKey()}|${p.ready}|${ranked.length && ranked[0].title}|${shown}`;
   if (k === akey) return; akey = k;
-  if (!p.ready || pending(st)) { ans.innerHTML = tt('loading') + (pending(st) ? ` <span class="ld-pct">${Math.floor(100 * winProgress(st))} %</span>` : ''); return; }   // the stay window is still being computed: no area from the yearly fallback
+  if (!p.ready || pending(st)) { ans.innerHTML = tt('loading') + ` <span class="ld-pct">${loadPct(st)} %</span>`; return; }   // the stay window is still being computed: no area from the yearly fallback
   const km = regionArea(rid), where = st.region && st.region !== 'all' ? regionName(rid) : '', day = dayText(st.tDay), r0 = ranked[0];
   const km2 = km == null ? '' : km >= 100 ? String(Math.round(km / 10) * 10) : km >= 10 ? String(Math.round(km)) : km.toFixed(1);
   let h = km ? tt('ans', day, st.mission, km2, where) : tt('ansNone', day, st.mission, where);
@@ -296,7 +308,7 @@ function drawList(st, p) {
   const c = st.crit, sm = D.layers.find(m => m.id === 'slope'), slim = sm ? Math.round(st.threshold[sm.id] ?? sm.threshold) : 8;
   const iceOn = !!st.on.mask.ice, ilim = st.threshold.ice;
   const head = `<div class="lyr-trh"><div><b>${regionName(currentRegion())}</b><span class="n">${dayText(st.tDay)} · ${tt('stayD', st.mission)}</span></div><span class="lyr-trgo n">${ranked.filter(r => r.go0).length} GO</span></div>`;
-  if (!p.ready) { list.innerHTML = head + `<p class="lyr-tri">${tt('loading')}</p>`; return; }
+  if (!p.ready) { list.innerHTML = head + `<p class="lyr-tri">${tt('loading')} <span class="ld-pct">${loadPct(st)} %</span></p>`; return; }
   if (!shown) { list.innerHTML = head; return; }
   const top5 = ranked.slice(0, 5);
   // one row of numbers per spot, the same columns for all; a value that misses its limit in red
