@@ -34,7 +34,7 @@ const S = {
 const qp = k => new URLSearchParams(location.search).get(k) ?? new URLSearchParams(location.hash.slice(1)).get(k);
 export const lang = qp('lang') === 'ko' ? 'ko' : 'en';
 export const t = (key, ...args) => { const v = S[lang][key] ?? S.en[key] ?? key; return typeof v === 'function' ? v(...args) : v; };
-const EN = { sun_days: 'Sun days', earth_days: 'Earth days', dark_days: 'Dark ≤50 h days', slope: 'Slope', mast: 'Mast', days14: 'GO days', days6: 'GO days (6 d)', psr: 'Permanent shadow', sun: 'Sun %', earth: 'Earth %', both: 'Sun+Earth %', dark14: 'Longest dark' };
+const EN = { sun_days: 'Sun days', earth_days: 'Earth days', dark_days: 'Dark ≤50 h days', slope: 'Slope', mast: 'Mast', days14: 'GO days', days6: 'GO days (6 d)', psr: 'Permanent shadow', ice: 'Near ice (optional)', sun: 'Sun %', earth: 'Earth %', both: 'Sun+Earth %', dark14: 'Longest dark' };
 export const unitOf = m => (lang === 'en' && m.unit === '일') ? 'd' : m.unit;
 export const layerName = m => (lang === 'en' && EN[m.id]) || m.name;
 export const MONTH_NAMES = lang === 'en' ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] : ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];

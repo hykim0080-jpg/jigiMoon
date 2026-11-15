@@ -2,6 +2,7 @@
 import { t } from './strings.js';
 import { bar } from './svg.js';
 import { THRESHOLDS } from './config.js';
+import { loadIce, iceKm } from './ice.js';
 
 let root;
 export function init(node) { root = node; }
@@ -30,10 +31,13 @@ export function render(st, data) {
   const { cal } = s, m = st.mast && s.mast, c = st.crit || THRESHOLDS, d = st.day, w = t('why'), L = t('whyLong');
   const sun = m ? m.sun[st.mast][d] : cal.sun[d], earth = m ? m.earth[st.mast][d] : cal.earth[d], dark = m ? m.dark[st.mast][d] : cal.dark[d], nc = cal.noComm[d];
   const sl = data.index.byId[st.site]?.slope_deg, lim = 8;
+  const si = data.index.byId[st.site], ik = si ? iceKm(si.x_m, si.y_m) : null;
+  if (ik == null && si) loadIce().then(() => { if (iceKm(si.x_m, si.y_m) != null) render(st, data); });
   root.innerHTML = `<div class="mline">`
     + item('☀', 'var(--sun)', t('pct', Math.round(sun)), sun < c.sun, `${t('sun')} ≥ ${c.sun} % · ${w.sun}\n${L.sun}`)
     + item('⊕', 'var(--earth)', t('pct', Math.round(earth)), earth < c.earth, `${t('earth')} ≥ ${c.earth} % · ${w.earth}\n${t('noComm')}: ${t('h', Math.round(nc))}\n${L.earth}`)
     + item('☾', 'var(--muted)', t('h', Math.round(dark)), dark > c.dark, `${t('dark')} ≤ ${c.dark} h · ${w.dark}\n${L.dark}`)
     + (sl == null ? '' : item('∠', 'var(--muted)', `${sl.toFixed(1)}°`, sl > lim, `${t('slopeL')} ≤ ${lim}° · ${w.slope}\n${L.slope}`))
+    + (ik == null ? '' : item('❄', '#9fe3ff', t('km', ik < 10 ? +ik.toFixed(1) : Math.round(ik)), false, t('iceTip')))
     + `</div>`;
 }
