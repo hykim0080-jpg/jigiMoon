@@ -422,3 +422,14 @@ body[data-view="find"] header>*:not(.app-name):not([data-key="view"]):not(.grow)
 #space-hint[hidden]{display:none}
 main[data-d3="1"] #zoom{z-index:6}
 .mastcmp{display:flex;align-items:flex-end;gap:3px;height:100%}.mastcmp svg{display:block;fill:#d6dbe6;stroke:#0f131b;stroke-width:.6}
+
+/* MOVE inset: one small line "MOVE 0.6 km ↖" over the 3 km grid */
+.card.inset{flex-direction:column;padding:6px 8px;gap:4px}
+.card.inset .left{width:auto;flex-direction:row;align-items:baseline;gap:6px}
+.card.inset .left h2{font-size:11px;margin:0}
+.card.inset .val{gap:3px}
+.card.inset .val b{font-size:15px}.card.inset .val span{font-size:11px}
+.card.inset .dir{font-size:14px;line-height:1;min-height:0;color:var(--move)}
+.card.inset .effort{display:none}
+.card.inset .vis svg{height:128px;max-height:128px}
+@media (max-width:700px){.card.inset .vis svg{height:96px}.card.inset .val b{font-size:14px}}
