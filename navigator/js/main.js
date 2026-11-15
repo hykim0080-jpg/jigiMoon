@@ -119,7 +119,7 @@ async function boot() {
   header.init($('header'), data);
   calendar.init($('cal-panel'), data);
   map.init($('map'), data, openPin);
-  view3d.init($('map-panel'), data);
+  view3d.init($('map-panel'), data, openPin);
   globe.init($('globe'), data);
   metrics.init($('metrics-panel'));
   sky.init($('sky'), $('countdowns'));
@@ -133,6 +133,17 @@ async function boot() {
   addEventListener('hashchange', () => location.reload());   // a link from Find a site (in its frame) into this page
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => render(state));
   addEventListener('keydown', onKey);
+  // Space with the 3D map on: back to the selected site, whatever has focus (a slider, a button, the 3D view);
+  // caught first on the way down so a focused button or the 3D player does not take it. Text fields keep it.
+  const spaceTo3d = e => {
+    if (e.code !== 'Space' || e.ctrlKey || e.metaKey || e.altKey || !view3d.isOn()) return false;
+    const a = e.target;
+    if (a.matches && a.matches('textarea,select,input:not([type=range]):not([type=button]):not([type=checkbox])')) return false;
+    e.preventDefault(); e.stopPropagation();
+    return true;
+  };
+  addEventListener('keydown', e => { if (spaceTo3d(e)) { if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur(); if (!e.repeat) view3d.recenter(); } }, true);
+  addEventListener('keyup', spaceTo3d, true);
   document.addEventListener('mapframe', () => { if (state.view === 'focus') chain.render(); });
   const ids = data.index.sites.map(s => s.id);
   preloadCals(ids, state.mission).then(() => render(state));
@@ -148,7 +159,7 @@ function onKey(e) {
     e.preventDefault();
     const i = ids.indexOf(state.site) + (e.key === 'ArrowUp' ? -1 : 1);
     setState({ site: ids[(i + ids.length) % ids.length] });
-  } else if (e.key === ' ') { e.preventDefault(); if (view3d.isOn()) { if (!e.target.closest('#map3d')) view3d.recenter(); } else setState({ playing: !state.playing }); }
+  } else if (e.key === ' ') { e.preventDefault(); if (!view3d.isOn()) setState({ playing: !state.playing }); }
   else if (e.key === '0') setState({ view: 'find' });
   else if (e.key === '1') setState({ view: 'focus' });
   else if (e.key === '2') setState({ view: 'compare' });

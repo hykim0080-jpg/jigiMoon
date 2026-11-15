@@ -1026,7 +1026,7 @@ export function mountLunarMap(container, options = {}) {
       s.dot.addEventListener('pointerenter', () => { hoverSite = s; dirty = true; });
       s.dot.addEventListener('pointerleave', () => { if (hoverSite === s) hoverSite = null; dirty = true; });
       s.dot.addEventListener('wheel', passWheel, { passive: false });
-      s.dot.addEventListener('click', () => { selSite = selSite === s ? null : s; stripDirty = true; dirty = true; });
+      s.dot.addEventListener('click', () => { if (opt.onSiteClick) { selSite = s; opt.onSiteClick(s.id); } else selSite = selSite === s ? null : s; stripDirty = true; dirty = true; });
     }
   }
   const project = (out) => {
@@ -1359,7 +1359,12 @@ export function mountLunarMap(container, options = {}) {
   let down = null;
   on(canvas, 'pointerdown', (e) => { down = { x: e.clientX, y: e.clientY }; });
   on(canvas, 'pointerup', (e) => {
-    if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 4 && selSite) { selSite = null; stripDirty = true; dirty = true; }
+    if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 4) {
+      // a click (not a drag): the host picks that ground point (navigator: a pin there); otherwise clear the selection
+      const pt = opt.onMapClick ? pick(e.clientX, e.clientY) : null;
+      if (pt) opt.onMapClick(pt.x, pt.y);
+      else if (selSite) { selSite = null; stripDirty = true; dirty = true; }
+    }
     down = null;
   });
   on(canvas, 'pointermove', (e) => { pointer = e.buttons ? null : { x: e.clientX, y: e.clientY }; pickDirty = true; dirty = true; });

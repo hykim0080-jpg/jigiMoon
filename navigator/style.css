@@ -418,3 +418,5 @@ main[data-view="find"]{display:block}
 main[data-view="find"]>*:not(#find){display:none!important}
 main[data-view="find"] #find{display:block;position:absolute;inset:0}
 body[data-view="find"] header>*:not(.app-name):not([data-key="view"]):not(.grow){display:none}
+#space-hint{position:absolute;right:12px;bottom:86px;z-index:6;font-size:11px;color:#c9cfdb;background:rgba(15,19,27,.75);padding:3px 7px;pointer-events:none}
+#space-hint[hidden]{display:none}

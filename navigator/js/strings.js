@@ -16,7 +16,7 @@ const en = {
     slope: 'A lander touching down on a steep slope can tip over, as IM-1 and IM-2 did. 8° is a conservative limit (Apollo LM: 12°). LOLA slope at 15 m scale.'
   },
   legendGo: 'GO', legendNone: 'no fix',
-  okPct: 'OK %', mastPole: h => `${h} m mast`, calOpen: 'Open large', calClose: 'Close', dock: { sky: 'Sky', metrics: 'Numbers', fixes: 'Fixes', cal: 'Year' }, layoutFull: 'Full map', layoutGrid: 'All panels', planMark: 'plan', planAxisTip: 'Click to move the planned landing date',
+  okPct: 'OK %', spaceHint: 'Space: back to the site', mastPole: h => `${h} m mast`, calOpen: 'Open large', calClose: 'Close', dock: { sky: 'Sky', metrics: 'Numbers', fixes: 'Fixes', cal: 'Year' }, layoutFull: 'Full map', layoutGrid: 'All panels', planMark: 'plan', planAxisTip: 'Click to move the planned landing date',
   km: v => `${v} km`, m: v => `${v} m`, d: v => `${v} d`, h: v => `${v} h`, pct: v => `${v} %`,
   unitKm: 'km', unitM: 'm', unitD: 'd',
   slip: v => `plan ${v > 0 ? '+' : '−'}${Math.abs(v)} d`, slipTip: d => `days after the planned landing date (${d})`,
@@ -84,7 +84,7 @@ const ko = {
     slope: '경사가 가파르면 착륙선이 넘어질 수 있어요 (IM-1·IM-2 사례). 8°는 보수적인 기준이에요 (Apollo LM 12°). LOLA 15 m 경사.'
   },
   legendGo: '가능', legendNone: '해법 없음',
-  okPct: '가능 %', mastPole: h => `마스트 ${h} m`, calOpen: '크게 보기', calClose: '닫기', dock: { sky: '하늘', metrics: '수치', fixes: '해결책', cal: '연간' }, layoutFull: '지도 크게', layoutGrid: '모든 패널', planMark: '계획', planAxisTip: '클릭하면 계획한 착륙일을 옮겨요',
+  okPct: '가능 %', spaceHint: '스페이스: 선택 지점으로', mastPole: h => `마스트 ${h} m`, calOpen: '크게 보기', calClose: '닫기', dock: { sky: '하늘', metrics: '수치', fixes: '해결책', cal: '연간' }, layoutFull: '지도 크게', layoutGrid: '모든 패널', planMark: '계획', planAxisTip: '클릭하면 계획한 착륙일을 옮겨요',
   km: v => `${v} km`, m: v => `${v} m`, d: v => `${v}일`, h: v => `${v}시간`, pct: v => `${v} %`,
   unitKm: 'km', unitM: 'm', unitD: '일',
   slip: v => `계획 ${v > 0 ? '+' : '−'}${Math.abs(v)}일`, slipTip: d => `계획한 착륙일(${d})보다 미뤄진 날 수`,
