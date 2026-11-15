@@ -8,7 +8,7 @@ import { lang } from './strings.js';
 import { defaults, isDefault } from './crit.js';
 import { FX, trackCss } from './factor.js';
 
-const TX = { en: { lim: 'Limit', title: 'Criteria', reset: 'Reset', off: 'Off', sun: 'Sun', earth: 'Earth', dark: 'Dark', slope: 'Slope', ice: 'Ice' }, ko: { lim: '기준선', title: '기준', reset: '초기화', off: '끔', sun: '햇빛', earth: '지구', dark: '어둠', slope: '경사', ice: '얼음' } }[lang === 'ko' ? 'ko' : 'en'];
+const TX = { en: { darkTip: 'Longest stretch without sunlight', lim: 'Limit', title: 'Criteria', reset: 'Reset', off: 'Off', sun: 'Sun', earth: 'Earth', dark: 'Dark', slope: 'Slope', ice: 'Ice' }, ko: { darkTip: '햇빛이 한 번에 가장 오래 끊긴 시간', lim: '기준선', title: '기준', reset: '초기화', off: '끔', sun: '햇빛', earth: '지구', dark: '어둠', slope: '경사', ice: '얼음' } }[lang === 'ko' ? 'ko' : 'en'];
 let el, data, setCrit, rows = {}, open = true;
 
 export function initCritPanel(host, d, setCritFn) {
@@ -32,6 +32,7 @@ export function initCritPanel(host, d, setCritFn) {
     const cl = Object.entries(CL).find(([lid]) => hue(lid) === k);
     const r = document.createElement('label'); r.className = 'lyr-cpl';
     r.innerHTML = `<button type="button" class="lyr-cpk" aria-pressed="false">${TX[k]}</button><input type="range"><b class="n"></b>`;
+    if (k === 'dark') r.title = TX.darkTip;   // the longest single stretch without sunlight (same wording as the spot card)
     const inp = r.querySelector('input'), m = data.layers.find(q => q.id === id), f = FX[k];
     // the name shows this factor on the map (again: off)
     r.querySelector('.lyr-cpk').onclick = e => { e.preventDefault(); setState({ factor: state.factor === k ? null : k }, 'pixels'); };
@@ -46,7 +47,7 @@ export function initCritPanel(host, d, setCritFn) {
         const d = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1 }[e.key]; if (!d) return;
         e.preventDefault(); const j = lv.indexOf(state.crit[P]) + d; if (j >= 0 && j < lv.length) { inp.value = String(lv[j]); setCrit(P, lv[j]); }
       };
-      rows[k] = { inp, b: r.querySelector('b'), get: () => { const v = state.crit[P]; return { i: v, txt: `${cl[1].dir === '<=' ? '≤' : '≥'} ${v} ${cl[1].unit === '%' ? '%' : 'h'}` }; } };
+      rows[k] = { inp, b: r.querySelector('b'), get: () => { const v = state.crit[P]; return { i: v, txt: `${k === 'dark' ? '⟷ ' : ''}${cl[1].dir === '<=' ? '≤' : '≥'} ${v} ${cl[1].unit === '%' ? '%' : 'h'}` }; } };
     } else if (k === 'slope') {
       Object.assign(inp, { min: 0, max: 20, step: 1 });
       inp.oninput = () => { if (+inp.value < 1) inp.value = '1'; setState({ threshold: { ...state.threshold, [id]: +inp.value } }); };
