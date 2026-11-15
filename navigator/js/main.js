@@ -20,9 +20,11 @@ import * as view3d from './view3d.js';
 import * as full from './full.js';
 import * as intro from './intro.js';
 import * as verdict from './verdict.js';
+import * as drag from './drag.js';
 if (intro.shouldPlay()) intro.play();   // opening shot: near side -> south pole
 
 const $ = id => document.getElementById(id);
+const isFull = () => $('main').classList.contains('full');   // panels move only on the full map
 const data = { index: null, site: null };
 
 // rebuild the per-day entries when the criteria or the mission change (needs every site's file)
@@ -68,6 +70,8 @@ function render(st) {
   metrics.render(st, data);
   fixes.render(st, data);
   verdict.render(st, data, $('map-panel'), limitsOf(st));
+  drag.draggable($('vbadge'), 'verdict', isFull);
+  drag.refresh();
   detailNote(st);
   if (st.view === 'focus') { sky.render(st, data); timeline.render(st, data); chain.render(); }
 }
@@ -131,6 +135,8 @@ async function boot() {
   fixes.init($('fixes'));
   compare.init($('compare'));
   full.init($('main'));
+  for (const [id, k] of [['sky-panel', 'sky'], ['metrics-panel', 'numbers'], ['fixes', 'fixes'], ['cal-panel', 'year']]) drag.draggable($(id), k, isFull);
+  drag.onChange(() => render(state));
   subscribe(render);
   render(state);
   addEventListener('resize', () => render(state));

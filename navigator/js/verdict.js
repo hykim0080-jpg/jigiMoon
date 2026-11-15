@@ -2,12 +2,15 @@
 // The verdict for the selected place, big on the map: GO / NO-GO, each criterion that misses its limit (value vs limit),
 // and the fix (or, with none within the limits, the one-sentence reason from failreason.js).
 // verdictFor() is plain data so other views (3D hover card, Find a site) can show the same words.
+import { moved } from './drag.js';
 import { t } from './strings.js';
 import { THRESHOLDS } from './config.js';
 import { status, nearestOk, blockage } from './logic.js';
 import { failStats, failReason } from './failreason.js';
 import { sector, bearing } from './orient.js';
 
+// one decimal, rounded down so a miss never reads as the limit (48.8 %, as the API gives it)
+const pct1 = v => (Math.floor(v * 10) / 10).toFixed(1);
 const ARROW = ['↑', '↗', '→', '↘', '↓', '↙', '←', '↖'];
 const lang = () => (document.documentElement.lang || 'en').startsWith('ko') ? 'ko' : 'en';
 
@@ -19,8 +22,8 @@ export function verdictFor(st, data, lim) {
   const sun = m ? m.sun[st.mast][d] : site.cal.sun[d], earth = m ? m.earth[st.mast][d] : site.cal.earth[d], dark = m ? m.dark[st.mast][d] : site.cal.dark[d];
   const b = site.sky ? blockage(site.sky, d * 24 + st.hour) : {}, hid = k => b[k] ? ` · ${t('hiddenRidge')}` : '';   // the ridge that hides it now
   const fails = [];
-  if (sun < c.sun) fails.push({ k: 'sun', text: `${t('sun')} ${Math.floor(sun)} % < ${c.sun} %${hid('sun')}` });
-  if (earth < c.earth) fails.push({ k: 'earth', text: `${t('earth')} ${Math.floor(earth)} % < ${c.earth} %${hid('earth')}` });
+  if (sun < c.sun) fails.push({ k: 'sun', text: `${t('sun')} ${pct1(sun)} % < ${c.sun} %${hid('sun')}` });
+  if (earth < c.earth) fails.push({ k: 'earth', text: `${t('earth')} ${pct1(earth)} % < ${c.earth} %${hid('earth')}` });
   if (dark > c.dark) fails.push({ k: 'dark', text: `${t('dark')} ${Math.ceil(dark)} h > ${c.dark} h` });
   const s = status(e, d, st.mast, lim);
   let fix = '', why = '';
@@ -43,7 +46,7 @@ export function render(st, data, panel, lim) {
   const main = document.getElementById('main');
   if (!v) { main.style.setProperty('--vbh', '0px'); return; }
   const key = JSON.stringify(v);
-  if (box.dataset.k === key) return;
+  if (box.dataset.k === key) { vbh(main, box); return; }
   box.dataset.k = key;
   box.className = v.go ? 'go' : 'nogo';
   box.innerHTML = `<b>${v.go ? t('go') : t('nogo')}</b>`
@@ -51,5 +54,7 @@ export function render(st, data, panel, lim) {
     + v.fails.map(f => `<span class="vfail">${f.text}</span>`).join('')
     + (v.fix ? `<span class="vfix" style="color:var(--${v.fixKind})">→ ${v.fix}</span>` : '')
     + (v.why ? `<span class="vwhy">${v.why}</span>` : '');
-  main.style.setProperty('--vbh', box.offsetHeight + 8 + 'px');   // the dock, sky pop-up and 3D legend sit below it
+  vbh(main, box);
 }
+// the dock, sky pop-up and 3D legend sit below the block, unless it was dragged away
+const vbh = (main, box) => main.style.setProperty('--vbh', moved('verdict') ? '0px' : box.offsetHeight + 8 + 'px');
