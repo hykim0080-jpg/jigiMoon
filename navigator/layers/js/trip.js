@@ -169,7 +169,7 @@ function open(kind) {
   pop.dataset.kind = kind; pop.hidden = false; if (kind === 'date') calMonth = dateOf(state.tDay).getUTCMonth();
   bar.querySelectorAll('[data-pop]').forEach(b => b.setAttribute('aria-expanded', String(b.dataset.pop === kind)));
   const r = bar.querySelector(`[data-pop="${kind}"]`).getBoundingClientRect();
-  pop.style.left = Math.max(8, Math.min(r.left, innerWidth - (kind === 'date' ? 430 : 640) - 8)) + 'px'; pop.style.top = (r.bottom + 6) + 'px';
+  if (innerWidth <= 700) { pop.style.left = ''; pop.style.top = ''; } else { pop.style.left = Math.max(8, Math.min(r.left, innerWidth - (kind === 'date' ? 430 : 640) - 8)) + 'px'; pop.style.top = (r.bottom + 6) + 'px'; }
   drawPop();
 }
 function drawPop() {

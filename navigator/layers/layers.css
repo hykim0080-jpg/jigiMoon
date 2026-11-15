@@ -353,3 +353,26 @@ h2{margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spaci
 .lyr-win{display:flex;gap:10px;font-size:12px;color:var(--muted)}
 .lyr-win span:first-child{color:var(--ink);font-weight:600}
 .lyr-win .bad{color:var(--block)}
+.lyr-app header{height:48px}
+.lyr-sw a,.lyr-sw button{font-size:13px;padding:5px 12px;line-height:1.4}
+
+/* phones (390 px): one column — trip bar, map, best spots, spot card, criteria */
+@media (max-width:700px){
+  .lyr-app{min-width:0;height:auto;min-height:0;padding:8px;gap:8px}
+  .lyr-app header{height:auto;flex-wrap:wrap;gap:8px}
+  .lyr-app header .app-name{display:none}
+  .lyr-trip{order:3;width:100%;margin:0}
+  .lyr-tb{flex:1 1 0;min-width:0;padding:2px 10px}
+  .lyr-tb b{font-size:13px;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .lyr-main{display:flex;flex-direction:column;gap:8px}
+  .lyr-map{order:1;width:100%;height:var(--S,374px);flex:none}
+  .lyr-left{order:3;overflow:visible}
+  .lyr-tripl{order:-1;overflow:visible}
+  .lyr-pinp{order:2;overflow:visible}
+  .lyr-time{left:46px;right:8px}
+  .lyr-pop{left:8px!important;right:8px;top:auto!important;bottom:8px;max-height:80vh;overflow:auto;padding:10px}
+  .lyr-pcalg{grid-template-columns:repeat(7,1fr)}
+  .lyr-pcalg button{height:44px;padding:2px 3px}
+  .lyr-regs{grid-template-columns:repeat(2,1fr)}
+  .lyr-ph{flex-wrap:wrap}
+}

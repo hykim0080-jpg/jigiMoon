@@ -261,3 +261,35 @@ header>.verdict .fix{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;m
 @media (max-width:1400px){header .seg[data-key="view"] button,header .seg[data-key="pro"] button{padding:5px 8px}header .slip{display:none}}
 /* square corners: rules kept unchanged above so parallel PRs merge cleanly */
 .adv>button,.api-link,#lander-card{border-radius:0}
+
+/* phones (390 px): one column — header controls wrap, then map, fixes, sky, numbers, calendar */
+@media (max-width:700px){
+  .app{min-width:0;height:auto;min-height:0;padding:8px;gap:8px}
+  header{height:auto;flex-wrap:wrap;gap:6px}
+  header>*{flex:none}
+  header .app-name,header .adv,header .slip,header .api-link{display:none}
+  #site-select{flex:1 1 100%;order:1;height:34px}
+  header>.stepper{order:2}header>.chips{order:2;flex:1 1 100%;min-width:0;overflow-x:auto;flex-wrap:nowrap}
+  header>.seg[data-key="mission"]{order:3}header>.seg[data-key="mode"]{order:3}
+  header>.verdict{order:4;flex:1 1 100%;max-width:none;white-space:normal}
+  header>.verdict .fix{white-space:normal}
+  header>.grow{display:none}
+  header>.seg[data-key="view"],header>.seg[data-key="pro"]{order:5}
+  main{display:flex;flex-direction:column;gap:8px;flex:none}
+  main>*{flex:none}
+  .map-panel{order:1}
+  #compare{order:2;overflow:auto}
+  #fixes{order:2}
+  #sky-panel{order:3;height:340px}
+  #metrics-panel{order:4;gap:6px}
+  #cal-panel{order:5;height:var(--cal,216px)}
+  #chain{display:none!important}
+  main[data-view="compare"] .map-panel{height:auto}
+  main[data-view="compare"] #globe{display:none}
+  .map-panel h2{max-width:calc(100% - 180px)}
+  .card{flex:none;height:150px;padding:10px;gap:10px}
+  .card .left{width:auto;flex:1 1 0;min-width:0}
+  .card .effort{width:100%}
+  .card .val b{font-size:32px}
+  .card .vis svg{height:128px}
+}

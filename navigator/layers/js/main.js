@@ -18,7 +18,7 @@ import { mapHome, setBadges } from './mapview.js';
 export async function mount(root, opts = {}) {
   const { dataUrl = './data/', header = true } = opts;
   const lq = new URLSearchParams(location.search).get('lang') || new URLSearchParams(location.hash.slice(1)).get('lang'), cmp = '../index.html' + (lq ? '?lang=' + lq : '') + '#v=focus';
-  root.innerHTML = `<div class="lyr-app">${header ? `<header><a class="app-name" href="${cmp}">${t('app')}</a><div class="seg lyr-sw"><a href="${cmp}">${t('compare')}</a><button aria-pressed="true">${t('find')}</button></div></header>` : ''}<div class="lyr-main"><section class="panel lyr-left"><div class="lyr-lh"><h2>${t('criteria')}</h2><button class="lyr-advb" aria-pressed="false">${t('adv')}</button></div><div class="lyr-crit"></div><div class="lyr-advwrap lyr-layers"></div><div class="lyr-tripl"></div><div class="lyr-zones"></div></section><section class="panel lyr-map" data-theme="dark"></section><section class="panel lyr-pinp"></section></div></div><div id="tip" hidden></div>`;
+  root.innerHTML = `<div class="lyr-app">${header ? `<header><div class="seg lyr-sw"><a href="${cmp}">${t('compare')}</a><button aria-pressed="true">${t('find')}</button></div><a class="app-name" href="${cmp}">${t('app')}</a></header>` : ''}<div class="lyr-main"><section class="panel lyr-left"><div class="lyr-lh"><h2>${t('criteria')}</h2><button class="lyr-advb" aria-pressed="false">${t('adv')}</button></div><div class="lyr-crit"></div><div class="lyr-advwrap lyr-layers"></div><div class="lyr-tripl"></div><div class="lyr-zones"></div></section><section class="panel lyr-map" data-theme="dark"></section><section class="panel lyr-pinp"></section></div></div><div id="tip" hidden></div>`;
   const data = await loadAll(dataUrl);
   const main = root.querySelector('.lyr-main'), app = root.querySelector('.lyr-app'), pMap = main.querySelector('.lyr-map'), pLayers = main.querySelector('.lyr-advwrap'), pZones = main.querySelector('.lyr-zones'), pCrit = main.querySelector('.lyr-crit'), pPin = main.querySelector('.lyr-pinp'), advBtn = main.querySelector('.lyr-advb');
 
@@ -50,7 +50,7 @@ export async function mount(root, opts = {}) {
 
   const { comp } = initCompose(data);
   { const ok = await applyLevels(data, state.crit, dataUrl); if (!ok) state.crit = readCrit(data.meta, new URLSearchParams()), await applyLevels(data, state.crit, dataUrl); }
-  const pick = z => { setState({ pin: { col: z.best.col, row: z.best.row }, autoPin: false }, 'panel'); flyToCells(z.bbox, ZONE.fitMaxK); };
+  const pick = z => { setState({ pin: { col: z.best.col, row: z.best.row }, autoPin: false }, 'panel'); flyToCells(z.bbox, ZONE.fitMaxK); if (innerWidth <= 700) root.querySelector('.lyr-map').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
   initPanel(pLayers, data); const setCrit = async (param, v, whole) => {
     const next = whole || { ...state.crit, [param]: v };
     if (!(await applyLevels(data, next, dataUrl))) { await applyLevels(data, state.crit, dataUrl); return false; }
@@ -64,7 +64,7 @@ export async function mount(root, opts = {}) {
   advBtn.onclick = () => setAdv(!state.adv);
 
   const setS = () => {
-    const band = main.clientHeight || 800, S = band >= 802 && band < 962 ? 802 : Math.max(500, band);
+    const band = main.clientHeight || 800, S = innerWidth <= 700 ? main.clientWidth : band >= 802 && band < 962 ? 802 : Math.max(500, band);
     main.style.setProperty('--S', S + 'px');
   };
   let passPx = 0;
