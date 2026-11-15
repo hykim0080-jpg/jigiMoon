@@ -9,7 +9,9 @@ import { describe, anchorOf } from './orient.js';
 import { decode } from './data.js';
 import { lang, MONTH_NAMES } from './strings.js';
 import { failStats, failReason } from '../../js/failreason.js';
-import { failBase, critIds } from './compose.js';
+import { failBase, failYear, critIds } from './compose.js';
+import { winToken } from './window.js';
+import { inCart, toggleCart, ct } from './cart.js';
 
 const T0 = Date.UTC(2027, 0, 1), DAYS = 365, LIM = { move: 3, mast: 20, wait: 60 };
 export const REGIONS = [
@@ -97,12 +99,12 @@ function poolCells(rid, mission) {
   const cand = [], useMask = !!failBase && state.mode === 'mask' && critIds(state).length > 0;
   for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
     const i = r * N + c, v = days[i]; if (!(v > 0 && v <= 250)) continue;
-    if (useMask) { if (failBase[i] !== 0) continue; }
+    if (useMask) { if (failBase[i] !== 0 && failYear[i] !== 0) continue; }
     else if (sb && slopeM && (sb[i] > 250 || decode(slopeM, sb[i]) > thr)) continue;
     if (reg.r) { const { x, y } = cellToXY(c, r); if (Math.hypot(x / 1000 - reg.x, y / 1000 - reg.y) > reg.r) continue; }
     cand.push(i);
   }
-  cand.sort((a, b) => days[b] - days[a]);
+  cand.sort((a, b) => useMask && (failBase[a] === 0) !== (failBase[b] === 0) ? (failBase[a] === 0 ? -1 : 1) : days[b] - days[a]);   // judged GO for this trip first
   const K = reg.r ? 60 : 120, sp = reg.r ? 4 : 12, out = [];
   for (const i of cand) {
     const c = i % N, r = (i - c) / N;
@@ -119,7 +121,7 @@ export function poolOf(rid, mission) {
   p.promise = (async () => { await ensure(); let n = 0; for (const c of p.cells) { c.w = await statsAsync(c.col, c.row, mission); if (++n % 12 === 0) await new Promise(r => setTimeout(r, 0)); } p.ready = true; })();
   pools.set(k, p); return p;
 }
-const maskKey = () => JSON.stringify([state.crit, state.threshold, state.on.mask, state.mode]);
+const maskKey = () => JSON.stringify([state.crit, state.threshold, state.on.mask, state.mode, winToken(state)]);
 export function goCount(p, d, crit) { let n = 0; for (const c of p.cells) if (c.w && isGo(c.w, d, crit)) n++; return n; }
 
 // ranked spots of a pool for a landing day: GO first (largest margin), then the soonest to become GO
@@ -155,7 +157,7 @@ export function initTrip(header, listEl, d, o = {}) {
     else if (dd) { setState({ tDay: +dd.dataset.day, tTouched: true, autoPin: true }, 'time'); open(state.region ? null : 'region'); }
     else if (rg) { open(null); pickRegion(rg.dataset.reg); }
   };
-  list.onclick = e => { const r = e.target.closest('[data-rank]'); if (r) { const z = ranked[+r.dataset.rank - 1]; if (z) opts.pick && opts.pick(z); } };
+  list.onclick = e => { const a = e.target.closest('[data-addr]'); if (a) { e.stopPropagation(); const z = ranked[+a.dataset.addr - 1]; if (z) toggleCart(z.col, z.row); return; } const r = e.target.closest('[data-rank]'); if (r) { const z = ranked[+r.dataset.rank - 1]; if (z) opts.pick && opts.pick(z); } };
   list.onmouseover = e => { const r = e.target.closest('[data-rank]'), id = r ? +r.dataset.rank : null; if (id !== state.hoverTrip) setState({ hoverTrip: id }, 'hover'); };
   list.onmouseleave = () => { if (state.hoverTrip != null) setState({ hoverTrip: null }, 'hover'); };
 }
@@ -219,7 +221,7 @@ export function renderTrip(st) {
   bar.querySelector('.lyr-tbd').textContent = `${dayText(st.tDay)} · ${tt('stayD', st.mission)}`;
   bar.querySelector('.lyr-tbr').textContent = st.region ? regionName(st.region) : regionName('all');
   bar.querySelector('[data-pop="region"]').classList.toggle('unset', !st.region);
-  const rid = currentRegion(), p = poolOf(rid, st.mission), k = `${rid}|${st.mission}|${st.tDay}|${maskKey()}|${p.ready}`;
+  const rid = currentRegion(), p = poolOf(rid, st.mission), k = `${rid}|${st.mission}|${st.tDay}|${maskKey()}|${p.ready}|${JSON.stringify(st.cart)}`;
   if (!p.ready) p.promise.then(() => setState({}, 'panel'));
   if (k !== rkey) { rkey = k; ranked = p.ready ? rank(p, st.tDay, st.crit) : []; drawList(st, p); if (p.ready) opts.ranked && opts.ranked(ranked); }
   else for (const r of list.querySelectorAll('[data-rank]')) r.classList.toggle('hot', +r.dataset.rank === st.hoverTrip || (st.pin && ranked[+r.dataset.rank - 1] && ranked[+r.dataset.rank - 1].col === st.pin.col && ranked[+r.dataset.rank - 1].row === st.pin.row));
@@ -231,6 +233,6 @@ function drawList(st, p) {
   list.innerHTML = `<div class="lyr-trh"><h2>${tt('best')}</h2><span class="n">${regionName(currentRegion())} · ${tt('spots', ranked.filter(r => r.go).length)}</span></div>` + ranked.map((r, i) => {
     const v = r.go ? `<span style="color:var(--ok)">${tt('go')}</span>` : r.wait != null && r.wait <= LIM.wait ? `<span style="color:var(--wait)">${tt('wait', r.wait)}</span>` : `<span style="color:var(--muted)">${tt('nogo')}</span>`;
     const why = i === 0 ? `<ul class="lyr-why"><li class="${r.sun < c.sun ? 'bad' : ''}"><i style="background:var(--sun)"></i>${tt('whySun', Math.floor(r.sun), c.sun)}</li><li class="${r.earth < c.earth ? 'bad' : ''}"><i style="background:var(--earth)"></i>${tt('whyEarth', Math.floor(r.earth), c.earth)}</li><li class="${r.dark > c.dark ? 'bad' : ''}"><i style="background:var(--muted)"></i>${tt('whyDark', Math.ceil(r.dark), c.dark)}</li></ul>` : '';
-    return `<div class="lyr-tr${i === 0 ? ' top' : ''}" data-rank="${r.id}"><span class="lyr-trn n">${r.id}</span><div class="lyr-trt">${r.title}</div><div class="lyr-trv">${v}</div><div class="lyr-trs n">☀ ${Math.floor(r.sun)} % · ⊕ ${Math.floor(r.earth)} % · ☾ ${Math.ceil(r.dark)} h</div>${why}</div>`;
+    return `<div class="lyr-tr${i === 0 ? ' top' : ''}" data-rank="${r.id}"><span class="lyr-trn n">${r.id}</span><div class="lyr-trt">${r.title}</div><div class="lyr-trv">${v}<button class="lyr-tradd${inCart(r.col, r.row) >= 0 ? ' in' : ''}" data-addr="${r.id}" title="${ct(inCart(r.col, r.row) >= 0 ? 'added' : 'add')}">${inCart(r.col, r.row) >= 0 ? '✓' : '+'}</button></div><div class="lyr-trs n">☀ ${Math.floor(r.sun)} % · ⊕ ${Math.floor(r.earth)} % · ☾ ${Math.ceil(r.dark)} h</div>${why}</div>`;
   }).join('');
 }

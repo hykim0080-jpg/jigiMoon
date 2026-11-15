@@ -37,6 +37,7 @@ function series(x, y, h720, Bd) {   // copy of navigator/js/pin.js series()
   }
   return { frac, vis, az, el };
 }
+export const bodiesData = () => B;   // hourly Sun/Earth vectors (S, E, n) for the window worker
 export const ensure = () => loading || (loading = Promise.all([shadow.load(), bodies()]).then(([, b]) => { B = b; }));
 
 // sky object of mode A (see navigator/js/data.js loadSky) for a pixel

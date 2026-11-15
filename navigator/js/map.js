@@ -68,6 +68,7 @@ export function init(node, d, openPin) {
   svg = node; data = d; pinOpener = openPin;
   const eb = document.getElementById('expo');
   eb.addEventListener('click', () => setState({ expo: state.expo ? 0 : 1 }));
+  document.getElementById('basemap').addEventListener('click', e => { const b = e.target.closest('[data-b]'); if (b) setState({ base: b.dataset.b }); });
   svg.addEventListener('pointerdown', e => {
     const xy = e.target.dataset && e.target.dataset.expo;
     if (!xy || state.view !== 'compare') return;   // in the focus view a marker acts on release (press-and-hold zooms out)
@@ -287,8 +288,11 @@ function draw(st) {
   // fades in when it has loaded, and the coarser layers underneath stay visible until it has
   const iw = 2 * R_KM * ppk, want = new Map();
   const put = (layer, href, x, y, w, h) => want.set(href, { layer, a: { x, y, width: w, height: h } });
-  put(0, 'data/hillshade.jpg', px(-R_KM), py(R_KM), iw, iw);
-  if (hill !== 'data/hillshade.jpg') put(0, hill, px(-R_KM), py(R_KM), iw, iw);
+  document.getElementById('basemap').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.b === (st.base === 'line' ? 'line' : 'shade'))));
+  const lines = st.base === 'line';   // contour line map (100 m/px) instead of the hillshade and its sharper tiles
+  if (lines) put(0, 'data/linemap_4000.webp', px(-R_KM), py(R_KM), iw, iw);
+  else put(0, 'data/hillshade.jpg', px(-R_KM), py(R_KM), iw, iw);
+  if (!lines && hill !== 'data/hillshade.jpg') put(0, hill, px(-R_KM), py(R_KM), iw, iw);
   // LOLA hillshade tiles wherever the view is close enough to need them: 40 m (10 km tiles), 20 m (5 km) when closer
   const tiles = (res, T, n, h, pad) => {
     const c0 = Math.max(0, Math.floor((vp.cx - h + R_KM) / T) - pad), c1 = Math.min(n - 1, Math.floor((vp.cx + h + R_KM) / T) + pad);
@@ -297,7 +301,7 @@ function draw(st) {
     for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) out.push([`data/t${res}/${c}_${r}.jpg`, c, r]);
     return out;
   };
-  for (const [li, res, T, n, hmax] of [[1, 40, 10, 40, 30], [2, 20, 5, 80, 8]]) {
+  if (!lines) for (const [li, res, T, n, hmax] of [[1, 40, 10, 40, 30], [2, 20, 5, 80, 8]]) {
     if (vp.h < hmax) for (const [href, c, r] of tiles(res, T, n, vp.h, 0))
       put(li, href, px(-R_KM + c * T) - .5, py(R_KM - r * T) - .5, T * ppk + 1, T * ppk + 1);
     // prefetch: the ring around the view, and this level's tiles shortly before it is needed
@@ -305,7 +309,7 @@ function draw(st) {
   }
   // 20 m / 5 m LOLA hillshade patches (+-4.5 km) around each site, faded in as you zoom past Site
   const sharp = Math.max(0, Math.min(1, (14 - vp.h) / 8));
-  if (sharp > 0.01) for (const s of data.index.sites) {
+  if (sharp > 0.01 && !lines) for (const s of data.index.sites) {
     if (s.isPin) continue;
     const x = s.x_m / 1000, y = s.y_m / 1000;
     if (Math.abs(x - vp.cx) > vp.h + 5 || Math.abs(y - vp.cy) > vp.h + 5) continue;

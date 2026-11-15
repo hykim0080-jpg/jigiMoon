@@ -64,7 +64,7 @@ export function applyCriteria(index, mission, c, metricsOf) {
   const sites = index.modes[mission].sites;
   orig[mission] = orig[mission] || { ...sites };
   for (const id of Object.keys(sites)) {
-    if (isDefault(c) && orig[mission][id] && id !== 'pin') { sites[id] = orig[mission][id]; continue; }
+    if (isDefault(c) && orig[mission][id] && !/^pin\d*$/.test(id)) { sites[id] = orig[mission][id]; continue; }
     const m = metricsOf(id);
     if (!m) return false;
     sites[id] = buildEntry(m, c);

@@ -35,7 +35,6 @@ let badgeSrc = null; export const setBadges = fn => { badgeSrc = fn; };
 const tripBadges = () => !!badgeSrc && !state.adv;
 export function initMap(el, d, compCanvas) {
   panel = el; data = d; comp = compCanvas;
-  if (shade && data.hill) data.hill.fill(255);
   canvas = Object.assign(document.createElement('canvas'), { className: 'lyr-raster' });
   svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('class', 'lyr-vec');
   badge = Object.assign(document.createElement('div'), { className: 'lyr-badge n' });
@@ -50,7 +49,11 @@ export function initMap(el, d, compCanvas) {
   homeBtn = Object.assign(document.createElement('button'), { className: 'lyr-home', textContent: t('home'), hidden: true });
   homeBtn.onclick = e => { e.stopPropagation(); reset(); };
   homeBtn.onpointerdown = homeBtn.ondblclick = e => e.stopPropagation();
-  panel.append(canvas, svg, legend, badge, homeBtn); initTime(panel, data);
+  const bm = Object.assign(document.createElement('div'), { className: 'seg lyr-basem' });
+  bm.innerHTML = `<button data-b="line">${t('b_line')}</button><button data-b="shade">${t('b_shade')}</button>`;
+  bm.onclick = e => { e.stopPropagation(); const b = e.target.closest('[data-b]'); if (b) setState({ basemap: b.dataset.b }, 'pixels'); };
+  bm.onpointerdown = bm.ondblclick = e => e.stopPropagation();
+  panel.append(canvas, svg, legend, badge, homeBtn, bm); initTime(panel, data);
   ctx = canvas.getContext('2d');
   tip = document.getElementById('tip') || Object.assign(document.createElement('div'), { id: 'tip', hidden: true });
   if (!tip.parentNode) document.body.append(tip);
@@ -64,21 +67,23 @@ export function resize() {
 }
 // sharper terrain: 100 m/px LOLA hillshade (shared with Compare). Once it loads, the composite is built on a flat
 // white base and this shade multiplies it (base pixels come out as the hillshade itself; colours keep the terrain).
+// base map, multiplied over the composite (built on a flat white base): the contour line map (default in Find a site)
+// or the 100 m/px LOLA hillshade (shared with Compare). Each loads on first use.
 let shade = null;
-const sharp = new Image();
-sharp.onload = () => {
-  const n = sharp.naturalWidth, c = Object.assign(document.createElement('canvas'), { width: n, height: n }), x = c.getContext('2d');
-  x.drawImage(sharp, 0, 0);
-  shade = c;
-  if (data && data.hill) { data.hill.fill(255); setState({}, 'pixels'); }
-};
-sharp.src = '../data/hillshade_4000.jpg';
+const BASES = { line: '../data/linemap_4000.webp', shade: '../data/hillshade_4000.jpg' }, baseImg = {};
+function baseFor(id) {
+  if (baseImg[id]) return baseImg[id].complete && baseImg[id].naturalWidth ? baseImg[id] : null;
+  const im = baseImg[id] = new Image();
+  im.onload = () => { if (data && data.hill) data.hill.fill(255); setState({}, 'pixels'); };
+  im.src = BASES[id]; return null;
+}
 export function blit() {
   const { k, cx, cy } = state.view, w = N / k;
   ctx.imageSmoothingEnabled = (W * dpr * k / N) < 1.5;
   ctx.drawImage(comp, cx - w / 2, cy - w / 2, w, w, 0, 0, canvas.width, canvas.height);
+  shade = baseFor(state.basemap === 'shade' ? 'shade' : 'line');
   if (shade) {
-    const f = shade.width / N;
+    const f = shade.naturalWidth / N;
     ctx.save(); ctx.imageSmoothingEnabled = true; ctx.globalCompositeOperation = 'multiply';
     ctx.drawImage(shade, (cx - w / 2) * f, (cy - w / 2) * f, w * f, w * f, 0, 0, canvas.width, canvas.height); ctx.restore();
   }
@@ -88,6 +93,7 @@ export function blit() {
   }
   const sc = shadowCanvas(); if (sc) ctx.drawImage(sc, cx - w / 2, cy - w / 2, w, w, 0, 0, canvas.width, canvas.height);
   homeBtn.hidden = k <= 1.0001;
+  panel.querySelectorAll('.lyr-basem button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.b === (state.basemap === 'shade' ? 'shade' : 'line'))));
 }
 function reset() { fly({ k: 1, cx: N / 2, cy: N / 2 }); }
 function fly(target) {

@@ -5,6 +5,7 @@ import { hue } from './config.js';
 import { layerColor } from './ramps.js';
 import { fmt } from './data.js';
 import { t, layerName } from './strings.js';
+import { WIN_IDS, useWin, pending } from './window.js';
 
 let el, data, rows = {}, drag = null, picking = null, setCritFn = null;
 const CRIT_KEY = { sun: ['c_sun', 'min_sun_pct'], earth: ['c_earth', 'min_earth_pct'], dark: ['c_dark', 'max_dark_h'] };
@@ -68,7 +69,11 @@ export function initCriteria(root, d, setCrit) {
   }
 }
 export function renderCriteria(st) {
+  const wb = useWin(st);
+  el.classList.toggle('busy', pending(st));
   for (const { r, m, tg, cv, tr, hd } of Object.values(rows)) {
+    const w = wb && WIN_IDS[m.id]; r.classList.toggle('win', !!w);
+    if (w) { const on = !!st.on.mask[m.id]; r.classList.toggle('off', !on); tg.setAttribute('aria-pressed', on); r.querySelector('.lyr-nm').innerHTML = nameHtml(m, picking === m.id); continue; }
     const thr = st.threshold[m.id], p = 100 * (thr - m.min) / (m.max - m.min), ge = m.direction !== '<=', c = layerColor(m.id, false), on = !!st.on.mask[m.id];
     r.classList.toggle('off', !on); r.classList.toggle('base', state.base === hue(m.id)); tg.setAttribute('aria-pressed', on);
     cv.textContent = critValue(m, thr); r.querySelector('.lyr-nm').innerHTML = nameHtml(m, picking === m.id);
@@ -76,8 +81,12 @@ export function renderCriteria(st) {
     hd.style.left = p + '%'; tr.setAttribute('aria-valuenow', thr);
   }
 }
+export const winText = (k, v) => k === 'dark' ? `${Math.ceil(v)} h` : `${Math.floor(v)} %`;
 export function renderCritTick(sm) {
-  for (const { m, tick } of Object.values(rows)) {
+  for (const { m, tick, cv, r } of Object.values(rows)) {
+    const k = r.classList.contains('win') && WIN_IDS[m.id];
+    if (k) { const v = sm?.win?.[k]; cv.textContent = v == null ? '' : winText(k, v); cv.classList.toggle('bad', v != null && sm.pass[m.id] === false); continue; }
+    cv.classList.remove('bad');
     const v = sm?.values[m.id];
     if (v == null || v === Infinity) tick.style.display = 'none';
     else { tick.style.display = 'block'; tick.style.left = Math.max(0, Math.min(100, 100 * (v - m.min) / (m.max - m.min))) + '%'; }

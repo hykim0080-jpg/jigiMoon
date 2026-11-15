@@ -44,13 +44,14 @@ export async function loadIndex() {
 
 // Per-day numbers and the relocation grid for (site, mission length)
 // the custom point is computed in the browser (js/pin.js) and registered here
+export const isPinId = id => /^pin\d*$/.test(id);   // 'pin' (map click) and 'pin1'..'pin4' (shortlist from Find a site)
 export function setCustom(mission, obj) {
-  full[`pin:${mission}`] = obj;
-  calDone[`pin:${mission}`] = obj.cal;
+  full[`${obj.id}:${mission}`] = obj;
+  calDone[`${obj.id}:${mission}`] = obj.cal;
 }
 
 export function loadCal(id, mission) {
-  if (id === 'pin') return Promise.resolve(full[`pin:${mission}`]);
+  if (isPinId(id)) return Promise.resolve(full[`${id}:${mission}`]);
   return cached(`cal:${id}:${mission}`, async () => {
     const raw = await getJson(`data/${mission}/${id}.json`);
     const c = raw.calendar;
@@ -64,7 +65,7 @@ export function loadCal(id, mission) {
 }
 
 export function loadSky(id) {
-  if (id === 'pin') return Promise.resolve(full['pin:14'].sky);
+  if (isPinId(id)) return Promise.resolve(full[`${id}:14`].sky);
   return cached(`sky:${id}`, async () => {
     const r = await getJson(`data/sky/${id}.json`);
     let sx = 0, sy = 0;
@@ -87,7 +88,7 @@ export function getSite(id, mission) {
   return full[`${id}:${mission}`] || null;
 }
 export async function loadSite(id, mission) {
-  if (id === 'pin') return full[`pin:${mission}`];
+  if (isPinId(id)) return full[`${id}:${mission}`];
   const [a, sky] = await Promise.all([loadCal(id, mission), loadSky(id)]);
   const s = { id, mission, ...a, sky };
   full[`${id}:${mission}`] = s;
@@ -104,7 +105,7 @@ export const calOf = (id, mission) => calDone[`${id}:${mission}`] || null;
 
 // metrics a site's entry is rebuilt from when the criteria change (null until its file is loaded)
 export function metricsOf(id, mission) {
-  const raw = id === 'pin' ? full[`pin:${mission}`] : calRaw[`${id}:${mission}`];
+  const raw = isPinId(id) ? full[`${id}:${mission}`] : calRaw[`${id}:${mission}`];
   if (!raw) return null;
   if (raw.metrics) return raw.metrics;
   const mast = {};

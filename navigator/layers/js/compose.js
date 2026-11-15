@@ -1,10 +1,12 @@
 import { N, SIMPLE, ZONE, RAMPS, MASK_COLORS, SCORE_RAMP, FAIL_AT_255, PX, HALF } from './config.js';
 import { buildRampLUT, layerColor, colorAt, hex } from './ramps.js';
 import { decode, valueOf } from './data.js';
+import { winPass, winAt } from './window.js';
 
 const NPX = N * N;
 let D, comp, ctx, maskCv, maskCtx, maskImg, maskU32, halo, haloCtx, tmpCv, tmpCtx, D2, img, u32, light, ramp = {}, scoreLut, sitesCells = {}, last = { st: null, nCrit: 0, passPx: 0 };
-export let failCount, failBase, score100;
+export let failCount, failBase, failYear, score100;
+const ID3 = Uint8Array.from({ length: 256 }, (_, v) => v);   // pass bytes of the window arrays are already 0 / 1
 
 // continuous base of the default view: one factor as intensity (ramp colour, alpha rising with the value)
 const BASE = {
@@ -65,7 +67,7 @@ export function initCompose(data) {
   maskImg = maskCtx.createImageData(N, N); maskU32 = new Uint32Array(maskImg.data.buffer);
   tmpCv = Object.assign(document.createElement('canvas'), { width: 200, height: 200 }); tmpCtx = tmpCv.getContext('2d');
   halo = Object.assign(document.createElement('canvas'), { width: N, height: N }); haloCtx = halo.getContext('2d');
-  failCount = new Uint8Array(NPX); failBase = new Uint8Array(NPX); score100 = new Uint8Array(NPX);
+  failCount = new Uint8Array(NPX); failBase = new Uint8Array(NPX); failYear = new Uint8Array(NPX); score100 = new Uint8Array(NPX);
   for (const m of data.layers) ramp[m.id] = buildRampLUT(m);
   scoreLut = new Array(256).fill(0).map((_, i) => hex2(colorAt(SCORE_RAMP, i / 255)));
   for (const s of data.sites) {
@@ -103,18 +105,21 @@ export function compose(st) {
     const ids = critIds(st), nb = ids.length;
     const simple = !st.adv, mon = st.adv && st.month != null && D.month ? D.month.subarray(st.month * NPX, (st.month + 1) * NPX) : null, mthr = st.monthThr, ov = st.adv ? st.ov : null;
     const n = nb + (mon ? 1 : 0); last.nCrit = n;
-    const bs = ids.map(id => D.bytes[id]), pl = ids.map(id => passLUT(metaOf(id), st.threshold[id]));
+    const wp = winPass(st), win = ids.map(id => !!(wp && wp[id]));   // trip basis: Sun / Earth / dark judged over the stay
+    const bs = ids.map((id, k) => win[k] ? wp[id] : D.bytes[id]), pl = ids.map((id, k) => win[k] ? ID3 : passLUT(metaOf(id), st.threshold[id]));
+    const yk = win.map((w, k) => w ? k : -1).filter(k => k >= 0), ybs = yk.map(k => D.bytes[ids[k]]), ypl = yk.map(k => passLUT(metaOf(ids[k]), st.threshold[ids[k]]));
     const hc = ids.map(id => hex2(hexOf(layerColor(id, true)))); if (mon) hc.push(hexOf(layerColor('days', true)));
     const [pc, pa] = MASK_COLORS.pass, [mc, ma] = MASK_COLORS.many, [nc, na] = MASK_COLORS.nodata, oa = MASK_COLORS.one;
     const P = hexOf(pc), M = hexOf(mc), ND = hexOf(nc), SP = hexOf(SIMPLE.pass), spk = pack(SP[0], SP[1], SP[2]), fi = ids.indexOf(st.focusCrit);
     let passPx = 0, BL = null;
     maskU32.fill(0);
     if (simple) { const bo = baseOf(st); if (bo) { BL = baseLUT(bo); BL.arr = D.bytes[bo.id]; } }
-    if (!n) { for (let i = 0; i < NPX; i++) { const h = hill[i]; out[i] = pack(h, h, h); failCount[i] = 0; failBase[i] = 0; } }
+    if (!n) { for (let i = 0; i < NPX; i++) { const h = hill[i]; out[i] = pack(h, h, h); failCount[i] = 0; failBase[i] = 0; failYear[i] = 0; } }
     else for (let i = 0; i < NPX; i++) {
       let f = 0, nd = 0, lk = -1;
       for (let k = 0; k < nb; k++) { const p = pl[k][bs[k][i]]; if (p === 2) nd = 1; else if (p === 0) { f++; lk = k; } }
       failBase[i] = nd ? 255 : f;
+      if (yk.length) { let fy = f; for (let j = 0; j < yk.length; j++) { const p = ypl[j][ybs[j][i]], q = pl[yk[j]][bs[yk[j]][i]]; fy += (p === 0) - (q === 0); } failYear[i] = nd ? 255 : fy; } else failYear[i] = failBase[i];
       if (mon && mon[i] < mthr) { f++; lk = nb; }
       const o = ov ? ov[i] : 0;
       if (o === 1) { f = 0; nd = 0; } else if (o === -1) { f = f > 1 ? f : 2; nd = 0; }
@@ -184,10 +189,12 @@ export function sample(col, row) {
     if (m.threshold == null) pass[m.id] = null;
     else { const p = passLUT(m, st.threshold[m.id])[v]; pass[m.id] = p === 2 ? null : p === 1; }
   }
+  const wp = winPass(st), win = winAt(st, i);
+  if (wp) for (const id in wp) if (pass[id] != null) pass[id] = wp[id][i] === 1;
   const failIds = st.mode === 'mask' ? critIds(st).filter(id => pass[id] === false) : [];
   const fails = st.mode === 'mask' && failCount[i] !== 255 && last.nCrit ? failCount[i] : null;
   const score = st.mode === 'score' && score100[i] !== 255 ? score100[i] : null;
-  return { values, pass, fails, score, failIds, nCrit: last.nCrit };
+  return { values, pass, fails, score, failIds, nCrit: last.nCrit, win };
 }
 export function zonal(site, st) {
   const c = sitesCells[site.id]; let sum = 0, cnt = 0, tot = 0;
