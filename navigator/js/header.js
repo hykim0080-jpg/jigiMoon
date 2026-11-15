@@ -78,7 +78,7 @@ export function init(el, data, o = {}) {
     ropen(false);
     if (v.startsWith('ld:')) {   // a past mission's spot: opened as the pin, judged like any other point
       const l = (dataRef.index.landers || []).find(q => q.id === v.slice(3));
-      if (l && opts.openPin) opts.openPin(Math.round(l.x_m), Math.round(l.y_m), l.name.replace(/ \(planned site\)/, '') + ' ' + (l.year || ''));
+      if (l && opts.openPin) opts.openPin(Math.round(l.x_m), Math.round(l.y_m), l.name.replace(/ \(planned site\)/, '') + ' ' + (l.year || ''), l.id);
       return;
     }
     if (v !== ANY) { setState({ site: v }); return; }
