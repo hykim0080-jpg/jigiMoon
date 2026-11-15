@@ -675,3 +675,13 @@ body[data-view="find"] header>.seg[data-key="view"]{margin-left:auto}
 /* saved spots (Find a site's shortlist): one pin glyph and number wherever they are listed */
 .pin-ic{display:inline-block;width:10px;height:13px;vertical-align:-2px;margin-right:5px;flex:none;fill:currentColor}
 #where-pop .wp-grp,.wp-grp{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:4px 10px 2px}
+/* Side by side: one place on every Detail layout (header, left of Detail | Find a site), one look (dark, square, thin
+   white edge like the panel buttons; white when on) */
+header>#side-btn{height:30px;font-size:13px;padding:0 12px;margin-right:6px;border:1px solid rgba(255,255,255,.55);background:rgba(15,19,27,.82);color:#fff;border-radius:0;cursor:pointer}
+header>#side-btn:hover{border-color:#fff}
+header>#side-btn[aria-pressed="true"]{background:#fff;color:#0f131b;border-color:#fff}
+/* Sun / Earth / Both: right above the time bar, on its left edge, on every 3D layout (the bar is centred, at most
+   1080 px wide, 12 px off the bottom and 44 px high) */
+#map3d .lmap-tl{top:auto!important;bottom:62px!important;left:max(12px,calc((100% - 1080px) / 2))!important}
+#map3d .lmap-tl .lmap-seg{background:rgba(15,19,27,.92);border-color:var(--line,#2b3242)}
+main:not([data-view="find"]) #map3d .lmap-scale{margin-top:-40px}   /* the scale bar clears the Sun / Earth / Both row */
