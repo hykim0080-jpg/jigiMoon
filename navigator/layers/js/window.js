@@ -51,12 +51,13 @@ export function syncWin(st) {
   timer = setTimeout(() => start().then(() => { if (busy) want = j; else post(j); }), busy ? 0 : 60);
 }
 // per criterion layer: 1 = pass, 0 = fail over the window (null while not computed)
+// pass with half a step of margin, so a green pixel is always GO in the pin card
 export function winPass(st) {
   const w = winOf(st); if (!w || !useWin(st)) return null;
   const c = st.crit, k = keyOf(st) + JSON.stringify(c);
   if (passCache.key === k) return passCache.p;
   const s = new Uint8Array(NPX), e = new Uint8Array(NPX), d = new Uint8Array(NPX), cs = 2 * c.sun, ce = 2 * c.earth;
-  for (let i = 0; i < NPX; i++) { s[i] = w.sun[i] >= cs ? 1 : 0; e[i] = w.earth[i] >= ce ? 1 : 0; d[i] = w.dark[i] <= c.dark ? 1 : 0; }
+  for (let i = 0; i < NPX; i++) { s[i] = w.sun[i] > cs ? 1 : 0; e[i] = w.earth[i] > ce ? 1 : 0; d[i] = w.dark[i] < c.dark ? 1 : 0; }
   passCache = { key: k, p: { sun_days: s, earth_days: e, dark_days: d } };
   return passCache.p;
 }

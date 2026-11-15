@@ -7,8 +7,10 @@ import { t, layerName, unitOf, lang } from './strings.js';
 import { fmt } from './data.js';
 import { rampCss } from './ramps.js';
 import { SIMPLE, ZONE } from './config.js';
-import { shadowCanvas, initTime, expoTop } from './time.js';
+import { shadowCanvas, initTime, expoTop, skyGet } from './time.js';
 import { pinInfo } from './pin.js';
+import { useWin } from './window.js';
+import { sightSvg } from './sightlines.js';
 import { getZones, hotZoneId, paint, brushCells, saveOverride } from './zones.js';
 import { haloCanvas, baseInfo } from './compose.js';
 import { describe, lmName, drawableLanders, landerPath, landerLabel } from './orient.js';
@@ -45,7 +47,7 @@ export function initMap(el, d, compCanvas) {
   bd.sr.onpointerdown = e => { e.stopPropagation(); e.preventDefault(); bd.sr.setPointerCapture(e.pointerId); setCut(e); bd.sr.onpointermove = setCut; };
   bd.sr.onpointerup = () => { bd.sr.onpointermove = null; };
   bd.sr.ondblclick = e => { e.stopPropagation(); setState({ cutoff: 70 }, 'zones'); };
-  legend = Object.assign(document.createElement('div'), { className: 'lyr-legend n' }); legend.innerHTML = '<i></i><span class="lt"></span><em class="lbr"><b>0</b><u></u><b class="hi"></b></em>';
+  legend = Object.assign(document.createElement('div'), { className: 'lyr-legend n' }); legend.innerHTML = '<span class="l1"><i></i><span class="lt"></span></span><em class="lbr"><span class="bt"></span><b>0</b><u></u><b class="hi"></b></em>';
   homeBtn = Object.assign(document.createElement('button'), { className: 'lyr-home', textContent: t('home'), hidden: true });
   homeBtn.onclick = e => { e.stopPropagation(); reset(); };
   homeBtn.onpointerdown = homeBtn.ondblclick = e => e.stopPropagation();
@@ -268,7 +270,8 @@ const thin = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 export function renderBadge(passPx, readoutScore) {
   const sc = state.mode === 'score', km2 = thin(passPx * PX * PX / 1e6);
   legend.hidden = state.adv || state.mode !== 'mask';
-  legend.querySelector('.lt').textContent = `${t('suitable')} ${km2} km²`;
+  legend.querySelector('.lt').textContent = useWin(state) ? t('legStay', state.mission || 14, km2) : t('legYear', km2);   // the legend in words
+  legend.querySelector('.bt').textContent = (t('legBase') || {})[state.base] || '';
   const bi = baseInfo(state); if (bi) { legend.querySelector('u').style.background = bi.css; legend.querySelector('.hi').textContent = bi.hi; }
   bd.s.hidden = !sc; bd.t.textContent = state.adv && state.mode === 'mask' && critIds(state).length + (state.month != null ? 1 : 0) ? km2 + ' km²' : '';
   if (sc) {
@@ -372,7 +375,7 @@ export function drawOverlay(st, siteFill) {
   }
   if (pi) {
     const [x, y] = toScr(pi.col + .5, pi.row + .5), mv = pi.v.kind === 'move' && pi.v.move && !pi.v.move.here ? pi.v.move : null;
-    if (mv) { const [nx, ny] = toScr(mv.col + .5, mv.row + .5); h += `<line x1="${x}" y1="${y}" x2="${nx}" y2="${ny}" class="pln"/><circle cx="${nx}" cy="${ny}" r="2.5" class="plt"/>`; }
+    h += sightSvg(st, pi, skyGet(pi.col, pi.row), toScr, s, mv, W);   // Sun/Earth arrows, hiding ridge, landing-site arrow
     h += `<path d="M${x} ${y}l-5 -12a5.5 5.5 0 1 1 10 0z" class="pinm"/><circle cx="${x}" cy="${y - 14}" r="1.8" class="pind"/>`;
   }
   h += compassSvg();
