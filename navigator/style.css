@@ -565,9 +565,23 @@ header>.hb-ans{flex:1 1 0;min-width:0;margin:0 0 0 6px;font-size:14px;line-heigh
 .hb-ans b{font-weight:600}.hb-ans .hb-go{color:var(--ok)}.hb-ans .hb-nogo{color:var(--nogo,#f0655a)}
 header>.grow,header>.app-name{display:none}
 body[data-view="find"] header>.hb-trip,body[data-view="find"] header>.hb-ans{display:none}
-main.full #dock .adv{position:relative}
+main.full #dock .adv{position:relative;display:flex;flex-direction:column}
 main.full #dock #adv-panel{left:calc(100% + 6px);right:auto;top:0}
 main.full #dock #adv-btn.changed{border-color:var(--accent)}
+/* the dock: one width for every button, panel toggles as one joined stack, the page controls (All panels, Limits,
+   Side by side) as a second stack below; .tight (set when the dock would reach the Sun/Earth/Both legend) puts the
+   second stack beside the first */
+main.full #dock{gap:0;width:116px}
+main.full #dock button{height:30px;min-height:0;line-height:1;padding-top:0;padding-bottom:0}
+@media (pointer:coarse){main.full #dock button{height:44px}}
+main.full #dock>button,main.full #dock .adv,main.full #dock #adv-btn{width:100%;min-width:0;margin:0}
+main.full #dock>button+button,main.full #dock>button+.adv>#adv-btn,main.full #dock .adv+button{margin-top:-1px}
+main.full #dock #layout-btn{margin-top:10px}
+main.full #dock #adv-btn{display:block;height:30px;font-size:12px;padding:0 10px;text-align:left;letter-spacing:0}
+main.full #dock.tight{display:grid;align-items:start;grid-template-columns:116px 116px;grid-auto-flow:column;grid-template-rows:repeat(4,auto);column-gap:8px;width:auto;align-content:start}
+main.full #dock.tight>*{margin-top:0!important}
+main.full #dock.tight>[data-dk]+[data-dk]{margin-top:-1px!important}
+main.full #dock.tight #layout-btn{grid-row:1}main.full #dock.tight .adv{grid-row:2;margin-top:-1px!important}main.full #dock.tight #side-btn{grid-row:3;margin-top:-1px!important}
 @media (min-width:1180px) and (max-width:1500px){header>.hb-ans{font-size:13px}}
 @media (max-width:1100px){.hb-tb{min-width:140px;padding:2px 10px}}
 @media (max-width:700px){
