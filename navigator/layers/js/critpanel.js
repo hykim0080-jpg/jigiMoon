@@ -3,13 +3,14 @@
 // ground of every criterion (the default; picking the picked row again goes back). A row picks that factor's map (factor.js); its slider is the limit, its track
 // the factor's gradient; "Reset" shows when any differs from the default. Sun / Earth / dark move between
 // the computed levels (layers.json criterion_levels); slope and ice are thresholds; ice at 0 is off.
+import { photosOn } from './photos.js';
 import { state, setState } from './state.js';
 import { hue } from './config.js';
 import { lang } from './strings.js';
 import { defaults, isDefault } from './crit.js';
 import { FX, trackCss } from './factor.js';
 
-const TX = { en: { darkTip: 'Longest stretch without sunlight', lim: 'Limit', title: 'Layers', all: 'All', allTxt: 'GO', reset: 'Reset', off: 'Off', sun: 'Sun', earth: 'Earth', dark: 'Dark', slope: 'Slope', ice: 'Ice' }, ko: { darkTip: '햇빛이 한 번에 가장 오래 끊긴 시간', lim: '기준선', title: '레이어', all: '전체', allTxt: 'GO', reset: '초기화', off: '끔', sun: '햇빛', earth: '지구', dark: '어둠', slope: '경사', ice: '얼음' } }[lang === 'ko' ? 'ko' : 'en'];
+const TX = { en: { darkTip: 'Longest stretch without sunlight', lim: 'Limit', title: 'Layers', photos: 'ShadowCam', photosTip: 'Real photos inside permanently shadowed craters', credit: 'Photos: KPLO ShadowCam (NASA/KARI, MSSS/ASU); LROC NAC (NASA/GSFC/ASU)', all: 'All', allTxt: 'GO', reset: 'Reset', off: 'Off', sun: 'Sun', earth: 'Earth', dark: 'Dark', slope: 'Slope', ice: 'Ice' }, ko: { darkTip: '햇빛이 한 번에 가장 오래 끊긴 시간', lim: '기준선', title: '레이어', photos: 'ShadowCam', photosTip: '영구 그림자 크레이터 안을 찍은 실제 사진', credit: '사진: KPLO ShadowCam (NASA/KARI, MSSS/ASU); LROC NAC (NASA/GSFC/ASU)', all: '전체', allTxt: 'GO', reset: '초기화', off: '끔', sun: '햇빛', earth: '지구', dark: '어둠', slope: '경사', ice: '얼음' } }[lang === 'ko' ? 'ko' : 'en'];
 let el, data, setCrit, rows = {};
 export const LAYER_KEYS = [null, 'sun', 'earth', 'dark', 'slope', 'ice'];   // keys 0-5
 const pick = k => { if (state.factor !== k) setState({ factor: k }, 'pixels'); };
@@ -17,11 +18,12 @@ const pick = k => { if (state.factor !== k) setState({ factor: k }, 'pixels'); }
 export function initCritPanel(host, d, setCritFn) {
   data = d; setCrit = setCritFn;
   el = document.createElement('section'); el.className = 'lyr-cp';
-  el.innerHTML = `<div class="lyr-cph"><h3 class="lyr-cpt">${TX.title}</h3><span><button class="lyr-cplim" aria-pressed="true" hidden>${TX.lim}</button><button class="lyr-cpr" hidden>${TX.reset}</button></span></div><div class="lyr-cpb"></div>`;
+  el.innerHTML = `<div class="lyr-cph"><h3 class="lyr-cpt">${TX.title}</h3><span><button class="lyr-cpsc" aria-pressed="false" title="${TX.photosTip}" hidden>${TX.photos}</button><button class="lyr-cplim" aria-pressed="true" hidden>${TX.lim}</button><button class="lyr-cpr" hidden>${TX.reset}</button></span></div><div class="lyr-cpb"></div><p class="lyr-cpcr" hidden></p>`;
   host.prepend(el);
   const body = el.querySelector('.lyr-cpb');
 
   // with a factor on the map: show or hide its limit (dimming + line); off = the plain gradient
+  el.querySelector('.lyr-cpsc').onclick = () => setState({ photos: !state.photos }, 'pixels');
   el.querySelector('.lyr-cplim').onclick = () => setState({ fxLimit: state.fxLimit === false }, 'pixels');
   el.querySelector('.lyr-cpr').onclick = async () => {
     const th = { ...state.threshold }; for (const m of data.layers) if (m.threshold != null && th[m.id] !== m.threshold) th[m.id] = m.threshold;
@@ -80,5 +82,8 @@ export function render(st) {
     if (k === 'ice' && st.on.mask[layerOf('ice')]) changed = true;
   }
   el.querySelector('.lyr-cpr').hidden = !changed;
+  { const b = el.querySelector('.lyr-cpsc'), on = photosOn(st), cr = el.querySelector('.lyr-cpcr');
+    b.hidden = st.factor !== 'ice'; b.setAttribute('aria-pressed', String(on));
+    cr.hidden = !on; if (on) cr.textContent = TX.credit; }
   { const lb = el.querySelector('.lyr-cplim'); lb.hidden = !st.factor; lb.setAttribute('aria-pressed', String(st.fxLimit !== false)); }
 }

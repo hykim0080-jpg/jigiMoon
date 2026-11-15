@@ -9,6 +9,7 @@ import { t, layerName, unitOf, lang } from './strings.js';
 import { fmt } from './data.js';
 import { rampCss } from './ramps.js';
 import { SIMPLE, ZONE, SHOW_HATCH } from './config.js';
+import { photosOn, photoList, drawPhotos } from './photos.js';
 import { shadowCanvas, initTime, expoTop, skyGet } from './time.js';
 import { pinInfo } from './pin.js';
 import { useWin } from './window.js';
@@ -122,6 +123,7 @@ export function blit() {
     if (ga > 0) { ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = ga; blitImg(ctx, haloCanvas(), cw, ch); ctx.restore(); }
   }
   const sc = shadowCanvas(); if (sc) blitImg(ctx, sc, cw, ch);
+  if (photosOn(state) && photoList(() => setState({}, 'view'))) { const { vw, vh } = vis(); ctx.save(); ctx.imageSmoothingEnabled = true; drawPhotos(ctx, cx - vw / 2, cy - vh / 2, cw / vw, ch / vh); ctx.restore(); }   // ShadowCam photos over the Ice layer
   homeBtn.hidden = k <= 1.0001;
   panel.querySelectorAll('.lyr-basem button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.b === (state.basemap === 'shade' ? 'shade' : 'line'))));
 }
