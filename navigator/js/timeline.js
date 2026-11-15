@@ -20,14 +20,15 @@ export function drawStrips(g, sk, st, { x0, x1, y, brackets }) {
   el('rect', { x: x0, y: sunY, width: x1 - x0, height: ROW_H, fill: 'none', stroke: 'var(--line)' }, g);
   el('rect', { x: x0, y: earthY, width: x1 - x0, height: ROW_H, fill: 'none', stroke: 'var(--line)' }, g);
   if (brackets) {
-    const gap = (pred, rowY, limit) => {
+    const gap = (pred, rowY, limit, tip) => {
       const r = longestRun(pred, i0, n - 1);
       if (!r.len) return;
       const bx0 = X(r.start), bx1 = X(r.start + r.len), by = rowY + ROW_H + 4, c = limit && r.len > limit ? 'var(--block)' : 'var(--muted)';
       el('path', { d: `M${bx0},${by - 3}V${by}H${bx1}V${by - 3}`, fill: 'none', stroke: c }, g);
-      text(g, t('h', r.len), { x: (bx0 + bx1) / 2, y: by + 10, 'text-anchor': 'middle', class: 'tick', style: `fill:${c}` });
+      const lab = text(g, (tip ? '⟷ ' : '') + t('h', r.len), { x: (bx0 + bx1) / 2, y: by + 10, 'text-anchor': 'middle', class: 'tick', style: `fill:${c}` });
+      if (tip) { const ti = document.createElementNS('http://www.w3.org/2000/svg', 'title'); ti.textContent = tip; lab.appendChild(ti); el('path', { d: `M${bx0},${by - 3}V${by}H${bx1}V${by - 3}`, fill: 'none', stroke: 'transparent', 'stroke-width': 10 }, g).appendChild(ti.cloneNode(true)); }
     };
-    gap(i => sk.sunFrac[i] === 0, sunY, THRESHOLDS.dark);
+    gap(i => sk.sunFrac[i] === 0, sunY, (st.crit && st.crit.dark) || THRESHOLDS.dark, t('darkTip'));
     gap(i => !sk.earthVis[i], earthY, 0);
   }
   return { sunY, earthY };
