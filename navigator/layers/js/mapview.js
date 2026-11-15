@@ -17,6 +17,13 @@ const clampView = v => { const h = N / (2 * v.k); return { k: v.k, cx: Math.max(
 const scale = () => W * state.view.k / N;
 const toScr = (cf, rf) => { const { k, cx, cy } = state.view, s = scale(), w = N / k; return [(cf - (cx - w / 2)) * s, (rf - (cy - w / 2)) * s]; };
 const mToCf = (x, y) => [(x + HALF) / PX, (HALF - y) / PX];
+let holdTimer = 0, ring = null;
+function holdRing(pt) {
+  if (!pt) { if (ring) { ring.remove(); ring = null; } return; }
+  if (ring) ring.remove();
+  ring = Object.assign(document.createElement('div'), { className: 'lyr-hold' });
+  ring.style.left = pt[0] + 'px'; ring.style.top = pt[1] + 'px'; panel.append(ring);
+}
 export function cellFromEvent(e) {
   const r = canvas.getBoundingClientRect(), { k, cx, cy } = state.view, s = scale(), w = N / k;
   const col = Math.floor(cx - w / 2 + (e.clientX - r.left) / s), row = Math.floor(cy - w / 2 + (e.clientY - r.top) / s);
@@ -172,15 +179,24 @@ function wire() {
   panel.addEventListener('pointerdown', e => {
     if (e.button !== 0) return;
     if (state.edit && !e.shiftKey) { const c = cellFromEvent(e); painting = { last: null, val: state.edit === 'add' ? 1 : -1 }; panel.setPointerCapture(e.pointerId); if (c) stroke(c); return; }
-    drag = { x: e.clientX, y: e.clientY, v: { ...state.view }, moved: false }; cancelAnimationFrame(anim);
+    drag = { x: e.clientX, y: e.clientY, v: { ...state.view }, moved: false, held: false }; cancelAnimationFrame(anim);
     panel.setPointerCapture(e.pointerId);
+    // press and hold (as in Compare): zoom out x2 about the point after 500 ms, then every 400 ms down to the whole map
+    const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top, dg = drag;
+    const out = () => {
+      if (drag !== dg || state.view.k <= 1.001) { holdRing(null); return; }
+      dg.held = true; zoomAt(mx, my, 0.5); dg.v = { ...state.view };
+      if (state.view.k > 1.001) holdTimer = setTimeout(out, 400); else holdRing(null);
+    };
+    clearTimeout(holdTimer); holdRing(state.view.k > 1.001 ? [mx, my] : null); holdTimer = setTimeout(out, 500);
   });
   panel.addEventListener('pointermove', e => {
     const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
     if (painting) { const c = cellFromEvent(e); if (c) stroke(c); }
     if (drag) {
       const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-      if (!drag.moved && Math.hypot(dx, dy) > 3) { drag.moved = true; panel.classList.add('grab'); }
+      if (!drag.moved && Math.hypot(dx, dy) > 3) { clearTimeout(holdTimer); holdRing(null); if (drag.held) return; drag.moved = true; panel.classList.add('grab'); }
+      if (drag.held) return;
       if (drag.moved) { const s = W * drag.v.k / N; setState({ view: clampView({ k: drag.v.k, cx: drag.v.cx - dx / s, cy: drag.v.cy - dy / s }) }, 'view'); }
     }
     const cell = cellFromEvent(e), hs = state.adv ? hitSite(mx, my) : null, hl = hitLander(mx, my), hb = hitBadge(mx, my);
@@ -191,7 +207,8 @@ function wire() {
   });
   panel.addEventListener('pointerup', e => {
     if (painting) { painting = null; saveOverride(state.ov); return; }
-    if (!drag) return; const moved = drag.moved; drag = null; panel.classList.remove('grab');
+    clearTimeout(holdTimer); holdRing(null);
+    if (!drag) return; const moved = drag.moved || drag.held; drag = null; panel.classList.remove('grab');
     if (moved) return;
     const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top, hb = hitBadge(mx, my), hs = state.adv ? hitSite(mx, my) : null, cell = cellFromEvent(e);
     const hr = hitRing(mx, my);
@@ -208,7 +225,7 @@ function wire() {
   const mid = t => { const r = canvas.getBoundingClientRect(); return { x: (t[0].clientX + t[1].clientX) / 2 - r.left, y: (t[0].clientY + t[1].clientY) / 2 - r.top, d: Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY) || 1 }; };
   panel.addEventListener('touchstart', e => {
     if (e.touches.length !== 2) return;
-    e.preventDefault(); drag = null; painting = null; panel.classList.remove('grab'); cancelAnimationFrame(anim);
+    e.preventDefault(); drag = null; painting = null; panel.classList.remove('grab'); cancelAnimationFrame(anim); clearTimeout(holdTimer); holdRing(null);
     pinch = mid(e.touches);
   }, { passive: false });
   panel.addEventListener('touchmove', e => {
@@ -219,6 +236,7 @@ function wire() {
     zoomAt(m.x, m.y, m.d / pinch.d); pinch = m;
   }, { passive: false });
   panel.addEventListener('touchend', e => { if (e.touches.length < 2) pinch = null; });
+  panel.addEventListener('contextmenu', e => { if (drag) e.preventDefault(); });
   panel.addEventListener('pointerleave', () => { tip.hidden = true; if (!drag) setState({ hover: null, hoverSite: null, hoverLander: null }, 'hover'); });
 }
 function showTip(e, cell) {
