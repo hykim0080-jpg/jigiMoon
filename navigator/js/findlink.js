@@ -36,6 +36,14 @@ export function mask() {
   return maskCv;
 }
 export const near = () => nearF;
+// one factor on the map (layers/js/factor.js): rgb = colour step, a = 255 meets the limit, 128 misses it, 0 no data
+let fx = null, fxCv = null;
+export function fxCanvas() {
+  if (!fx) return null;
+  if (!fxCv) { fxCv = document.createElement('canvas'); fxCv.width = fxCv.height = N; }
+  const g = fxCv.getContext('2d'), im = g.createImageData(N, N); im.data.set(fx); g.putImageData(im, 0, 0);
+  return fxCv;
+}
 
 addEventListener('message', e => {
   if (!frame || e.source !== frame.contentWindow || !e.data || !e.data.mj) return;
@@ -43,6 +51,7 @@ addEventListener('message', e => {
   if (m.type === 'rects') { rects = m.rects || []; }
   else if (m.type === 'out') setPE('none');
   else if (m.type === 'mask') { go = m.go || null; nearF = go ? nearestField(i => go[i] === 1) : null; changed('mask'); }
+  else if (m.type === 'fx') { fx = m.rgba || null; changed('fx'); }
   else if (m.type === 'rank') { rank = m.list || []; changed('rank'); }
   else if (m.type === 'pin') { pin = m.pin; changed('pin'); }
   else if (m.type === 'time') { if (active() && (m.day !== state.day || m.mission !== state.mission || m.hour !== state.hour)) setState({ day: m.day, mission: m.mission === 6 ? 6 : 14, hour: m.hour }); }   // the map shows Find a site's hour

@@ -8,6 +8,7 @@ import { state, setState } from './state.js';
 import { failCount, sample } from './compose.js';
 import { tripRanked, statsFor, whyNoFix } from './trip.js';
 import { pending } from './window.js';
+import { fxImage } from './factor.js';
 import { lang } from './strings.js';
 import { cellToXY, xyToCell } from './geo.js';
 import { SETS, frameFor } from '../../js/frames3d.js';
@@ -197,7 +198,7 @@ function sync(st) {
     note.hidden = f.exact;
     if (!f.exact) { const d = new Date(f.shown); note.textContent = tx('only', d.getUTCMonth() + 1, d.getUTCDate(), d.getUTCHours()); }
   }
-  if (maskDirty) { maskDirty = false; const pd = pending(st); map.setMask(pd ? null : paintMask()); near = pd || !failCount ? null : nearestField(i => failCount[i] === 0); maskKeyNow++; }   // no GO outline from the yearly fallback while the stay is computed
+  if (maskDirty) { maskDirty = false; const pd = pending(st), fx = st.factor ? fxImage(st) : null; if (map.setFx) map.setFx(fx ? fx.cv : null); map.setMask(pd || fx ? null : paintMask()); near = pd || !failCount ? null : nearestField(i => failCount[i] === 0); maskKeyNow++; }   // no GO outline from the yearly fallback while the stay is computed
   const tops = (tripRanked() || []).filter(r => r.go).slice(0, 5), pin = st.pin && !st.autoPin ? st.pin : null;
   const pk = tops.map(r => r.col + ',' + r.row).join(';') + '|' + (pin ? pin.col + ',' + pin.row : '');
   if (pk !== lastPins) {

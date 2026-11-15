@@ -219,7 +219,8 @@ uniform vec2 uUvS, uUvO;
 uniform vec3 cNone, cSun, cEarth, cBoth;
 uniform vec3 uSunDir;      // map x, map y, up (unit); z < 0 when unknown
 uniform sampler2D uPsr;    // permanent shadow, 800 x 800 over +-200 km (style 'glow')
-uniform float uPsrOn, uGlowOn, uCurv, uMaskOn;
+uniform float uPsrOn, uGlowOn, uCurv, uMaskOn, uFxOn;
+uniform sampler2D uFx;      // one factor from the host (Find a site): rgb = colour step, a = 1 meets the limit, .5 misses it, 0 no data
 uniform sampler2D uMask, uHalo;   // GO mask from the host (Find a site): r = GO, g = sunlight level, a = has data
 uniform vec4 uRims[32];    // named craters: centre x, y, radius (km), strength
 uniform int uRimN;
@@ -255,6 +256,15 @@ void main() {
     float outline = 1.0 - smoothstep(0.0, 1.6 * w, abs(go - 0.5));
     col = mix(col, vec3(0.455, 0.635, 0.949), smoothstep(0.35, 0.65, go) * 0.42);
     col = mix(col, vec3(0.70, 0.82, 1.0), outline * 0.95);
+  }
+  if (uFxOn > 0.5) {   // the factor's gradient; a little dimmer where it misses the limit; the limit as a thin bright line
+    vec4 fx = texture2D(uFx, vec2((vMap.x + 200.0) / 400.0, (200.0 - vMap.y) / 400.0));
+    float shade = 0.55 + 0.5 * clamp(amb, 0.0, 1.2);
+    float met = smoothstep(0.7, 0.8, fx.a), has = smoothstep(0.1, 0.3, fx.a);
+    vec3 fc = fx.rgb * shade;
+    col = mix(col, mix(mix(col, fc, 0.75) * 0.6, mix(col, fc, 0.85), met), has);
+    float wl = max(fwidth(fx.a), 1e-4);
+    col = mix(col, vec3(0.96, 0.97, 0.99), (1.0 - smoothstep(0.0, 1.4 * wl, abs(fx.a - 0.75))) * 0.95 * has);
   }
   if (uPsrOn > 0.5) {
     float ps = texture2D(uPsr, vec2((vMap.x + 200.0) / 400.0, (200.0 - vMap.y) / 400.0)).r;
@@ -619,7 +629,7 @@ export function mountLunarMap(container, options = {}) {
     uExag: { value: exagV }, uBase: { value: -8 },
     uRims: { value: Array.from({ length: 32 }, () => new THREE.Vector4()) }, uRimN: { value: 0 },
     uPsr: { value: blank }, uPsrOn: { value: 0 }, uGlowOn: { value: opt.style === 'glow' ? 1 : 0 },
-    uCurv: { value: opt.style === 'glow' ? 1 : 0 }, uRef: { value: 0 }, uMaskOn: { value: 0 }, uMask: { value: blank }, uHalo: { value: blank },
+    uCurv: { value: opt.style === 'glow' ? 1 : 0 }, uRef: { value: 0 }, uMaskOn: { value: 0 }, uMask: { value: blank }, uFxOn: { value: 0 }, uFx: { value: blank }, uHalo: { value: blank },
   };
   const terrainMat = new THREE.ShaderMaterial({ uniforms, vertexShader: VERT, fragmentShader: FRAG, transparent: glow });
   if (glow && opt.psrUrl) fetch(opt.psrUrl).then(r => r.ok ? r.arrayBuffer() : null).then(b => {
@@ -1901,6 +1911,12 @@ export function mountLunarMap(container, options = {}) {
     highlightPin(col, row) { for (const p of pins) p.hl = col != null && p.col === col && p.row === row; dirty = true; },
     setPins(list) { for (const p of pins) p.el?.remove(); pins = (list || []).map((p) => ({ ...p })); dirty = true; },
     // GO mask from the host: a canvas over +-200 km (row 0 = Earth side), red = GO; null turns it off
+    setFx(cv) {   // one factor coloured over the ground (rgba canvas, 800 x 800 over +-200 km), null = off
+      if (!cv) { if (uniforms.uFxOn.value) { uniforms.uFxOn.value = 0; dirty = true; } return; }
+      let tx = uniforms.uFx.value;
+      if (!tx || tx === blank || tx.image !== cv) { tx = new THREE.CanvasTexture(cv); tx.flipY = false; tx.magFilter = tx.minFilter = THREE.LinearFilter; tx.generateMipmaps = false; tx.premultiplyAlpha = false; uniforms.uFx.value = tx; }
+      tx.needsUpdate = true; uniforms.uFxOn.value = 1; dirty = true;
+    },
     setMask(cv) {
       if (!cv) { uniforms.uMaskOn.value = 0; dirty = true; return; }
       let tx = uniforms.uMask.value;
