@@ -15,7 +15,7 @@ import { syncShadow, syncExpo, renderTime, ensure as ensureTime } from './time.j
 import { xyToCell, cellToXY } from './geo.js';
 import { initTrip, renderTrip, tripRanked, REGIONS, regionBBox } from './trip.js';
 import { mapHome, setBadges, shadowLegend } from './mapview.js';
-import { syncWin, winToken, pending } from './window.js';
+import { syncWin, winToken, pending, winProgress, setWinProgress, keyOf } from './window.js';
 import { initCart, renderCart, readCart, cartHash } from './cart.js';
 import * as g3 from './find3d.js';
 import * as pn from './panels.js';
@@ -25,7 +25,14 @@ export async function mount(root, opts = {}) {
   const { dataUrl = './data/', header = true } = opts;
   const lq = new URLSearchParams(location.search).get('lang') || new URLSearchParams(location.hash.slice(1)).get('lang'), cmp = '../index.html' + (lq ? '?lang=' + lq : '') + '#v=focus';
   root.innerHTML = `<div class="lyr-app">${header ? `<header><div class="seg lyr-sw"><a href="${cmp}">${t('compare')}</a><button aria-pressed="true">${t('find')}</button></div><div class="app-id"><a class="app-name" href="${cmp}">${t('app')}</a><span class="app-tag">${t('tagline')}</span></div></header>` : ''}<div class="lyr-main"><section class="panel lyr-left"><div class="lyr-lh"><h2>${t('criteria')}</h2><button class="lyr-advb" aria-pressed="false">${t('adv')}</button></div><div class="lyr-crit"></div><div class="lyr-advwrap lyr-layers"></div><div class="lyr-tripl"></div><div class="lyr-zones"></div></section><section class="panel lyr-map" data-theme="dark"></section><div class="lyr-loading" role="status">${t('loading')}</div><section class="panel lyr-pinp"><button class="lyr-pclose" aria-label="${t('close')}">×</button><div class="lyr-pcard"></div></section></div></div><div id="tip" hidden></div>`;
-  const data = await loadAll(dataUrl);
+  // the loading label counts up in % (files first, then the stay being worked out)
+  const ldEl = () => root.querySelector('.lyr-loading'), pctTxt = f => ` ${Math.floor(100 * f)} %`;
+  const data = await loadAll(dataUrl, f => { const ld = ldEl(); if (ld) ld.textContent = t('loading') + pctTxt(f); });
+  setWinProgress((key, f) => {
+    if (key !== keyOf(state)) return;
+    const ld = ldEl(); if (ld && !ld.hidden) ld.textContent = t('computing', state.mission || 14) + pctTxt(f);
+    root.querySelectorAll('.ld-pct').forEach(e => { e.textContent = pctTxt(f).trim(); });
+  });
   const main = root.querySelector('.lyr-main'), app = root.querySelector('.lyr-app'), pMap = main.querySelector('.lyr-map'), pLayers = main.querySelector('.lyr-advwrap'), pZones = main.querySelector('.lyr-zones'), pCrit = main.querySelector('.lyr-crit'), pPin = main.querySelector('.lyr-pinp'), advBtn = main.querySelector('.lyr-advb');
 
   const ids = data.layers.map(m => m.id), h = new URLSearchParams(location.hash.slice(1));
@@ -97,7 +104,7 @@ export async function mount(root, opts = {}) {
     syncWin(state); { const wt = winToken(state); if (wt !== lastWin) { lastWin = wt; p.add('pixels'); } }   // date, stay or basis changed the judged map
     app.dataset.adv = state.adv ? '1' : ''; advBtn.setAttribute('aria-pressed', state.adv);
     { const open = innerWidth > 700 && !state.autoPin && !!state.pin; if (app.classList.contains('pin-open') !== open) { app.classList.toggle('pin-open', open); setInsets(open ? 344 : 0); p.add('view'); } }   // the spot panel slides in when a spot is clicked
-    { const ld = root.querySelector('.lyr-loading'); if (ld) { const pd = pending(state); ld.hidden = !pd; if (pd) ld.textContent = t('computing', state.mission || 14); } }
+    { const ld = root.querySelector('.lyr-loading'); if (ld) { const pd = pending(state); ld.hidden = !pd; if (pd) ld.textContent = t('computing', state.mission || 14) + pctTxt(winProgress(state)); } }
     if (p.has('pixels')) { passPx = compose(state).passPx; if (state.adv) renderPanel(state); renderCriteria(state); renderZones(state); zonesSoon(); syncShadow(); syncExpo(state); renderTime(state); renderPinCard(state); renderPinSky(state); blit(); overlay(); readout(); g3.repaint(); pn.repaint(); }
     else {
       if (p.has('view')) { blit(); overlay(); }
