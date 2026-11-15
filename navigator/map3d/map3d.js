@@ -449,11 +449,21 @@ export function mountLunarMap(container, options = {}) {
     for (const [x, y, w, h] of [[44, 50, 30, 5], [60, 68, 34, 6], [40, 80, 22, 4]]) { g.beginPath(); g.ellipse(x + w / 2, y, w / 2, h / 2, -.3, 0, 7); g.fill(); }
     const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace; return tx;
   };
+  // Sun: NASA/SDO HMI continuum disc with a glow (sprite, constant screen size).
+  // Earth: a globe with the NASA Blue Marble texture, lit from the Sun's direction so its phase is right.
+  const sunMat = new THREE.SpriteMaterial({ map: glowTex('#fff8e0', 'rgba(255,190,80,.35)', 0.22), sizeAttenuation: false, depthWrite: false, transparent: true });
+  if (opt.sunUrl) new THREE.TextureLoader().load(opt.sunUrl, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; sunMat.map = tx; sunMat.needsUpdate = true; dirty = true; });
+  const earthMat = new THREE.MeshLambertMaterial({ map: earthTex(), color: 0xffffff });
+  if (opt.earthUrl) new THREE.TextureLoader().load(opt.earthUrl, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; earthMat.map = tx; earthMat.needsUpdate = true; dirty = true; });
+  const SKY_D0 = 3400, EARTH_R = SKY_D0 * Math.tan(3.5 * DEG);   // drawn about 7 times its real size
+  const earthMesh = new THREE.Mesh(new THREE.SphereGeometry(EARTH_R, 48, 24), earthMat);
+  const sunLight = new THREE.DirectionalLight(0xffffff, 2.2);
+  scene.add(sunLight, sunLight.target, new THREE.AmbientLight(0x223044, 0.35));
   const sky = {
-    sun: new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex('#fff8e0', 'rgba(255,190,80,.35)', 0.22), sizeAttenuation: false, depthWrite: false, transparent: true })),
-    earth: new THREE.Sprite(new THREE.SpriteMaterial({ map: earthTex(), sizeAttenuation: false, depthWrite: false, transparent: true })),
+    sun: new THREE.Sprite(sunMat),
+    earth: earthMesh,
   };
-  sky.sun.scale.set(0.16, 0.16, 1); sky.earth.scale.set(0.11, 0.11, 1);
+  sky.sun.scale.set(0.2, 0.2, 1);
   for (const k in sky) { sky[k].visible = false; sky[k].renderOrder = -1; scene.add(sky[k]); }
   const SKY_D = 3400;
   function placeSky(tt) {
@@ -463,7 +473,9 @@ export function mountLunarMap(container, options = {}) {
       const a = b.az * DEG, e = b.el * DEG;
       sp.position.set(Math.sin(a) * Math.cos(e) * SKY_D, Math.sin(e) * SKY_D, -Math.cos(a) * Math.cos(e) * SKY_D);
       sp.visible = true;
+      if (k === 'sun') { sunLight.position.copy(sp.position); sunLight.target.position.copy(earthMesh.position); }
     }
+    earthMesh.lookAt(0, 0, 0);
   }
   function placeMoon() {
     if (!Number.isFinite(hMin)) return;
@@ -1063,7 +1075,7 @@ export function mountLunarMap(container, options = {}) {
 
     // Sun / Earth direction as seen from the pole, placed on the map margin
     for (const k of ['sun', 'earth']) {
-      const b = bodies[k], st = bodyAt(b.key, t);
+      const b = bodies[k], st = opt.bodyMarkers === false ? null : bodyAt(b.key, t);   // the host can draw the real Sun/Earth instead
       if (!st) { place(b.e, 0, 0, false); continue; }
       const ok = project(edgePoint(st.az, 20, v3));
       const txt = `${b.name} ${st.el >= 0 ? '+' : '−'}${Math.abs(st.el).toFixed(1)}°`;

@@ -64,7 +64,7 @@ async function mount() {
       // clicks pick like the 2D map: a marker selects that site, the ground drops a pin there
       onSiteClick: id => { if (data.index.byId[id]) setState({ site: id }); },
       onMapClick: (x, y) => { if (onPin) onPin(Math.round(x), Math.round(y)); },
-      moonUrl: 'data/moon.jpg',   // NASA SVS CGI Moon Kit, the globe under the terrain patch
+      moonUrl: 'data/moon.jpg', sunUrl: 'data/sun_sdo_512.png', earthUrl: 'data/earth_bluemarble_1024.jpg', bodyMarkers: false,   // NASA SVS CGI Moon Kit, the globe under the terrain patch
     });
     return map.ready;
   }).then(() => { box.classList.remove('loading'); lastKey = ''; lastSite = ''; sync(state); })
