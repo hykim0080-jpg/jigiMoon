@@ -42,6 +42,10 @@ const CSS = `
   --bg:#0f131b;--surface:#181d28;--ink:#e8eaf0;--muted:#98a1b4;--line:#2b3242;--sun:#f0a531;--earth:#74a2f2;--ok:#4cbf82;
   font:12px/1.3 Inter,"Apple SD Gothic Neo",system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;user-select:none;-webkit-user-select:none;outline:none;
   --lmap-mono:Inter,system-ui,sans-serif}
+.lmap-mast{position:absolute;left:0;top:0;pointer-events:none;z-index:3;display:flex;flex-direction:column;align-items:center;transform-origin:50% 100%}
+.lmap-mast i{display:block;width:3px;background:var(--mast,#4fc0c9);box-shadow:0 0 0 1px #0f131b}
+.lmap-mast b{display:block;width:12px;height:12px;border:2px solid var(--mast,#4fc0c9);border-radius:50%;border-bottom-color:transparent;transform:rotate(45deg);margin-bottom:-2px}
+.lmap-mast span{font:600 11px/1 Inter,system-ui,sans-serif;color:#fff;background:rgba(15,19,27,.85);border:1px solid var(--mast,#4fc0c9);padding:2px 5px;margin-bottom:3px;white-space:nowrap}
 .lmap *,.lmap *::before,.lmap *::after{box-sizing:border-box;font-variant-numeric:tabular-nums!important}
 .lmap canvas.lmap-gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
 .lmap-ov{position:absolute;inset:0;pointer-events:none;overflow:hidden}
@@ -382,6 +386,7 @@ export function mountLunarMap(container, options = {}) {
   let hMin = 0, hMax = 0;
   let sites = [];
   let landmarks = [], landers = [];
+  let mastPt = null, mastEl = null;   // MAST fix: a pole of h metres at a map point, drawn on the overlay
   let hoverSite = null, selSite = null, hoverPt = null, hoverLander = null, hoverLm = null;
   let pointer = null;                 // last pointer position over the canvas (client px)
   let tween = null;
@@ -1101,6 +1106,14 @@ export function mountLunarMap(container, options = {}) {
       m.sx = v3.x; m.sy = v3.y; m.on = ok && inView(v3.x, v3.y);
       if (m.pt) { place(m.pt, m.sx, m.sy, m.on); if (m.on) boxes.push([m.sx - 6, m.sy - 6, m.sx + 6, m.sy + 6]); }
     }
+    if (mastPt) {
+      if (!mastEl) { mastEl = el('div', 'lmap-mast', '<span></span><b></b><i></i>'); ov.appendChild(mastEl); }
+      const ok = project(worldOf(mastPt.x, mastPt.y, v3));
+      const px = Math.round(10 + Math.min(mastPt.h, 20) * 3);   // drawn tall enough to see: 3 px per metre
+      if (mastEl._h !== mastPt.h) { mastEl.firstChild.textContent = mastPt.label; mastEl.lastChild.style.height = px + 'px'; mastEl._h = mastPt.h; }
+      const hh = mastEl.offsetHeight || px + 30;
+      place(mastEl, v3.x - (mastEl.offsetWidth || 40) / 2, v3.y - hh, ok && inView(v3.x, v3.y));
+    } else if (mastEl) place(mastEl, 0, 0, false);
     const vis = [];
     for (const s of sites) {
       const ok = project(worldOf(s.x_m, s.y_m, v3));
@@ -1493,6 +1506,7 @@ export function mountLunarMap(container, options = {}) {
     setDataset,
     setExaggeration: setExag,
     focus: focusOn,
+    setMast(h, x_m, y_m, label) { mastPt = h > 0 ? { h, x: x_m, y: y_m, label: label || `${h} m` } : null; if (mastEl) mastEl._h = null; dirty = true; },
     selectSite(id) { selSite = sites.find((s) => s.id === id) ?? null; stripDirty = true; dirty = true; },
     loaded: () => ({ loaded: ds.loaded, total: ds.n }),
     destroy() {

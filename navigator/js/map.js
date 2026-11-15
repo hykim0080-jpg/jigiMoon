@@ -3,7 +3,7 @@ import { state, setState, limitsOf, ui, setHover, onHover } from './state.js';
 import { ZOOM } from './config.js';
 import { siteName, t } from './strings.js';
 import { el, text, clear, showTip, hideTip } from './svg.js';
-import { status, fixText, shortDate, blockage, azToMapDir, nearestOk } from './logic.js';
+import { status, fixText, shortDate, blockage, azToMapDir, nearestOk, mastShown } from './logic.js';
 import { togglePin, rowOrder } from './calendar.js';
 import { landmarks, where, fmtLatLon } from './orient.js';
 import * as shadow from './shadow.js';
@@ -402,6 +402,18 @@ function draw(st) {
       const rr = Math.max(7, 0.2 * ppk);
       el('circle', { cx: x1, cy: y1, r: rr, fill: 'none', stroke: '#000', 'stroke-width': 4, 'stroke-opacity': .5 }, svg);
       el('circle', { cx: x1, cy: y1, r: rr, fill: 'none', stroke: '#fff', 'stroke-width': 2 }, svg);
+    }
+  }
+
+  // MAST fix: a pole at the site, 3 px per metre so 7 m and 20 m read differently
+  if (data.site && !compare) {
+    const e = data.index.modes[st.mission].sites[st.site], h = e ? mastShown(e, st.day, st.mast, limitsOf(st)) : 0;
+    if (h) {
+      const x0 = px(site.x_m / 1000), y0 = py(site.y_m / 1000), L = 10 + Math.min(h, 20) * 3, g = el('g', { class: 'mastpole' }, svg);
+      el('line', { x1: x0, y1: y0, x2: x0, y2: y0 - L, stroke: '#0f131b', 'stroke-width': 5 }, g);
+      el('line', { x1: x0, y1: y0, x2: x0, y2: y0 - L, stroke: 'var(--mast)', 'stroke-width': 3 }, g);
+      el('path', { d: `M${x0 - 7},${y0 - L - 6}a7 7 0 0 0 14 0`, fill: 'none', stroke: 'var(--mast)', 'stroke-width': 2 }, g);
+      text(g, t('mastPole', h), { x: x0 + 10, y: y0 - L - 4, class: 'mastlab' });
     }
   }
 

@@ -410,3 +410,4 @@ input[type=range]{accent-color:var(--accent)}
 /* dark theme: cards and labels that were drawn on white paper */
 [data-theme="dark"] .card.inset{background:rgba(24,29,40,.94)}
 [data-theme="dark"] .locl,[data-theme="dark"] .card.local .lname,[data-theme="dark"] .card.local .tick{stroke:#0f131b}
+.mastlab{font-size:12px;font-weight:600;fill:#fff;paint-order:stroke;stroke:#0f131b;stroke-width:3px}

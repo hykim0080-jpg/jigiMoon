@@ -2,7 +2,8 @@
 // Loaded on first use only (module ~2 MB, one month of frames ~18 MB). Lighting frames exist for
 // June and December 2027 (4 h steps); other dates show the same day-of-month and hour of the nearer
 // computed month, and say so.
-import { state, setState } from './state.js';
+import { state, setState, limitsOf } from './state.js';
+import { mastShown } from './logic.js';
 import { FIRST_DAY } from './config.js';
 import { t } from './strings.js';
 
@@ -79,6 +80,9 @@ function sync(st) {
     const s = data.index.byId[st.site];
     if (s) { map.selectSite(st.site); map.focus(s.x_m, s.y_m, 22); }
   }
+  const s = data.index.byId[st.site], e = data.index.modes[st.mission]?.sites[st.site];
+  const h = s && e ? mastShown(e, st.day, st.mast, limitsOf(st)) : 0;
+  if (map.setMast) map.setMast(h, s?.x_m, s?.y_m, h ? t('mastPole', h) : '');
   note.hidden = f.exact;
   if (!f.exact) {
     const d = new Date(f.shown);
