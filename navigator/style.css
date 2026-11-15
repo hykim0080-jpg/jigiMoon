@@ -51,7 +51,7 @@ select{border:1px solid var(--line);background:var(--surface);border-radius:0;pa
 
 main{flex:1;min-height:0;position:relative;display:grid;gap:12px;
   grid-template-columns:minmax(320px,1fr) var(--S,588px) minmax(320px,1fr);
-  grid-template-rows:minmax(0,1fr) 136px var(--cal,216px);
+  grid-template-rows:minmax(0,1fr) 48px var(--cal,216px);
   grid-template-areas:"sky map fixes" "metrics map fixes" "cal cal cal"}
 .panel{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:0;padding:12px;min-width:0;min-height:0;position:relative}
 .map-panel{grid-area:map;padding:0;overflow:hidden;background:#222;display:flex;flex-direction:column}
@@ -65,7 +65,11 @@ main[data-view="compare"] #zoom{display:none}
 #globe{position:absolute;left:8px;bottom:8px;width:calc(var(--S,588px) * 176 / 588);aspect-ratio:1;background:#0f131b;border:1px solid rgba(255,255,255,.3);border-radius:0}
 main[data-zoomed="1"]:not([data-view="compare"]) #globe{width:calc(var(--S,588px) * 112 / 588)}
 #globe canvas,#globe svg{position:absolute;inset:0;width:100%;height:100%}
-#metrics-panel{grid-area:metrics;display:flex;flex-direction:column;justify-content:space-between}
+#metrics-panel{grid-area:metrics;display:flex;flex-direction:column;justify-content:center}
+.mline{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+.mline .mi{white-space:nowrap;cursor:help}
+.mline .mi i{font-style:normal;margin-right:5px;font-weight:500}
+.mline .mi.fail{color:var(--block)}
 #sky-panel{grid-area:sky;display:flex;flex-direction:column}
 #fixes{grid-area:fixes;display:flex;flex-direction:column;gap:12px;min-height:0}
 #compare{display:none;grid-area:cmp;overflow:hidden}
