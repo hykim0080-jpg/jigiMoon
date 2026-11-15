@@ -90,6 +90,9 @@ const CSS = `
 .lmap-link text{fill:#7fe0aa;font:600 12px Inter,system-ui,sans-serif;paint-order:stroke;stroke:#0f131b;stroke-width:3px}
 .lmap-pin.is-pin i{background:#fff;box-shadow:0 0 0 1.5px #0f131b}
 .lmap-pin.is-pin::before{background:rgba(255,255,255,.9)}
+.lmap-pin.is-saved i{width:14px;height:18px;left:-7px;top:-20px;transform:none;background:#fff;clip-path:path('M7 18C4.5 13.5 0 11.5 0 7a7 7 0 0 1 14 0c0 4.5-4.5 6.5-7 11z');box-shadow:none}
+.lmap-pin.is-saved::before{display:none}
+.lmap-pin.is-saved span,.lmap-pin.is-saved.is-dot span{display:block;color:#fff;left:9px;top:-22px}
 .lmap-site.is-sel{box-shadow:0 0 0 1px rgba(15,19,27,.85),0 0 0 4px rgba(232,234,240,.28)}
 .lmap-name{font-size:11px;color:var(--ink);text-shadow:0 0 3px #0f131b,0 0 3px #0f131b,0 1px 6px #0f131b;letter-spacing:.01em}
 .lmap-name.is-sel{font-weight:600}
