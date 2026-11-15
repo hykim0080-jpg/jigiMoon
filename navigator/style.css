@@ -3,8 +3,8 @@
   --bg:#eef0f4; --surface:#ffffff; --ink:#151b2b; --muted:#5a6377; --line:#d3d7e0;
   --sun:#b96f00; --earth:#2459b8; --ok:#1f8a5b; --move:#2459b8; --mast:#0f7f8c; --accent:#0b3d91; --wait:#d9a24a; --none:#c3c8d2;
   --box:#d4a017; --block:#c8372d; --terrain:#2b3242; --terrain-edge:#5d6880;
-  --f-body:"Inter","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
-  --f-mono:"Inter","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-body:"Roboto","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+  --f-mono:"Roboto","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
@@ -486,7 +486,7 @@ main[data-d3="1"] #zoom{z-index:6}
 #intro{position:fixed;inset:0;z-index:100;background:#000;cursor:pointer;transition:opacity .6s}
 #intro.out{opacity:0;pointer-events:none}
 #intro canvas{display:block}
-#intro .intro-title{position:absolute;left:0;right:0;top:4.5vh;text-align:center;color:#e8eaf0;font-family:Inter,system-ui,sans-serif;pointer-events:none;transition:opacity .5s}
+#intro .intro-title{position:absolute;left:0;right:0;top:4.5vh;text-align:center;color:#e8eaf0;font-family:Roboto,system-ui,sans-serif;pointer-events:none;transition:opacity .5s}
 #intro .intro-title h1{margin:0;font-size:clamp(28px,min(4.6vw,7vh),56px);font-weight:700;letter-spacing:.14em;line-height:1}
 #intro .intro-title p{position:fixed;left:0;right:0;bottom:9.5vh;margin:0;font-size:clamp(14px,1.8vw,18px);color:#c3c9d6}
 #intro .intro-title small{position:fixed;left:0;right:0;bottom:4.5vh;font-size:13px;color:#98a1b4;opacity:.6;letter-spacing:.04em}
@@ -507,7 +507,7 @@ main.full #sky-panel{top:calc(104px + var(--vbh, 0px))}
 @media (max-width:700px){#vbadge b{font-size:26px}#vbadge{top:34px;max-width:70%}}
 
 /* Detail 3D: the card that follows the cursor (js/hover3d.js) */
-.h3d-tip{position:absolute;left:0;top:0;z-index:6;min-width:210px;max-width:290px;padding:10px 12px;background:rgba(10,12,16,.93);border:1px solid rgba(255,255,255,.22);border-radius:0;color:#e8eaf0;font:12px/1.45 Inter,system-ui,sans-serif;pointer-events:none;font-variant-numeric:tabular-nums}
+.h3d-tip{position:absolute;left:0;top:0;z-index:6;min-width:210px;max-width:290px;padding:10px 12px;background:rgba(10,12,16,.93);border:1px solid rgba(255,255,255,.22);border-radius:0;color:#e8eaf0;font:12px/1.45 Roboto,system-ui,sans-serif;pointer-events:none;font-variant-numeric:tabular-nums}
 .h3d-tip[hidden]{display:none}
 .h3d-tip .v{font-size:18px;font-weight:700;letter-spacing:.03em;line-height:1.15;margin-bottom:6px;color:#fff}
 .h3d-tip .v small{display:block;font-size:10.5px;font-weight:500;color:#9aa3b2;letter-spacing:0}
@@ -525,7 +525,7 @@ main.full #sky-panel{top:calc(104px + var(--vbh, 0px))}
 
 /* one time bar for the shared 3D map, both tabs (js/timebar.js); the map's own bar (month buttons, frame counter) is not used */
 #map3d .lmap-bar{display:none!important}
-.tbar{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:45;display:flex;align-items:center;gap:8px;width:min(1080px,calc(100% - 24px));padding:7px 12px;background:rgba(15,19,27,.92);border:1px solid var(--line,#2b3242);color:#e8eaf0;font:12px/1 Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;box-sizing:border-box}
+.tbar{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:45;display:flex;align-items:center;gap:8px;width:min(1080px,calc(100% - 24px));padding:7px 12px;background:rgba(15,19,27,.92);border:1px solid var(--line,#2b3242);color:#e8eaf0;font:12px/1 Roboto,system-ui,sans-serif;font-variant-numeric:tabular-nums;box-sizing:border-box}
 .tbar[hidden]{display:none}
 .tbar button{background:transparent;color:#e8eaf0;border:1px solid #3a4254;border-radius:0;height:26px;min-width:26px;padding:0 7px;font:inherit;cursor:pointer}
 .tbar button[aria-pressed="true"]{background:#e8eaf0;color:#0f131b}
@@ -694,3 +694,6 @@ main:not([data-view="find"]) #map3d .lmap-scale{margin-top:-40px}   /* the scale
 #vbadge>*{flex:0 0 100%}
 #vbadge>b{flex:none}
 #vbadge>.vfail{flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;font-weight:500;opacity:.8}
+/* Map panel: the map only (현기 11-16) — no reason box above it, no MOVE grid in its corner (the fix buttons say it) */
+#fixes>#why,#fixes .card.local>.card.inset{display:none!important}
+#vbadge>.vfail{min-width:min(150px,100%)}   /* a narrow verdict box (All panels): the reasons go under NO-GO instead of a bare "…" */

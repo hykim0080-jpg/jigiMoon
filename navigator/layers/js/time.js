@@ -104,7 +104,7 @@ function darkStrip(svg, sky, st) {
   const tip = lang === 'ko' ? '햇빛이 한 번에 가장 오래 끊긴 시간' : 'Longest stretch without sunlight';
   const g = mk('g', {}); mk('title', {}, g).textContent = tip;
   mk('path', { d: `M${bx0},${11}V${14}H${bx1}V${11}`, fill: 'none', stroke: c }, g);
-  const tx = mk('text', { x: Math.min(Math.max((bx0 + bx1) / 2, 24), w - 24), y: 26, 'text-anchor': 'middle', style: `fill:${c};font:600 11px Inter,system-ui,sans-serif` }, g); tx.textContent = `⟷ ${best.len} h`;
+  const tx = mk('text', { x: Math.min(Math.max((bx0 + bx1) / 2, 24), w - 24), y: 26, 'text-anchor': 'middle', style: `fill:${c};font:600 11px Roboto,system-ui,sans-serif` }, g); tx.textContent = `⟷ ${best.len} h`;
 }
 
 // ---- shadow overlay ----

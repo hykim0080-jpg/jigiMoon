@@ -59,7 +59,7 @@ Living list: last updated 2026-11-15 (KST morning). Items marked **[verify]** st
 
 | # | Font | Used in | Licence |
 |---|---|---|---|
-| F1 | Inter (variable, Latin + Latin Extended), by The Inter Project Authors — woff2 files bundled in `navigator/fonts/` (from the @fontsource-variable/inter package), licence text in `navigator/fonts/Inter-OFL.txt`; Korean text uses the system font | Web tool | SIL Open Font License 1.1 |
+| F1 | Roboto (variable, Latin + Latin Extended), by The Roboto Project Authors (Google) — woff2 files bundled in `navigator/fonts/` (from the @fontsource-variable/roboto 5.3.0 package), licence text in `navigator/fonts/Roboto-OFL.txt`; Korean text uses the system font | Web tool | SIL Open Font License 1.1 (current Roboto releases; older Roboto was Apache 2.0) |
 
 ## 5. Images and media made by the team
 
