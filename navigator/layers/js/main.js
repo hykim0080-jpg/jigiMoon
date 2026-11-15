@@ -19,6 +19,7 @@ import { syncWin, winToken, pending } from './window.js';
 import { initCart, renderCart, readCart, cartHash } from './cart.js';
 import * as g3 from './find3d.js';
 import * as pn from './panels.js';
+import { initCritPanel, render as renderCritPanel } from './critpanel.js';
 
 export async function mount(root, opts = {}) {
   const { dataUrl = './data/', header = true } = opts;
@@ -69,7 +70,7 @@ export async function mount(root, opts = {}) {
     if (!(await applyLevels(data, next, dataUrl))) { await applyLevels(data, state.crit, dataUrl); return false; }
     saveCrit(next); setState({ crit: next }, 'pixels'); return true;
   };
-  initCart(app, data, lang, lq); initCriteria(pCrit, data, setCrit); initZones(pZones, data, { pick }); initPinCard(pPin.querySelector('.lyr-pcard'), data); initMap(pMap, data, comp); g3.init(pMap, data); setPick(pick);
+  initCart(app, data, lang, lq); initCriteria(pCrit, data, setCrit); initCritPanel(main.querySelector('.lyr-left'), data, setCrit); initZones(pZones, data, { pick }); initPinCard(pPin.querySelector('.lyr-pcard'), data); initMap(pMap, data, comp); g3.init(pMap, data); setPick(pick);
   { const hd = root.querySelector('.lyr-app header'), tl = main.querySelector('.lyr-tripl');
     initTrip(hd || main, tl, data, { pick, fly: bb => flyToCells(bb, 8), home: () => mapHome(), ranked: rk => { if (state.autoPin && rk[0] && !(state.pin && state.pin.col === rk[0].col && state.pin.row === rk[0].row)) setState({ pin: { col: rk[0].col, row: rk[0].row } }, 'panel'); } });
     setBadges(() => { const r = tripRanked(), g = r.filter(z => z.go).length; return r.slice(0, g ? Math.min(g, 15) : 3); }); }
@@ -107,6 +108,7 @@ export async function mount(root, opts = {}) {
       if (p.has('hover')) { overlay(); readout(); renderZones(state); }
     }
     renderTrip(state);   // after compose(): the ranked spots follow the current mask
+    renderCritPanel(state);
     renderCart(state);
     g3.render(state); pn.render(state);
     const q = new URLSearchParams(); if (state.base !== 'sun') q.set('b', state.base); if (state.adv) { q.set('a', 1); q.set('m', state.mode); } if (state.site) q.set('s', state.site);
