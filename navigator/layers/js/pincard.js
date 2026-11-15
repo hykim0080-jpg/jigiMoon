@@ -4,10 +4,12 @@ import { state, setState } from './state.js';
 import { pinInfo, isoOfDay } from './pin.js';
 import { layerColor } from './ramps.js';
 import { fmt } from './data.js';
+import { BUDGET } from './config.js';
 import { t, lang, unitOf, layerName } from './strings.js';
 import { skyAt, skyCached, drawPinSky } from './time.js';
 import { critName, critValue } from './criteria.js';
 import { statsCached, statsFor, whyNoFix, tt } from './trip.js';
+import { WIN_IDS, useWin } from './window.js';
 
 let el, data, key = '', drag = false;
 const KIND = { go: 'ok', wait: 'wait', move: 'move', mast: 'mast', none: 'block' };
@@ -36,7 +38,14 @@ export function renderPinCard(st) {
   if (!inf) { el.innerHTML = ''; return; }
   const v = inf.v, f = (kind, label, val, title = '') => `<div class="lyr-fx${v.kind === kind ? ' pick' : ''}${val == null ? ' na' : ''}" style="--c:var(--${kind})" title="${title}"><span>${label}</span><span class="n">${val ?? '—'}</span></div>`;
   const mv = v.move ? (v.move.here ? t('here') : t('move_txt', v.move.dir, v.move.km.toFixed(1))) : null;
+  const wb = useWin(st), ws = statsCached(inf.col, inf.row, st.mission), dd = st.tDay;
   const checks = data.layers.filter(m => m.threshold != null).map(m => {
+    const wk = wb && WIN_IDS[m.id];
+    if (wk) {   // judged over this stay: the stay's own value against the criterion (bar 0-100 %, dark 0-stay h)
+      const c = st.crit[wk], raw = ws ? ws[wk][dd] : null, val = raw == null ? null : wk === 'dark' ? Math.ceil(raw) : Math.floor(raw), mx = wk === 'dark' ? st.mission * 24 : 100;
+      const fail = val != null && (wk === 'dark' ? val > c : val < c), pc = x => Math.max(0, Math.min(100, 100 * x / mx));
+      return `<div class="lyr-ck${st.on.mask[m.id] ? '' : ' off'}"><i class="lyr-tg" style="--c:${layerColor(m.id, false)}"></i><span class="lyr-nm">${critName(m)}</span><span class="lyr-ckb"><b style="width:${val == null ? 0 : pc(val)}%;background:${fail ? 'var(--block)' : layerColor(m.id, false)}"></b><u style="left:${pc(c)}%"></u></span><span class="n lyr-ckv${fail ? ' fail' : ''}">${val == null ? '–' : val + (wk === 'dark' ? ' h' : ' %')}</span></div>`;
+    }
     const val = inf.values[m.id], fail = state.threshold[m.id] != null && val != null && (m.direction === '<=' ? val > st.threshold[m.id] : val < st.threshold[m.id]);
     const pc = x => Math.max(0, Math.min(100, 100 * (x - m.min) / (m.max - m.min)));
     return `<div class="lyr-ck${st.on.mask[m.id] ? '' : ' off'}"><i class="lyr-tg" style="--c:${layerColor(m.id, false)}"></i><span class="lyr-nm">${critName(m)}</span><span class="lyr-ckb"><b style="width:${val == null ? 0 : pc(val)}%;background:${fail ? 'var(--block)' : layerColor(m.id, false)}"></b><u style="left:${pc(st.threshold[m.id])}%"></u></span><span class="n lyr-ckv${fail ? ' fail' : ''}">${val == null ? '–' : fmt(m, val) + unitOf(m)}</span></div>`;
@@ -45,7 +54,7 @@ export function renderPinCard(st) {
   el.innerHTML = `<div class="lyr-pt">${inf.title}</div>
 <div class="lyr-dt"><button data-step="-1">◀</button><span class="n">${isoOfDay(st.tDay)}</span><button data-step="1">▶</button></div>
 <div class="lyr-vd">${verdictHtml(v, inf, st)}</div>${winRow(inf, st)}
-<div class="lyr-fxs">${f('move', t('move'), mv)}${f('mast', t('mast'), v.goNow ? t('not_needed') : v.mast ? t('mast_gain', v.mast.gain) : null, v.mast && !v.goNow ? t('mast_title', v.mast.from, v.mast.to) : '')}${f('wait', t('wait'), v.goNow ? t('days', 0) : v.wait != null ? t('days', v.wait) : null)}</div>
+<div class="lyr-fxs">${f('move', t('move'), mv)}${f('mast', t('mast'), v.goNow ? t('not_needed') : v.mast ? t('mast_gain', v.mast.gain) : null, v.mast && !v.goNow ? t('mast_title', v.mast.from, v.mast.to) : '')}${f('wait', t('wait'), v.goNow ? t('days', 0) : v.wait != null && v.wait <= BUDGET.wait ? t('days', v.wait) : null, v.wait != null && v.wait > BUDGET.wait ? t('days', v.wait) : '')}</div>
 <div class="lyr-cks">${checks}</div>${adv}
 <svg class="lyr-sky"></svg>
 ${inf.go ? `<div class="lyr-cal"><canvas class="lyr-pcal"></canvas><span class="n lyr-go-n">${t('go')} ${t('days', inf.go.count)}</span></div>` : ''}
@@ -57,6 +66,7 @@ ${inf.go ? `<div class="lyr-cal"><canvas class="lyr-pcal"></canvas><span class="
 function winRow(inf, st) {
   const w = statsCached(inf.col, inf.row, st.mission), c = st.crit;
   if (!w) { statsFor(inf.col, inf.row, st.mission).then(() => { key = ''; renderPinCard(state); }); return '<div class="lyr-win n">…</div>'; }
+  if (useWin(st)) return '';
   const d = st.tDay, s = Math.floor(w.sun[d]), e = Math.floor(w.earth[d]), k = Math.ceil(w.dark[d]);
   return `<div class="lyr-win n"><span>${tt('stayD', st.mission)}</span><span class="${s < c.sun ? 'bad' : ''}">☀ ${s} %</span><span class="${e < c.earth ? 'bad' : ''}">⊕ ${e} %</span><span class="${k > c.dark ? 'bad' : ''}">☾ ${k} h</span></div>`;
 }

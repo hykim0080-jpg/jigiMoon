@@ -4,6 +4,8 @@ import { rampCss, layerColor } from './ramps.js';
 import { fmt, withUnit } from './data.js';
 import { t, layerName, unitOf } from './strings.js';
 import { critIds } from './compose.js';
+import { WIN_IDS, useWin } from './window.js';
+const winText = (k, v) => k === 'dark' ? `${Math.ceil(v)} h` : `${Math.floor(v)} %`;
 
 let el, data, rows = {}, segEl, scoreBar, rowsEl, noneCol = '#888';
 const MODES = ['layers', 'mask', 'score'];
@@ -13,7 +15,8 @@ const isCrit = m => m.threshold != null;
 
 export function initPanel(root, d) {
   el = root; data = d;
-  el.innerHTML = `<div class="lyr-head"><h2>${t('layers')}</h2><div class="seg">${MODES.map(m => `<button data-m="${m}" aria-pressed="false">${t('m_' + m)}</button>`).join('')}</div></div><div class="lyr-score"></div><div class="lyr-rows"></div>`;
+  el.innerHTML = `<div class="lyr-head"><h2>${t('layers')}</h2><div class="seg">${MODES.map(m => `<button data-m="${m}" aria-pressed="false">${t('m_' + m)}</button>`).join('')}</div></div><div class="lyr-basis"><span>${t('basis')}</span><span class="seg"><button data-b="trip">${t('b_trip')}</button><button data-b="year">${t('b_year')}</button></span></div><div class="lyr-score"></div><div class="lyr-rows"></div>`;
+  el.querySelector('.lyr-basis').onclick = e => { const x = e.target.closest('[data-b]'); if (x) setState({ basis: x.dataset.b, autoPin: true }, 'pixels'); };
   segEl = el.querySelector('.seg'); scoreBar = el.querySelector('.lyr-score'); rowsEl = el.querySelector('.lyr-rows');
   noneCol = getComputedStyle(el).getPropertyValue('--none').trim() || noneCol;
   segEl.onclick = e => { const b = e.target.closest('button'); if (b) setState({ mode: b.dataset.m }, 'pixels'); };
@@ -93,6 +96,8 @@ export function renderPanel(st) {
   const mode = st.mode;
   segEl.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.m === mode));
   el.dataset.mode = mode;
+  el.querySelectorAll('.lyr-basis button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.b === (st.basis || 'trip'))));
+  const wb = useWin(st);
   const ordered = st.order.map(id => rows[id]).filter(Boolean);
   ordered.forEach((o, i) => { if (rowsEl.children[i] !== o.r) rowsEl.insertBefore(o.r, rowsEl.children[i] || null); });
   rowsEl.classList.toggle('compact', data.layers.length > 8);
@@ -104,7 +109,7 @@ export function renderPanel(st) {
     const on = mode === 'score' ? st.weight[m.id] > 0 : !!st.on[mode][m.id];
     o.r.classList.toggle('off', !on || !active); o.r.classList.toggle('disabled', !active);
     o.tg.setAttribute('aria-pressed', on && active); o.tg.disabled = !active;
-    o.r.classList.toggle('nol5', mode === 'mask');
+    o.r.classList.toggle('nol5', mode === 'mask'); o.r.classList.toggle('win', mode === 'mask' && wb && !!WIN_IDS[m.id]);
     const thr = st.threshold[m.id];
     if (o.hd) {
       const p = pct(m, thr), ge = m.direction !== '<=';
@@ -121,7 +126,8 @@ export function renderReadout(sm, st) {
   for (const m of data.layers) {
     const o = rows[m.id];
     if (!sm) { o.rd.textContent = ''; o.tick.style.display = 'none'; o.rd.classList.remove('fail'); continue; }
-    const v = sm.values[m.id];
+    const v = sm.values[m.id], wk = sm.win && st.mode === 'mask' && WIN_IDS[m.id];
+    if (wk) { o.rd.textContent = winText(wk, sm.win[wk]); o.rd.classList.toggle('fail', sm.pass[m.id] === false); o.tick.style.display = 'none'; continue; }
     o.rd.textContent = v === Infinity ? fmt(m, Infinity) + '\u2009' + unitOf(m) : withUnit(m, v);
     o.rd.classList.toggle('fail', sm.pass[m.id] === false);
     if (v == null) o.tick.style.display = 'none';

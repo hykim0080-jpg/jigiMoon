@@ -9,7 +9,8 @@ import { describe, anchorOf } from './orient.js';
 import { decode } from './data.js';
 import { lang, MONTH_NAMES } from './strings.js';
 import { failStats, failReason } from '../../js/failreason.js';
-import { failBase, critIds } from './compose.js';
+import { failBase, failYear, critIds } from './compose.js';
+import { winToken } from './window.js';
 
 const T0 = Date.UTC(2027, 0, 1), DAYS = 365, LIM = { move: 3, mast: 20, wait: 60 };
 export const REGIONS = [
@@ -97,12 +98,12 @@ function poolCells(rid, mission) {
   const cand = [], useMask = !!failBase && state.mode === 'mask' && critIds(state).length > 0;
   for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
     const i = r * N + c, v = days[i]; if (!(v > 0 && v <= 250)) continue;
-    if (useMask) { if (failBase[i] !== 0) continue; }
+    if (useMask) { if (failBase[i] !== 0 && failYear[i] !== 0) continue; }
     else if (sb && slopeM && (sb[i] > 250 || decode(slopeM, sb[i]) > thr)) continue;
     if (reg.r) { const { x, y } = cellToXY(c, r); if (Math.hypot(x / 1000 - reg.x, y / 1000 - reg.y) > reg.r) continue; }
     cand.push(i);
   }
-  cand.sort((a, b) => days[b] - days[a]);
+  cand.sort((a, b) => useMask && (failBase[a] === 0) !== (failBase[b] === 0) ? (failBase[a] === 0 ? -1 : 1) : days[b] - days[a]);   // judged GO for this trip first
   const K = reg.r ? 60 : 120, sp = reg.r ? 4 : 12, out = [];
   for (const i of cand) {
     const c = i % N, r = (i - c) / N;
@@ -119,7 +120,7 @@ export function poolOf(rid, mission) {
   p.promise = (async () => { await ensure(); let n = 0; for (const c of p.cells) { c.w = await statsAsync(c.col, c.row, mission); if (++n % 12 === 0) await new Promise(r => setTimeout(r, 0)); } p.ready = true; })();
   pools.set(k, p); return p;
 }
-const maskKey = () => JSON.stringify([state.crit, state.threshold, state.on.mask, state.mode]);
+const maskKey = () => JSON.stringify([state.crit, state.threshold, state.on.mask, state.mode, winToken(state)]);
 export function goCount(p, d, crit) { let n = 0; for (const c of p.cells) if (c.w && isGo(c.w, d, crit)) n++; return n; }
 
 // ranked spots of a pool for a landing day: GO first (largest margin), then the soonest to become GO

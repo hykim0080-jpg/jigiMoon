@@ -207,3 +207,6 @@ export function brightest(ex, slope, k = 5, sepKm = 10, maxSlope = 8) {
   }
   return out;
 }
+
+// the raw base horizon set (64 x 800 x 800, value/10 - 5 = deg), for the Find a site window worker
+export const horizonBuf = () => hor;
