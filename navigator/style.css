@@ -558,3 +558,33 @@ main.full #dock #adv-btn.changed{border-color:var(--accent)}
   header>.hb-ans{order:4;flex:1 1 100%;margin:0;max-height:none;font-size:13px}
 }
 @media (max-width:700px){header>#side-btn{order:5}}
+/* Fixes: MOVE, MAST, WAIT in one row; the map folded under "Map"; ⤢ 2D turns the centre map into the 2D map
+   (the 2D | 3D switch on the map is gone on desktops) */
+#fixes .fxbar{display:flex;justify-content:space-between;gap:6px;padding:4px 0 0}
+#fixes .fxbar button{font:inherit;font-size:12px;padding:3px 10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:0;cursor:pointer}
+#fixes .fxbar button:hover{border-color:var(--muted)}
+#fixes .card.local[hidden]{display:none}
+#fixes .fixrow .mdir{font-style:normal;font-size:16px;color:var(--move)}
+@media (min-width:701px){#dim{display:none!important}}
+#fixes .fixrow[data-k="move"] .val{white-space:nowrap;padding-right:6px}
+
+/* the fixes in one line under the verdict (MOVE · MAST · WAIT): each a button; ⤢ 2D / 3D at the end of the view buttons */
+#vbadge .vfx{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;pointer-events:auto}
+#vbadge .vfx button{font:inherit;font-size:13px;font-weight:600;padding:3px 8px;border:1px solid rgba(255,255,255,.35);background:rgba(15,19,27,.6);color:#fff;border-radius:0;cursor:pointer;white-space:nowrap}
+#vbadge .vfx button i{font-style:normal;font-size:10px;letter-spacing:.08em;color:var(--fc);margin-right:2px}
+#vbadge .vfx button.best{border-color:var(--fc);box-shadow:inset 3px 0 0 var(--fc)}
+#vbadge .vfx button:hover:not([disabled]){border-color:#fff}
+#vbadge .vfx button[disabled]{opacity:.45;cursor:default}
+#zoom .z-dim{border-left:1px solid #fff}
+@media (max-width:700px){#zoom .z-dim{display:none}}
+#space-hint{display:none!important}   /* the Space key still recentres; no hint on the map */
+#vbadge .vfar{align-self:center;font-size:13px;color:#9aa3b2;padding:0 4px}
+/* MAST: a value, not a switch; over 10 m (beyond what a lander carries) orange, 15 m and up marked tall */
+#vbadge .vfx button.ro{cursor:default}
+#vbadge .vfx button.ro[disabled]:not([data-v=""]){opacity:1}
+#vbadge .vfx button.tall b{color:#f0a531}
+#vbadge .vfx button em{font-style:normal;font-size:10px;font-weight:600;color:#f0a531;letter-spacing:.04em;text-transform:uppercase}
+.fixrow[data-k="mast"]:not(.na){cursor:default}
+#fixes .fixrow.tall .val b{color:#f0a531}
+#vbadge .vfx b{font-size:inherit;line-height:inherit;font-weight:700;letter-spacing:0;color:inherit}
+#vbadge .vfx button.tall b{color:#f0a531}

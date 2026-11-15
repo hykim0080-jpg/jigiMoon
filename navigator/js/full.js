@@ -5,7 +5,7 @@ import { state, setState } from './state.js';
 import { t } from './strings.js';
 
 const PANELS = [['sky', 'sky-panel'], ['metrics', 'metrics-panel'], ['fixes', 'fixes'], ['cal', 'cal-panel']];
-const open = new Set(['fixes']);
+const open = new Set();   // the fixes read under the verdict; the Fixes panel (its map) opens from the dock
 let main, dock, btns = {}, layoutBtn;
 
 export const isFull = st => st.view === 'focus' && !!st.full && innerWidth > 700;

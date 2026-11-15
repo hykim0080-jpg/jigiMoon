@@ -11,8 +11,9 @@ import { SPOT5 } from './map.js';
 import * as intro from './intro.js';
 import { openMastPop } from './mastpop.js';
 import { stageFx, stageLine } from './verdict.js';
+import * as verdict from './verdict.js';
 import { t } from './strings.js';
-import { initHover, hover } from './hover3d.js';
+import { initHover, hover, setGrid } from './hover3d.js';
 import { ranked } from './rank3d.js';
 import { nearestField, nearestOf, linkOf } from './nearestgo.js';
 import * as findlink from './findlink.js';
@@ -24,7 +25,7 @@ import { isDefault } from './criteria.js';
 const SETS = [{ label: '2027-01', url: 'data/3d/frames_jan/', y: 2027, m: 0 }, { label: '2027-02', url: 'data/3d/frames_feb/', y: 2027, m: 1 }, { label: '2027-03', url: 'data/3d/frames_mar/', y: 2027, m: 2 }, { label: '2027-04', url: 'data/3d/frames_apr/', y: 2027, m: 3 }, { label: '2027-05', url: 'data/3d/frames_may/', y: 2027, m: 4 }, { label: '2027-06', url: 'data/3d/frames/', y: 2027, m: 5 }, { label: '2027-12', url: 'data/3d/frames_dec/', y: 2027, m: 11 }];
 const STEP_H = 4;
 let lastCells = '', mapReady = false, lastZoom = null, onPin = null, hint, box, note, btns, map = null, loading = null, order = null, lastKey = '', lastSite = '', data = null;
-let landerOn = false, landerBtn = null, poleBtn = null;
+let landerOn = false, landerBtn = null, poleBtn = null, dimBtn = null;
 export function poleView() { landerOn = false; if (map && mapReady) map.focus(0, 0, 200, { dur: 1300, polar: 0.0005 }); render(state); }   // Lander view
 
 export function init(panel, d, pinAt) {
@@ -49,6 +50,10 @@ export function init(panel, d, pinAt) {
     zoom.addEventListener('click', e => { const b = e.target.closest('button'); was = landerOn && b && b !== landerBtn ? state.zoom : null; if (was !== null) landerOn = false; }, true);
     zoom.addEventListener('click', () => { if (was !== null && state.zoom === was && map && !entering) recenter(); if (was !== null) render(state); was = null; });
     zoom.appendChild(landerBtn);
+    // ⤢ 2D: the whole centre map as the 2D map (⤢ 3D or Esc: back); the 2D | 3D switch stays only on phones
+    dimBtn = document.createElement('button'); dimBtn.type = 'button'; dimBtn.className = 'z-dim';
+    dimBtn.addEventListener('click', e => { e.stopPropagation(); setState({ d3: state.d3 ? 0 : 1 }); });
+    zoom.appendChild(dimBtn);
   }
   box = document.createElement('div'); box.id = 'map3d'; box.hidden = true;
   hint = document.createElement('div'); hint.id = 'space-hint'; hint.hidden = true; hint.textContent = t('spaceHint'); panel.appendChild(hint);
@@ -169,7 +174,9 @@ function syncFind() {
 }
 // the picked spot (Find a site's pin, or Detail's selected place), when NO-GO: a dashed line to the nearest GO ground
 let nearCur = null, rankCur = [], linkKey = '', nearGen = 0;
-function setNear(f, list) { nearCur = f; rankCur = list || []; nearGen++; }
+function setNear(f, list) { nearCur = f; rankCur = list || []; nearGen++; verdict.refresh(); }
+// the verdict's far 'Nearest GO' (beyond the 3 km MOVE grid) from the same field
+verdict.setFar((x, y) => { const col = Math.floor((x + 200000) / 500), row = Math.floor((200000 - y) / 500); return col >= 0 && row >= 0 && col < 800 && row < 800 ? nearestOf(nearCur, col, row, rankCur) : null; });
 function syncLink(st) {
   let c = null;
   if (st.view === 'find') { const p = findlink.data().pin; if (p) c = p; }
@@ -228,6 +235,9 @@ function sync(st) {
   const ck = det && s && data.site ? `${st.site}:${s.x_m},${s.y_m}:${st.day}` : '';
   if (map.setCells && ck !== lastCells) {
     lastCells = ck;
+    // the hover card inside the grid: the cell's own verdict (the same as its colour)
+    const G = ck ? data.site : null, sx = s?.x_m, sy = s?.y_m;
+    setGrid(G ? (x, y) => { const h = G.stepKm / 2, dx = (x - sx) / 1000, dy = (y - sy) / 1000; if (Math.abs(dx) > 3 + h || Math.abs(dy) > 3 + h) return null; const c = G.grid.find(c => Math.abs(c.dx - dx) <= h && Math.abs(c.dy - dy) <= h); return c || null; } : null);
     map.setCells(ck ? data.site.grid.map(c => {
       const ok = c.ok[st.day] === '1';
       return { x: s.x_m + c.dx * 1000, y: s.y_m + c.dy * 1000, half: data.site.stepKm * 500, rgb: ok ? [0.455, 0.635, 0.949] : [0.13, 0.15, 0.2], a: ok ? (c.landable ? 0.85 : 0.45) : (c.landable ? 0.6 : 0.35) };
@@ -294,6 +304,7 @@ export function render(st) {
   const on = st.view === 'find' || (!!st.d3 && st.view === 'focus');   // Find a site lays its panels over this same map
   btns.forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.d) === (on ? 1 : 0))));
   if (poleBtn) poleBtn.hidden = !on;
+  if (dimBtn) { dimBtn.textContent = '⤢ ' + (on ? t('fx2d') : t('fx3d')); dimBtn.title = on ? t('fx2dTip') : t('fx3dTip'); dimBtn.setAttribute('aria-pressed', String(!on)); dimBtn.hidden = st.view !== 'focus'; }
   if (landerBtn) {
     landerBtn.hidden = !on;
     if (!on) landerOn = false;
