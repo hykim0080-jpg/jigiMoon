@@ -14,7 +14,7 @@ export const FX = {
   earth: { lo: 0, hi: 100, dir: '>=', ramp: ['#0b1833', '#173873', '#2459b8', '#74a2f2', '#dce8ff'] },
   dark:  { lo: 0, hi: 150, dir: '<=', ramp: ['#1b1430', '#3b2a6b', '#6a4fb0', '#a58ce6', '#e6dcff'] },
   slope: { lo: 0, hi: 20, dir: '<=', ramp: ['#1a2206', '#44580f', '#7c9a1e', '#b7d353', '#eef7c4'] },
-  ice:   { lo: 0, hi: 25, dir: '<=', ramp: ['#0b2a3a', '#0f4f6b', '#2386ad', '#5cc6ec', '#d6f3ff'] },
+  ice:   { lo: 0, hi: 10, dir: '<=', gamma: 2, ramp: ['#03080c', '#0a2433', '#145a7a', '#4fb8e3', '#f2fbff'] },   // permanent shadow (ice may be there) brightest; 10 km and beyond darkest
 };
 const NPX = N * N;
 let D = null;
@@ -22,7 +22,7 @@ export const initFactor = data => { D = data; };
 const metaOf = id => D.layers.find(m => m.id === id);
 
 // continuous colour along the slider's value range (t = 0 at lo .. 1 at hi), brighter = better
-const colorT = (k, t) => { const f = FX[k], g = f.dir === '<=' ? 1 - t : t; return colorAt(f.ramp, .12 + .88 * g); };
+const colorT = (k, t) => { const f = FX[k], g = Math.pow(f.dir === '<=' ? 1 - t : t, f.gamma || 1); return colorAt(f.ramp, f.gamma ? g : .12 + .88 * g); };
 const tOf = (k, v) => { const f = FX[k]; return Math.max(0, Math.min(1, (v - f.lo) / (f.hi - f.lo))); };
 
 // the limit of factor k now (null = no limit, e.g. ice switched off)

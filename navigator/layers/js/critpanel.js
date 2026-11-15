@@ -60,7 +60,7 @@ export function initCritPanel(host, d, setCritFn) {
       inp.oninput = () => { if (+inp.value < 1) inp.value = '1'; setState({ threshold: { ...state.threshold, [id]: +inp.value } }); };
       rows[k] = { inp, b: r.querySelector('b'), get: () => { const v = Math.round(state.threshold[id] ?? m.threshold); return { i: v, txt: `≤ ${v}°` }; } };
     } else {
-      Object.assign(inp, { min: 0, max: 25, step: 0.5 });
+      Object.assign(inp, { min: 0, max: FX.ice.hi, step: 0.5 });
       inp.oninput = () => { const v = +inp.value; setState({ threshold: { ...state.threshold, [id]: v > 0 ? v : state.threshold[id] }, on: { ...state.on, mask: { ...state.on.mask, [id]: v > 0 } } }); };
       rows[k] = { inp, b: r.querySelector('b'), get: () => { const on = !!state.on.mask[id], v = state.threshold[id]; return { i: on ? v : 0, txt: on ? `≤ ${(+v).toFixed(v % 1 ? 1 : 0)} km` : TX.off }; } };
     }
