@@ -170,9 +170,9 @@ main[data-view="sites"]{grid-template-columns:1fr;grid-template-areas:"sites" "s
 header>*{flex:none}header>.chips{flex:1 1 0}header>.grow{flex:1 1 0}
 .verdict{flex:0 1 auto;min-width:0;white-space:normal;line-height:1.15;font-size:15px}
 .verdict .dot{flex:none}
-@media (max-width:1560px){.app-name{display:none}}
+@media (max-width:1799px){.app-name{display:none}}
 .stepper[hidden],.chips[hidden]{display:none}
-header>.chips{min-width:300px}.verdict{min-width:200px;max-width:400px}
+header>.chips{min-width:160px}.verdict{min-width:200px;max-width:400px}
 .verdict{white-space:nowrap}.verdict .fix{white-space:normal}
 
 .seg.pages a{font-size:13px;padding:5px 12px;color:var(--ink);text-decoration:none;white-space:nowrap}
