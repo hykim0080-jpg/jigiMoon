@@ -170,3 +170,6 @@ export async function setup(index, x, y, id = 'pin') {
   }
   return r;
 }
+
+// used by the 3D cursor card (hover3d.js)
+export { bodies as pinBodies, series as pinSeries };

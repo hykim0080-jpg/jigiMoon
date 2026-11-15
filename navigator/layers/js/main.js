@@ -17,7 +17,7 @@ import { initTrip, renderTrip, tripRanked, REGIONS, regionBBox } from './trip.js
 import { mapHome, setBadges, shadowLegend } from './mapview.js';
 import { syncWin, winToken, pending } from './window.js';
 import { initCart, renderCart, readCart, cartHash } from './cart.js';
-import * as g3 from './globe3d.js';
+import * as g3 from './find3d.js';
 
 export async function mount(root, opts = {}) {
   const { dataUrl = './data/', header = true } = opts;

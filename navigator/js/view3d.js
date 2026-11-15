@@ -11,6 +11,10 @@ import { SPOT5 } from './map.js';
 import * as intro from './intro.js';
 import { openMastPop } from './mastpop.js';
 import { t } from './strings.js';
+import { initHover, hover } from './hover3d.js';
+import * as gomask from './gomask3d.js';
+import { loadCam, saveCam, share, onShare } from './cam3d.js';
+import { isDefault } from './criteria.js';
 
 const SETS = [{ label: '2027-02', url: 'data/3d/frames_feb/', y: 2027, m: 1 }, { label: '2027-06', url: 'data/3d/frames/', y: 2027, m: 5 }, { label: '2027-12', url: 'data/3d/frames_dec/', y: 2027, m: 11 }];
 const STEP_H = 4;
@@ -61,6 +65,7 @@ async function mount() {
   order = [f.k, ...SETS.map((_, j) => j).filter(j => j !== f.k)];      // the month in use loads first; the others on first switch
   const lang = (new URLSearchParams(location.search).get('lang') || 'en').startsWith('ko') ? 'ko' : 'en';
   box.classList.add('loading');
+  initHover(box);
   loading = import('../map3d/map3d.js').then(({ mountLunarMap }) => {
     map = mountLunarMap(box, {
       datasets: order.map(j => ({ label: SETS[j].label, url: SETS[j].url })),
@@ -71,6 +76,7 @@ async function mount() {
       // clicks pick like the 2D map: a marker selects that site, the ground drops a pin there
       onSiteClick: id => { if (data.index.byId[id]) setState({ site: id }); },
       onMapClick: (x, y) => { if (onPin) onPin(Math.round(x), Math.round(y)); },
+      style: 'glow', psrUrl: 'layers/data/psr.wasm', onHover: hover, onCamera: c => { if (!entering && performance.now() > quietUntil) saveCam(c, 'detail'); },   // LLSN-like look: stars, gold where Sun and Earth are in view, soft blue permanent shadow; a card follows the cursor
       moonUrl: 'data/moon.jpg', sunUrl: 'data/sun_sdo_512.png', earthUrl: 'data/earth_bluemarble_1024.jpg', bodyMarkers: false,   // NASA SVS CGI Moon Kit, the globe under the terrain patch
     });
     return map.ready;
@@ -84,6 +90,25 @@ async function mount() {
 // chosen yet, tilts to the oblique view of the whole region
 const TOP_R = 1390, REGION_R = 760;
 let entering = false;
+const HASH0 = location.hash;   // as opened (the page rewrites the hash with the default site soon after)
+const CAM0 = loadCam('detail');   // read before this page saves its own view
+let quietUntil = 0, shareKey = { day: '', spot: '' };
+// Find a site (in its frame) moved the view, changed the day or picked a spot: follow it
+onShare('detail', (k, v) => {
+  if (k === 'cam3d' && map && mapReady && map.setCam) { quietUntil = performance.now() + 900; map.setCam(v); }
+  else if (k === 'day' && Number.isFinite(v.day)) { shareKey.day = `${v.day}|${v.mission}`; if (v.day !== state.day || v.mission !== state.mission) setState({ day: v.day, mission: v.mission === 6 ? 6 : 14 }); }
+  else if (k === 'spot' && Number.isFinite(v.x_m) && onPin) {
+    shareKey.spot = `${Math.round(v.x_m / 500)},${Math.round(v.y_m / 500)}`;
+    const s = data && data.index && data.index.byId[state.site];
+    if (!s || Math.hypot(s.x_m - v.x_m, s.y_m - v.y_m) > 400) onPin(Math.round(v.x_m), Math.round(v.y_m));
+  }
+});
+function shareOut(st) {
+  const dk = `${st.day}|${st.mission}`;
+  if (dk !== shareKey.day) { shareKey.day = dk; share('day', { day: st.day, mission: st.mission }, 'detail'); }
+  const s = data && data.index && data.index.byId[st.site];
+  if (s) { const sk = `${Math.round(s.x_m / 500)},${Math.round(s.y_m / 500)}`; if (sk !== shareKey.spot) { shareKey.spot = sk; share('spot', { x_m: s.x_m, y_m: s.y_m }, 'detail'); } }
+}
 async function arrive() {
   const fromIntro = intro.phase === 'playing';
   entering = true;
@@ -92,11 +117,23 @@ async function arrive() {
   if (fromIntro) { await intro.arrived; const skip = intro.phase === 'skipped'; intro.handOver(); await map.focus(0, 0, 0, { r: REGION_R, polar: 0.0005, dur: skip ? 0 : 1600 }); }
   entering = false;
   if (window.__fresh) { await map.focus(0, 0, 0, { r: 700, dur: 1300 }); return; }
+  // the same view as the other screen (Find a site) when it was used a moment ago
+  const c = !fromIntro && map.setCam && !/[#&]s=/.test(HASH0) ? CAM0 : null;   // a link naming a site wins
+  if (c) { map.setCam(c); return; }
   recenter(1300);
 }
 
+let maskKey = '';
+function syncMask(st) {
+  // GO for the chosen day (14-day stay, default criteria: the per-cell calendar exists for those): blue on the map
+  const on = st.mission === 14 && isDefault(st.crit), k = on ? 'd' + st.day : 'off';
+  if (k === maskKey) return; maskKey = k;
+  if (!on) { map.setMask(null); return; }
+  gomask.load().then(() => { if (maskKey === k) map.setMask(gomask.maskFor(st.day)); });
+}
 function sync(st) {
   if (!map || !mapReady || !data.index) return;
+  if (map.setMask) syncMask(st);
   const f = frameFor(st.day, st.hour), key = `${f.k}:${f.i}`;
   if (key !== lastKey) {
     lastKey = key;
@@ -171,6 +208,7 @@ export const isOn = () => !!box && !box.hidden;
 
 export function render(st) {
   if (!box) return;
+  if (data && data.index) shareOut(st);
   const on = !!st.d3 && st.view === 'focus';
   btns.forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.d) === (on ? 1 : 0))));
   document.getElementById('main').dataset.d3 = on ? '1' : '';

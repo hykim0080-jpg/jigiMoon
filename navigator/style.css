@@ -460,3 +460,19 @@ main.full #dock{top:calc(104px + var(--vbh, 0px))}
 main.full #sky-panel{top:calc(104px + var(--vbh, 0px))}
 #map3d .lmap-tl{top:calc(12px + var(--vbh, 0px))}
 @media (max-width:700px){#vbadge b{font-size:26px}#vbadge{top:34px;max-width:70%}}
+
+/* Detail 3D: the card that follows the cursor (js/hover3d.js) */
+.h3d-tip{position:absolute;left:0;top:0;z-index:6;min-width:210px;max-width:290px;padding:10px 12px;background:rgba(10,12,16,.93);border:1px solid rgba(255,255,255,.22);border-radius:0;color:#e8eaf0;font:12px/1.45 Inter,system-ui,sans-serif;pointer-events:none;font-variant-numeric:tabular-nums}
+.h3d-tip[hidden]{display:none}
+.h3d-tip .v{font-size:18px;font-weight:700;letter-spacing:.03em;line-height:1.15;margin-bottom:6px;color:#fff}
+.h3d-tip .v small{display:block;font-size:10.5px;font-weight:500;color:#9aa3b2;letter-spacing:0}
+.h3d-tip .v.both{color:#f6c35c}.h3d-tip .v.sun{color:#d39a4a}.h3d-tip .v.earth{color:#9cb4e8}.h3d-tip .v.none{color:#9aa3b2}
+.h3d-tip .m{display:grid;grid-template-columns:repeat(2,1fr);gap:4px 12px;margin-bottom:6px}
+.h3d-tip .m small{display:block;color:#9aa3b2;font-size:10.5px}
+.h3d-tip .m b{font-weight:600;color:#fff}
+.h3d-tip .m .bad b{color:#f0655a}
+.h3d-tip .s{color:#9cb4d8;font-size:11.5px}
+.h3d-tip .s b{color:#fff;font-weight:600}
+.h3d-tip .v.go{color:#9cc0ff}.h3d-tip .v.no{color:#fff}.h3d-tip .v.wait{color:#9aa3b2}
+.h3d-tip .why{color:#f0a49c;font-size:11.5px;line-height:1.4;margin:0 0 6px}
+.h3d-tip .s.now{margin-top:4px;color:#c9b27a}.h3d-tip .s.now b{color:#f6c35c}
