@@ -17,12 +17,12 @@ const regionOf = id => Object.keys(REGIONS).find(r => REGIONS[r].includes(id)) |
 const dayOfMonth = (m, d) => Math.round((Date.UTC(2027, m, d) - FIRST_DAY) / 864e5);
 const daysIn = m => new Date(Date.UTC(2027, m + 1, 0)).getUTCDate();
 
-let root, data, q = null, sort = 'best', searched = false;
+let root, data, q = null, sort = 'best', searched = true;   // the default search runs at once (results show before Search is pressed)
 
 export function init(node, d) {
   root = node; data = d;
   q = { when: 'date', day: state.day, month: dateOf(state.day).getUTCMonth(), region: 'all' };
-  if (!location.hash) { searched = false; setState({ view: 'search' }); }
+  if (!location.hash) setState({ view: 'search' });
 }
 
 function rows(st, day) {
