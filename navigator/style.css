@@ -502,6 +502,7 @@ main[data-d3="1"] #zoom{z-index:6}
 #vbadge .vfail{font-size:14px;font-weight:600;color:#f0655a}
 #vbadge .vfix{font-size:15px;font-weight:700;margin-top:2px}
 #vbadge .vwhy{font-size:12px;color:var(--ink);line-height:1.35}
+#vbadge .vnc{display:block;font-size:12px;color:var(--ink);opacity:.8;margin-top:4px}
 #vbadge .vretro{display:block;flex:0 0 100%;font-size:12px;color:var(--ink);line-height:1.35;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #ffffff22}
 #vbadge .vretro b{font-size:12px}#vbadge .vretro b.g{color:var(--ok)}#vbadge .vretro b.n{color:#f0655a}
 main.full #dock{top:calc(104px + var(--vbh, 0px))}
