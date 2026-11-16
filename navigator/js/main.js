@@ -101,7 +101,7 @@ async function openPin(x, y, name, ld) {   // ld: the past mission's id (its rea
     if (name && data.index.byId.pin) data.index.byId.pin.name = name;
     if (ld && data.index.byId.pin) data.index.byId.pin.ld = ld;
     for (const k in applied) delete applied[k];
-    setState({ site: 'pin', pinXY: `${x},${y}`, pinned: state.pinned.filter(id => id !== 'pin'), zoom: Math.max(state.zoom, ZOOM.site) });
+    setState({ site: 'pin', pinXY: `${x},${y}`, pinned: state.pinned.filter(id => id !== 'pin'), zoom: state.zoom });
   } catch (e) { console.error(e); }
 }
 
@@ -177,7 +177,7 @@ function onKey(e) {
   else if (e.key === '1') setState({ view: 'focus' });
   else if (e.key === '2' || e.key === '0') setState({ view: 'find' });
   else if (e.key === '3') setState({ view: state.view === 'compare' ? 'focus' : 'compare' });
-  else if (e.key === 'z' || e.key === 'Z') setState({ zoom: state.zoom === 1 ? 4 : 1 });
+  else if (e.key === 'z' || e.key === 'Z') setState({ zoom: state.zoom === 1 ? ZOOM.spot : 1 });   // Region <-> Spot (Site merged into Region)
   else if (e.key === 'Escape') setState({ zoom: 1 });
 }
 

@@ -50,7 +50,7 @@ export function init(node) {
   fxbar.hidden = true;
   root.appendChild(fxbar);
   const l = document.createElement('div'); l.className = 'card local';
-  l.innerHTML = `<svg viewBox="0 0 ${VB} ${VB}" preserveAspectRatio="xMidYMin meet"></svg><div class="seg lmsw"><button data-lm="line">${t('baseLine')}</button><button data-lm="relief">${t('baseShade')}</button></div><div class="seg lzsw"><button data-lz="region">${t('zoomRegion')}</button><button data-lz="site">${t('zoomSite')}</button><button data-lz="spot">${t('zoomSpot')}</button></div>`;
+  l.innerHTML = `<svg viewBox="0 0 ${VB} ${VB}" preserveAspectRatio="xMidYMin meet"></svg><div class="seg lmsw"><button data-lm="line">${t('baseLine')}</button><button data-lm="relief">${t('baseShade')}</button></div><div class="seg lzsw"><button data-lz="region">${t('zoomRegion')}</button><button data-lz="spot">${t('zoomSpot')}</button></div>`;
   l.querySelector('.lmsw').addEventListener('click', ev => { const b = ev.target.closest('[data-lm]'); if (b) setState({ lmap: b.dataset.lm }); });
   l.querySelector('.lzsw').addEventListener('click', ev => { const b = ev.target.closest('[data-lz]'); if (b) setState({ lzoom: b.dataset.lz }); });
   root.appendChild(l);
@@ -154,7 +154,7 @@ function drawMove(svg, st, data) {
 const HALF = { region: 200, site: 50, spot: R_LOC }, SCALE = { region: 50, site: 10, spot: 1 };
 function drawLocal(svg, st, data, e, near) {
   clear(svg);
-  const relief = st.lmap === 'relief', zk = relief && HALF[st.lzoom] ? st.lzoom : 'region';
+  const relief = st.lmap === 'relief', zk = relief && st.lzoom === 'spot' ? 'spot' : 'region';   // Site (+-50 km) merged into Region
   const box = loc.parentNode;
   box.querySelectorAll('[data-lm]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lm === (relief ? 'relief' : 'line'))));
   box.querySelectorAll('[data-lz]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lz === zk)));
