@@ -76,6 +76,11 @@ export function init(el, data, o = {}) {
   // each with a GO / NO-GO dot for the chosen date and stay. Arrow keys move, Enter picks, Esc or a click outside closes.
   const pick = v => {
     ropen(false);
+    if (v.startsWith('ld:')) {   // a past mission's spot: opened as the pin, judged like any other point
+      const l = (dataRef.index.landers || []).find(q => q.id === v.slice(3));
+      if (l && opts.openPin) opts.openPin(Math.round(l.x_m), Math.round(l.y_m), l.name.replace(/ \(planned site\)/, '') + ' ' + (l.year || ''), l.id);
+      return;
+    }
     if (v !== ANY) { setState({ site: v }); return; }
     // Anywhere: the best spot for the date and stay (the same ranking as Find a site), opened as the pin
     refs.wn.textContent = t('anywhereBusy');
@@ -206,7 +211,17 @@ function whereList(st, data) {
   };
   const pins = data.index.sites.filter(s => /^pin/.test(s.id)), ex = data.index.sites.filter(s => !/^pin/.test(s.id));
   return `<button type="button" role="option" tabindex="-1" data-v="${ANY}" aria-selected="false" class="wp-any"><i class="wd any"></i><span>${t('anywhere')}</span></button>`
-    + (pins.length ? `<hr><div class="wp-grp">${t('yourSpots')}</div>${pins.map(row).join('')}` : '') + `<hr>${ex.map(row).join('')}`;
+    + (pins.length ? `<hr><div class="wp-grp">${t('yourSpots')}</div>${pins.map(row).join('')}` : '') + `<hr>${ex.map(row).join('')}`
+    + pastList(data);
+}
+// past landings, impacts and planned sites on our map (+-200 km): the year and what happened; picking one opens it as the pin
+const KIND_IC = { landed: '◆', planned: '◇', impact: '✕', crash: '✕' };
+function pastList(data) {
+  const ls = (data.index.landers || []).filter(l => KIND_IC[l.kind] && l.x_m != null && Math.abs(l.x_m) <= 199000 && Math.abs(l.y_m) <= 199000)
+    .sort((a, b) => String(b.date || b.year).localeCompare(String(a.date || a.year)));
+  if (!ls.length) return '';
+  const kinds = t('kinds') || {};
+  return `<hr><div class="wp-grp">${t('pastMissions')}</div>` + ls.map(l => `<button type="button" role="option" tabindex="-1" data-v="ld:${l.id}" aria-selected="false" title="${esc([l.mission, l.status].filter(Boolean).join(' · '))}"><i class="wd ld">${KIND_IC[l.kind]}</i><span>${esc(l.name.replace(/ \(planned site\)| impact$/, ''))} <small class="wp-yr">${esc(String(l.year || (l.date || '').slice(0, 4)))} · ${esc(kinds[l.kind] || l.kind)}</small></span></button>`).join('');
 }
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 // best day of the year for the selected place: a GO day with the most room over the Sun and Earth limits (earliest on

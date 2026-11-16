@@ -90,7 +90,7 @@ function detailNote(st) {
 }
 
 // open any point as the pin without reloading (map click)
-async function openPin(x, y) {
+async function openPin(x, y, name, ld) {   // ld: the past mission's id (its real-day check, retro.json)   // name: a past mission's, shown instead of the location sentence
   // no full-screen wait: the map shows a ring at the point until this resolves
   await new Promise(r => requestAnimationFrame(() => setTimeout(r, 30)));
   try {
@@ -98,6 +98,8 @@ async function openPin(x, y) {
     if (i >= 0) data.index.sites.splice(i, 1);
     delete data.index.byId.pin;
     await pin.setup(data.index, x, y);
+    if (name && data.index.byId.pin) data.index.byId.pin.name = name;
+    if (ld && data.index.byId.pin) data.index.byId.pin.ld = ld;
     for (const k in applied) delete applied[k];
     setState({ site: 'pin', pinXY: `${x},${y}`, pinned: state.pinned.filter(id => id !== 'pin'), zoom: Math.max(state.zoom, ZOOM.site) });
   } catch (e) { console.error(e); }

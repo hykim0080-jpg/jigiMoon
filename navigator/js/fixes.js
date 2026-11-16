@@ -19,7 +19,8 @@ export function init(node) {
   why = document.createElement('div'); why.id = 'why'; why.hidden = true; root.appendChild(why);
   const c = document.createElement('div');
   c.className = 'card'; c.style.setProperty('--fc', 'var(--move)');
-  c.innerHTML = `<div class="left"><h2>${t('move')}</h2><div class="val"><b></b><span></span></div><div class="dir"></div><div class="effort"></div></div><div class="vis"><svg viewBox="0 0 176 168"></svg></div>`;
+  c.innerHTML = `<div class="left"><h2>${t('move')}</h2><div class="val"><b></b><span></span></div><div class="dir"></div><div class="effort"></div><div class="miss"></div></div><div class="vis"><svg viewBox="0 0 176 168"></svg></div>`;
+  c.querySelector('.miss').textContent = t('missLine');   // the scale of MOVE: how far real landings came down from their target
   cards.move = { c, val: c.querySelector('b'), dir: c.querySelector('.dir'), unit: c.querySelector('.val span'), effort: c.querySelector('.effort'), svg: c.querySelector('svg') };
   const rows = document.createElement('div'); rows.className = 'fixrows';
   // MOVE as a line too, so the values read in one row while the map is folded

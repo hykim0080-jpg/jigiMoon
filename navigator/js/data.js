@@ -18,9 +18,10 @@ export async function loadIndex() {
   MAST_HEIGHTS.length = 0;
   MAST_HEIGHTS.push(...Object.keys(first.mast_ok).map(Number).filter(h => h <= MAST_SLIDER.max).sort((a, b) => a - b));
   const optimal = {}, sens = {};
-  let landmarks = [], landers = [];
+  let landmarks = [], landers = [], retro = {};
   try { landmarks = await getJson('data/orientation/landmarks.json'); } catch (e) { /* optional */ }
   try { landers = await getJson('data/orientation/landers.json'); } catch (e) { /* optional */ }
+  try { retro = await getJson('data/orientation/retro.json'); } catch (e) { /* optional */ }   // past landings judged on their real day (lunar/retro.py)
   try {
     for (const s of (await getJson('data/masts.json')).sites) optimal[s.id] = s.optimal_mast_practical_m;
   } catch (e) { /* optional */ }
@@ -39,7 +40,7 @@ export async function loadIndex() {
     }
     modes[m] = { criteria: mode.criteria, days: mode.mission_days, sites };
   }
-  return { landmarks, landers, optimal, sens, sites: raw.sites, byId: Object.fromEntries(raw.sites.map(s => [s.id, s])), modes };
+  return { landmarks, landers, retro, optimal, sens, sites: raw.sites, byId: Object.fromEntries(raw.sites.map(s => [s.id, s])), modes };
 }
 
 // Per-day numbers and the relocation grid for (site, mission length)

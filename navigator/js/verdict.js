@@ -59,17 +59,27 @@ export function render(st, data, panel, lim) {
   const main = document.getElementById('main');
   if (!v) { main.style.setProperty('--vbh', '0px'); return; }
   const e = data.index.modes[st.mission]?.sites[st.site], row = e && !v.go ? fixRow(st, data, e, lim) : '';
-  const key = JSON.stringify(v) + row;
+  const key = JSON.stringify(v) + row + retroLine(st, data);
   if (box.dataset.k === key) { vbh(main, box); return; }
   box.dataset.k = key;
   box.className = v.go ? 'go' : 'nogo';
-  box.innerHTML = `<b>${v.go ? t('go') : t('nogo')}</b>`
+  box.innerHTML = retroLine(st, data) + `<b>${v.go ? t('go') : t('nogo')}</b>`
     + (v.go && v.capped ? mastTag(v.mastH) : '')
     + (v.fails.length ? `<span class="vfail">${v.fails.map(f => f.text).join(' · ')}</span>` : '')   // the reasons on the verdict's line
     + (v.fix && !row ? `<span class="vfix" style="color:var(--${v.fixKind})">→ ${v.fix}</span>` : '')   // the row below carries the fix
     + (v.why ? `<span class="vwhy">${v.why}</span>` : '')
     + row;
   vbh(main, box);
+}
+// a past mission opened from WHERE: the same check from its real date and hour (retro.json; at the intended site for
+// a landing, at the impact point for an impact), judged with today's limits, then what actually happened. It leads the
+// box; the verdict below it stays the chosen 2027 date's
+function retroLine(st, data) {
+  const id = data.index.byId[st.site]?.ld, r = id && data.index.retro?.[id], m = r && r[st.mission];
+  if (!m) return '';
+  const c = st.crit || THRESHOLDS, go = m.sun >= c.sun && m.earth >= c.earth && m.dark <= c.dark;
+  const day = new Date(r.utc).toLocaleDateString(document.documentElement.lang === 'ko' ? 'ko-KR' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+  return `<span class="vretro">${t('retroOn', day, r.target)} <b class="${go ? 'g' : 'n'}">${go ? t('go') : t('nogo')}</b> · ${t('sun')} ${Math.round(m.sun)}% · ${t('earth')} ${Math.round(m.earth)}%${t('retroEl', m.sun_el_max)}<br>${(t('retroNote') || {})[id] || ''}</span>`;
 }
 // far ground (beyond the MOVE grid): the nearest GO from the 3D map's GO field, set by view3d.js
 let farOf = () => null;

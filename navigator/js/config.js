@@ -33,6 +33,9 @@ export const DEFAULT = {
   lzoom: 'region',   // right map zoom (Relief): 'region' +-200 km, 'site' +-50 km, 'spot' +-3.5 km   // right map: 'line' = whole pole contour map, 'relief' = the spot up close
 };
 // zoom factor: 1 = +-200 km; presets Region 1, Site 4, Spot (+-3.5 km)
+// how far real landings came down from their target (MOVE's scale): SLIM 2024 about 55 m (JAXA), IM-2 Athena 2025
+// about 250 m and IM-1 Odysseus 2024 about 1.5 km (Intuitive Machines)
+export const MISSES = [{ name: 'SLIM', m: 55 }, { name: 'IM-2', m: 250 }, { name: 'IM-1', m: 1500 }];
 export const ZOOM = { site: 4, spot: 200 / 3.5, slideMs: 250 };
 export const RIM_TOL = { km: 3, frac: 0.15 };
 export const ON_MASSIF_KM = 10;

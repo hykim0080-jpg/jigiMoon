@@ -5,7 +5,7 @@
 // computed month, and say so.
 import { state, setState, limitsOf } from './state.js';
 import { mastShown, nearestOk, status } from './logic.js';
-import { ZOOM } from './config.js';
+import { ZOOM, MISSES } from './config.js';
 import { FIRST_DAY } from './config.js';
 import { SPOT5 } from './map.js';
 import * as intro from './intro.js';
@@ -253,6 +253,16 @@ function sync(st) {
     for (let i = 0; i < N; i++) {
       const a0 = i / N * 2 * Math.PI, a1 = (i + 1) / N * 2 * Math.PI;
       marks.push({ x1: s.x_m + R * Math.sin(a0), y1: s.y_m + R * Math.cos(a0), x2: s.x_m + R * Math.sin(a1), y2: s.y_m + R * Math.cos(a1), color: '#74a2f2', w: 1.2 });
+    }
+    // how far real landings missed their target (MISSES, config.js): dashed rings at Spot zoom
+    // (SLIM's 55 m is a dot at this scale: only on the MOVE card's line)
+    if (det && st.zoom >= ZOOM.spot - 0.01) for (const m of MISSES) {
+      if (m.m < 100) continue;
+      const n = 40, o = (m.m < 1000 ? 0.5 : 0.25) * n;   // label: IM-2 below the site, IM-1 east, clear of the site's labels
+      for (let i = 0; i < n; i++) {
+        const a0 = (i + o) / n * 2 * Math.PI, a1 = (i + o + 1) / n * 2 * Math.PI;
+        marks.push({ x1: s.x_m + m.m * Math.sin(a0), y1: s.y_m + m.m * Math.cos(a0), x2: s.x_m + m.m * Math.sin(a1), y2: s.y_m + m.m * Math.cos(a1), color: '#d9dee8', w: 1, dash: '3 3', label: i === n - 1 ? `${m.name} ${m.m < 1000 ? m.m + ' m' : m.m / 1000 + ' km'}` : '' });
+      }
     }
     marks.push({ x1: s.x_m - 150, y1: s.y_m, x2: s.x_m + 150, y2: s.y_m, color: '#fff', w: 1.5 }, { x1: s.x_m, y1: s.y_m - 150, x2: s.x_m, y2: s.y_m + 150, color: '#fff', w: 1.5 });
   }
