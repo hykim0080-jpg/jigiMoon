@@ -654,7 +654,7 @@ main[data-view="find"] #zoom .z-dim{display:none}
 /* Calendar: the expand button a full-size control at the top right; open large = a pop-up in the middle of the window,
    wherever the small panel is (a moved panel's offset and the docked position are both ignored) */
 #cal-big{top:4px;right:6px;min-width:28px;min-height:28px;padding:0 6px;font-size:15px;border-color:var(--muted);display:grid;place-items:center}
-#cal-panel.big{position:fixed!important;translate:none!important;left:50%!important;top:50%!important;right:auto!important;bottom:auto!important;width:min(1280px,92vw)!important;height:min(680px,84vh)!important;transform:translate(-50%,-50%);z-index:95;display:block!important;box-shadow:0 12px 40px rgba(0,0,0,.6)}
+#cal-panel.big{position:fixed!important;translate:none!important;left:50%!important;top:50%!important;right:auto!important;bottom:auto!important;width:min(1280px,92vw)!important;height:min(680px,84vh)!important;transform:translate(-50%,-50%);z-index:95!important;display:block!important;box-shadow:0 12px 40px rgba(0,0,0,.6)}
 #cal-panel.big #cal-big{top:6px;right:6px;padding:0 8px}
 #cal-back{z-index:94}
 /* Find a site: the scale bar sits right of the ranked-spots panel, never under it */
