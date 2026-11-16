@@ -36,7 +36,8 @@ export function verdictFor(st, data, lim) {
   else if (s.kind === 'none') {
     try { why = failReason(failStats(site, d, c, lim, st.mission), lang()).text; } catch (err) { console.error(err); }
   }
-  return { go: s.kind === 'ok', capped: !!s.capped, mastH: s.mast || 0, fails: s.kind === 'ok' ? [] : fails, fix, fixKind: s.kind, why };
+  const nc = site.cal.noComm ? site.cal.noComm[d] : null;   // information only, not judged: the longest unbroken stretch with Earth hidden
+  return { go: s.kind === 'ok', capped: !!s.capped, mastH: s.mast || 0, fails: s.kind === 'ok' ? [] : fails, fix, fixKind: s.kind, why, nc };
 }
 
 let box = null;
@@ -68,7 +69,8 @@ export function render(st, data, panel, lim) {
     + (v.fails.length ? `<span class="vfail">${v.fails.map(f => f.text).join(' · ')}</span>` : '')   // the reasons on the verdict's line
     + (v.fix && !row ? `<span class="vfix" style="color:var(--${v.fixKind})">→ ${v.fix}</span>` : '')   // the row below carries the fix
     + (v.why ? `<span class="vwhy">${v.why}</span>` : '')
-    + row;
+    + row
+    + (v.nc != null ? `<span class="vnc">${t('earthGap', Math.round(v.nc))}</span>` : '');
   vbh(main, box);
 }
 // a past mission opened from WHERE: the same check from its real date and hour (retro.json; at the intended site for
