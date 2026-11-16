@@ -46,11 +46,11 @@ export function render(st, data, panel, lim) {
   lastArgs = [st, data, panel, lim];
   if (!box) {
     box = document.createElement('div'); box.id = 'vbadge'; panel.appendChild(box);
-    // the three fixes in one line under the verdict: MOVE flies to the place at Site zoom (the MOVE ring and arrow),
+    // the three fixes in one line under the verdict: MOVE flies to the place at Region zoom (the MOVE ring and arrow),
     // MAST raises the mast on the lander (again: lowers it), WAIT moves the landing date
     box.addEventListener('click', ev => {
       const b = ev.target.closest('[data-fx]'); if (!b || b.disabled) return;
-      if (b.dataset.fx === 'move') document.querySelector('#zoom [data-z="4"]')?.click();
+      if (b.dataset.fx === 'move') document.querySelector('#zoom [data-z="1"]')?.click();   // Region: the 3 km MOVE grid around the place
       else if (b.dataset.fx === 'wait') setState({ day: state.day + +b.dataset.v });
     });
   }
