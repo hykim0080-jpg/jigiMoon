@@ -75,6 +75,7 @@ function moveGrid(inf, v, side = '') {
 function verdictHtml(v, inf, st) {
   if (v.pending) return `<i class="lyr-dot" style="background:var(--muted)"></i><span style="color:var(--muted)">…</span>`;
   const dot = `<i class="lyr-dot" style="background:var(--${v.kind === 'go' ? 'ok' : 'block'})"></i>`;
+  if (v.kind === 'go' && v.mastH) return `${dot}<span style="color:var(--ok)">${t('go_mast', v.mastH)}${v.mastH >= 15 ? ` <em class="lyr-high">${t('mastHigh')}</em>` : ''}</span>`;   // GO only with a mast
   if (v.kind === 'go') return `${dot}<span style="color:var(--ok)">${t('go_run', v.run)}</span>`;
   // short, as on Detail: NO-GO, then the one criterion it misses
   const why = v.steep ? t('slope_fail', v.slopeV.toFixed(0)) : missOf(inf, st);
@@ -82,7 +83,7 @@ function verdictHtml(v, inf, st) {
 }
 export function renderPinCard(st) {
   const inf = pinInfo(st);
-  const k = inf ? `${JSON.stringify(st.cart)},${inf.col},${inf.row},${st.tDay},${st.mission},${!!statsCached(inf.col, inf.row, st.mission)},${st.adv},${inf.pending},${inf.go ? inf.go.count : ''},${JSON.stringify(st.crit)},${JSON.stringify(st.threshold)},${JSON.stringify(st.on.mask)}` : '';
+  const k = inf ? `${JSON.stringify(st.cart)},${inf.col},${inf.row},${st.tDay},${st.mission},${!!statsCached(inf.col, inf.row, st.mission)},${st.adv},${inf.pending},${inf.v.mastH},${inf.go ? inf.go.count : ''},${JSON.stringify(st.crit)},${JSON.stringify(st.threshold)},${JSON.stringify(st.on.mask)}` : '';
   if (k === key) return; key = k;
   if (!inf) { el.innerHTML = ''; return; }
   const v = inf.v, f = (kind, label, val, title = '', can = false) => `<div class="lyr-fx${v.kind === kind ? ' pick' : ''}${val == null ? ' na' : ''}${can ? ' can' : ''}" style="--c:var(--${kind})" title="${can ? t('fix_apply') + (title ? ' · ' + title : '') : title}"${can ? ` data-fix="${kind}" role="button" tabindex="0"` : ''}><span>${label}</span><span class="n">${val ?? '—'}${can ? ' →' : ''}</span></div>`;

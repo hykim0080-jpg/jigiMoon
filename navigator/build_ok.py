@@ -1,12 +1,12 @@
 # Per-cell GO calendars (365 landing days) for Detail 3D, same test as layers/js/winworker.js, hourly, exact elevation.
-# Usage: python3 build_ok.py navigator <out dir>  (about 10 min), then build_ok_win.py; copy ok*s90_*.wasm to navigator/layers/data/
+# Usage: python3 build_ok.py navigator <out dir> [horizon_m10]  (about 10 min), then build_ok_win.py; copy ok*s90_*.wasm to navigator/layers/data/
 import numpy as np, json, sys, time
 from PIL import Image
-NAV = sys.argv[1]; OUT = sys.argv[2]
+NAV = sys.argv[1]; OUT = sys.argv[2]; HOR = sys.argv[3] if len(sys.argv) > 3 else 'horizon'   # horizon_m10 / horizon_m20: mast tops
 N = 800; NPX = N * N; NAZ = 64; R = 1737400.0; D2R = np.pi / 180
 hor = np.zeros((NAZ, NPX), np.uint8)
 for k in range((NAZ + 2) // 3):
-    px = np.asarray(Image.open(f'{NAV}/data/horizon/h_{k:02d}.png').convert('RGB')).reshape(NPX, 3)
+    px = np.asarray(Image.open(f'{NAV}/data/{HOR}/h_{k:02d}.png').convert('RGB')).reshape(NPX, 3)
     for b in range(3):
         if 3 * k + b < NAZ: hor[3 * k + b] = px[:, b]
 slope = np.fromfile(f'{NAV}/layers/data/slope.wasm', np.uint8)

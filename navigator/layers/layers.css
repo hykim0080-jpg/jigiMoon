@@ -768,3 +768,4 @@ html.panels,html.panels body,.panels .lyr-app,.panels .lyr-main{background:trans
 .lyr-vd{align-items:center;min-height:0}
 .lyr-vd>span{flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lyr-vd .lyr-vwhy{display:inline;margin:0 0 0 8px;font-size:12px;font-weight:500;opacity:.8}
+.lyr-high,.lyr-trm em{font-style:normal;font-weight:600;color:#f0a531;letter-spacing:.04em;text-transform:uppercase}

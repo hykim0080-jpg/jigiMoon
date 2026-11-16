@@ -2,7 +2,9 @@
 import { N, SIMPLE, ZONE, RAMPS, MASK_COLORS, SCORE_RAMP, FAIL_AT_255, PX, HALF } from './config.js';
 import { buildRampLUT, layerColor, colorAt, hex } from './ramps.js';
 import { decode, valueOf } from './data.js';
-import { winPass, winAt } from './window.js';
+import { winPass, winAt, useWin } from './window.js';
+import { setOf, loadAll, mastArr } from '../../js/gomask3d.js';
+import { setState } from './state.js';
 import { initFactor, fxImage } from './factor.js';
 
 const NPX = N * N;
@@ -117,6 +119,7 @@ export function compose(st) {
     const simple = !st.adv, mon = st.adv && st.month != null && D.month ? D.month.subarray(st.month * NPX, (st.month + 1) * NPX) : null, mthr = st.monthThr, ov = st.adv ? st.ov : null;
     const n = nb + (mon ? 1 : 0); last.nCrit = n;
     const wp = winPass(st), win = ids.map(id => !!(wp && wp[id]));   // trip basis: Sun / Earth / dark judged over the stay
+    const mga = wp ? mastFor(st) : null;   // GO with a 10 m / 20 m mast (Max mast 20 m): Sun / Earth / dark pass at the mast top
     const bs = ids.map((id, k) => win[k] ? wp[id] : D.bytes[id]), pl = ids.map((id, k) => win[k] ? ID3 : passLUT(metaOf(id), st.threshold[id]));
     const yk = win.map((w, k) => w ? k : -1).filter(k => k >= 0), ybs = yk.map(k => D.bytes[ids[k]]), ypl = yk.map(k => passLUT(metaOf(ids[k]), st.threshold[ids[k]]));
     const hc = ids.map(id => hex2(hexOf(layerColor(id, true)))); if (mon) hc.push(hexOf(layerColor('days', true)));
@@ -130,7 +133,9 @@ export function compose(st) {
     if (!n) { for (let i = 0; i < NPX; i++) { const h = hill[i]; out[i] = pack(h, h, h); failCount[i] = 0; failBase[i] = 0; failYear[i] = 0; } }
     else for (let i = 0; i < NPX; i++) {
       let f = 0, nd = 0, lk = -1;
-      for (let k = 0; k < nb; k++) { const p = pl[k][bs[k][i]]; if (p === 2) nd = 1; else if (p === 0) { f++; lk = k; hb[k][i] = HK; } }
+      let fo = 0;   // failures a mast cannot fix (slope, ice)
+      for (let k = 0; k < nb; k++) { const p = pl[k][bs[k][i]]; if (p === 2) nd = 1; else if (p === 0) { f++; lk = k; hb[k][i] = HK; if (!win[k]) fo++; } }
+      if (mga && f && !fo && !nd && mga[i]) { f = 0; lk = -1; for (let k = 0; k < nb; k++) hb[k][i] = 0; }
       if (nd) for (let k = 0; k < nb; k++) hb[k][i] = 0;
       failBase[i] = nd ? 255 : f;
       if (yk.length) { let fy = f; for (let j = 0; j < yk.length; j++) { const p = ypl[j][ybs[j][i]], q = pl[yk[j]][bs[yk[j]][i]]; fy += (p === 0) - (q === 0); } failYear[i] = nd ? 255 : fy; } else failYear[i] = failBase[i];
@@ -229,6 +234,14 @@ export function sample(col, row) {
   const fails = st.mode === 'mask' && failCount[i] !== 255 && last.nCrit ? failCount[i] : null;
   const score = st.mode === 'score' && score100[i] !== 255 ? score100[i] : null;
   return { values, pass, fails, score, failIds, nCrit: last.nCrit, win };
+}
+// the day's mast GO cells for the stay and criteria (null until loaded or when no calendar covers them)
+const mastAsked = new Set();
+export function mastFor(st) {
+  const set = useWin(st) ? setOf(st.mission, st.crit) : null; if (!set) return null;
+  const a = mastArr(st.tDay, set, 20);
+  if (!a && !mastAsked.has(set)) { mastAsked.add(set); loadAll(set, 20).then(() => setState({}, 'pixels')); }
+  return a;
 }
 export function zonal(site, st) {
   const c = sitesCells[site.id]; let sum = 0, cnt = 0, tot = 0;

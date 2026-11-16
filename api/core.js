@@ -130,7 +130,10 @@ export async function check(load, params, origin = '') {
   if (m.longest_dark_h > crit.dark) failing.push('dark');
 
   const okBase = e.ok[day];
-  const okMast = !okBase && mast > 0 && !!(e.mastOk[mast] && e.mastOk[mast][day]);
+  // a mast within max_mast counts as GO (as on the page, js/logic.js status): the asked one, else the lowest that works
+  const autoMast = !okBase && e.mast[day] != null && e.mast[day] > 0 && e.mast[day] <= lim.mast ? e.mast[day] : 0;
+  const goMast = !okBase ? (mast > 0 && e.mastOk[mast] && e.mastOk[mast][day] ? mast : autoMast) : 0;
+  const okMast = goMast > 0;
   const go = okBase || okMast;
 
   // nearest landable GO cell on the 3 km relocation grid (direction in the polar-stereographic map frame);
@@ -151,7 +154,7 @@ export async function check(load, params, origin = '') {
     mission_days: Number(mission),
     criteria: { sun_min_pct: crit.sun, earth_min_pct: crit.earth, dark_max_h: crit.dark },
     verdict: go ? 'GO' : 'NO-GO',
-    ...(okMast && { go_with_mast_m: mast }),
+    ...(okMast && { go_with_mast_m: goMast }),
     metrics: m,
     failing,
     fixes: {
@@ -185,7 +188,7 @@ export const USAGE = {
     earth: 'minimum share of the mission with Earth in view, % (default 50)',
     dark: 'longest allowed dark spell, hours (default 50)',
     max_move: 'largest move to recommend, km (default 3)',
-    max_mast: 'largest mast to recommend, m (default 20)',
+    max_mast: 'largest mast, m (default 20); a mast up to it counts as GO (go_with_mast_m)',
     max_wait: 'longest wait to recommend, days (default 60)'
   },
   example: '/api/check?site=nobile-rim-1&date=2027-02-15&mission=14'

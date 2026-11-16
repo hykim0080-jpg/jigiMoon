@@ -156,10 +156,10 @@ async function arrive() {
 let maskKey = '';
 function syncMask(st) {
   // GO for the chosen day (a per-cell calendar exists for 14 d at 70 % and for 6 / 14 d at 90 %): blue on the map
-  const set = gomask.setOf(st.mission, st.crit), on = !!set, k = on ? set + 'd' + st.day : 'off';
+  const set = gomask.setOf(st.mission, st.crit), on = !!set, ml = limitsOf(st).mast, k = on ? set + 'd' + st.day + 'm' + ml : 'off';
   if (k === maskKey) return; maskKey = k;
   if (!on) { map.setMask(null); return; }
-  gomask.load(set).then(() => { if (maskKey === k) { map.setMask(gomask.maskFor(st.day, set)); rankKey = ''; syncRank(state); } });
+  gomask.loadAll(set, ml).then(() => { if (maskKey === k) { map.setMask(gomask.maskFor(st.day, set, ml)); rankKey = ''; syncRank(state); } });
 }
 // Find a site tab: its GO ground, ranked spots and picked spot on this map (js/findlink.js)
 let findShown = false;

@@ -30,7 +30,7 @@ const TX = {
     calNote: 'GO spots per landing day', spots: n => `${n} GO ${n === 1 ? 'spot' : 'spots'}`, noneDay: 'no GO spot',
     nextGo: n => `next GO in ${n} d`, best: 'Best spots', findBest: 'Find best spots', hideBest: 'Hide best spots', loading: 'Computing…', go: 'GO', nogo: 'NO-GO',
     wait: n => `GO in ${n} d`, noFix: 'NO FIX',
-    whySun: (v, c) => `Sun ${v} % of the stay (need ${c})`, whyEarth: (v, c) => `Earth in view ${v} % (need ${c})`, whyDark: (v, c) => `Longest dark ${v} h (max ${c})`, whyIce: v => `Ice-likely shade ${v} km away (may hold ice, not proven)`, lIce: 'Ice', lSlope: 'Slope', mastM: m => `${m} m mast`, iceNote: '(may hold ice, not proven)',
+    whySun: (v, c) => `Sun ${v} % of the stay (need ${c})`, whyEarth: (v, c) => `Earth in view ${v} % (need ${c})`, whyDark: (v, c) => `Longest dark ${v} h (max ${c})`, whyIce: v => `Ice-likely shade ${v} km away (may hold ice, not proven)`, lIce: 'Ice', lSlope: 'Slope', mastM: m => `${m} m mast`, mHigh: 'high', iceNote: '(may hold ice, not proven)',
     stayD: n => `${n} d`, wd: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
     ans: (day, n, km2, where) => `If you land on <b>${day}</b> and stay <b>${n} days</b>, <b>${km2} km²</b>${where ? ` of ${where}` : ''} keeps power and Earth contact.`,
     ansNone: (day, n, where) => `If you land on <b>${day}</b> and stay <b>${n} days</b>, no ground${where ? ` in ${where}` : ''} keeps power and Earth contact.`,
@@ -42,7 +42,7 @@ const TX = {
     calNote: '착륙일별 가능한 지점 수', spots: n => `가능 지점 ${n}곳`, noneDay: '가능 지점 없음',
     nextGo: n => `${n}일 뒤 가능`, best: '추천 지점', findBest: '최적 지점 찾기', hideBest: '추천 숨기기', loading: '계산 중…', go: '가능', nogo: '불가',
     wait: n => `${n}일 후`, noFix: '해법 없음',
-    whySun: (v, c) => `햇빛 ${v} % (기준 ${c})`, whyEarth: (v, c) => `지구 보임 ${v} % (기준 ${c})`, whyDark: (v, c) => `가장 긴 어둠 ${v}시간 (최대 ${c})`, whyIce: v => `얼음이 있을 수 있는 영구 그늘까지 ${v} km (확정 아님)`, lIce: '얼음', lSlope: '경사', mastM: m => `마스트 ${m} m`, iceNote: '(얼음 가능성, 확정 아님)',
+    whySun: (v, c) => `햇빛 ${v} % (기준 ${c})`, whyEarth: (v, c) => `지구 보임 ${v} % (기준 ${c})`, whyDark: (v, c) => `가장 긴 어둠 ${v}시간 (최대 ${c})`, whyIce: v => `얼음이 있을 수 있는 영구 그늘까지 ${v} km (확정 아님)`, lIce: '얼음', lSlope: '경사', mastM: m => `마스트 ${m} m`, mHigh: '높음', iceNote: '(얼음 가능성, 확정 아님)',
     stayD: n => `${n}일`, wd: ['일', '월', '화', '수', '목', '금', '토'],
     ans: (day, n, km2, where) => `<b>${day}</b>에 착륙해 <b>${n}일</b> 머물면 ${where ? `${where}에서 ` : ''}<b>${km2} km²</b>가 전력과 지구 교신을 유지해요.`,
     ansNone: (day, n, where) => `<b>${day}</b>에 착륙해 <b>${n}일</b> 머물면 ${where ? `${where}에는 ` : ''}전력과 지구 교신을 유지하는 땅이 없어요.`,
@@ -355,7 +355,7 @@ function drawList(st, p) {
   ].map(([v, bad, k]) => `<b class="${bad ? 'bad' : ''}${k ? ' ' + k : ''}">${v}</b>`).join('');
   const labels = `<div class="lyr-trc lab">${[tt('lSun') + ' %', tt('lEarth') + ' %', tt('lDark') + ' h', tt('lSlope') + ' °', tt('lIce') + ' km'].map(x => `<span>${x}</span>`).join('')}</div>`;
   list.innerHTML = head + top5.map((r, i) => {
-    const added = inCart(r.col, r.row) >= 0, st8 = r.go ? (r.mast > 2 ? ` <small class="lyr-trm">${tt('mastM', r.mast)}</small>` : '') : ` <em>${r.wait != null && r.wait <= LIM.wait ? tt('wait', r.wait) : tt('nogo')}</em>`;
+    const added = inCart(r.col, r.row) >= 0, st8 = r.go ? (r.mast > 2 ? ` <small class="lyr-trm">${tt('mastM', r.mast)}${r.mast >= 15 ? ` <em>${tt('mHigh')}</em>` : ''}</small>` : '') : ` <em>${r.wait != null && r.wait <= LIM.wait ? tt('wait', r.wait) : tt('nogo')}</em>`;
     return `<div class="lyr-tr${i === 0 ? ' top' : ''}${r.go ? '' : ' no'}" data-rank="${r.id}" tabindex="0"><span class="lyr-trn n">${r.id}</span><div class="lyr-trt">${r.title}${st8}</div><button class="lyr-tradd${added ? ' in' : ''}" data-addr="${r.id}" title="${ct(added ? 'added' : 'add')}">${added ? '✓' : '+'}</button>${i === 0 ? labels : ''}<div class="lyr-trc n">${cells(r)}</div></div>`;
   }).join('');
 }
