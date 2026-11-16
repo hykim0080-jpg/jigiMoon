@@ -717,7 +717,7 @@ export function mountLunarMap(container, options = {}) {
   let detail = [];
   const texLoader = new THREE.TextureLoader();
   function clearDetail() { for (const d of detail) { scene.remove(d.mesh); d.mesh.geometry.dispose(); d.mesh.material.map?.dispose(); d.mesh.material.dispose(); } detail = []; }
-  function addDetail({ x0, y0, x1, y1, url }, list = detail, fixedA = null) {
+  function addDetail({ x0, y0, x1, y1, url }) {
     const n = 96, pos = new Float32Array((n + 1) * (n + 1) * 3), uv = new Float32Array((n + 1) * (n + 1) * 2), idx = [];
     for (let j = 0; j <= n; j++) for (let i = 0; i <= n; i++) {
       const k = j * (n + 1) + i, xm = x0 + (x1 - x0) * i / n, ym = y0 + (y1 - y0) * j / n;
@@ -733,18 +733,9 @@ export function mountLunarMap(container, options = {}) {
     const mesh = new THREE.Mesh(geo, mat);
     mesh.visible = false; mesh.renderOrder = 2; mesh.frustumCulled = false;
     scene.add(mesh);
-    const d = { mesh, ready: false, a: fixedA };
-    list.push(d);
-    texLoader.load(url, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 4; mat.map = tx; mat.needsUpdate = true; d.ready = true; if (fixedA != null) { mat.opacity = fixedA; mesh.visible = true; } dirty = true; }, undefined, () => {});
-  }
-  // photos laid on the terrain at every distance (Find a site: ShadowCam images inside permanent shadow, transparent
-  // outside it): [{ x0, y0, x1, y1, url }], opacity 1, below the cells and marks
-  let photos = [];
-  function setPhotos(list) {
-    for (const d of photos) { scene.remove(d.mesh); d.mesh.geometry.dispose(); d.mesh.material.map?.dispose(); d.mesh.material.dispose(); }
-    photos = [];
-    for (const p of list || []) addDetail(p, photos, 1);
-    dirty = true;
+    const d = { mesh, ready: false };
+    detail.push(d);
+    texLoader.load(url, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 4; mat.map = tx; mat.needsUpdate = true; d.ready = true; dirty = true; }, undefined, () => {});
   }
 
   // cells painted on the ground (navigator: the 3 km MOVE grid, GO cells blue): [{ x, y, half (m), rgb: [r,g,b], a }]
@@ -777,7 +768,6 @@ export function mountLunarMap(container, options = {}) {
     const a = clamp((14 - dist) / 8, 0, 1) * 0.92;
     if (cellMesh) cellMesh.scale.y = exagV;
     for (const d of detail) { d.mesh.scale.y = exagV; d.mesh.visible = d.ready && a > 0; d.mesh.material.opacity = a; }
-    for (const d of photos) d.mesh.scale.y = exagV;
     // near plane follows the camera in, so a close look does not clip the ground
     const near = clamp(dist * 0.02, 0.0005, 5);
     if (camera === cam3 && Math.abs(cam3.near - near) > near * 0.2) { cam3.near = near; cam3.updateProjectionMatrix(); }
@@ -1988,7 +1978,6 @@ export function mountLunarMap(container, options = {}) {
     setInsets,
     setCells,
     setDetail(list) { clearDetail(); for (const d of list || []) addDetail(d); dirty = true; },
-    setPhotos,
     // h = 0: no mast, only the lander and astronaut close up (nothing from afar)
     // fx: how a NO-GO place is staged on the model (figs.js MAST_RIG); label then = the one short reason line
     setMast(h, x_m, y_m, label, fx) { mastPt = x_m != null && y_m != null ? { h: h > 0 ? h : 0, x: x_m, y: y_m, label: h > 0 ? label || `${h} m` : label || '', fx: fx || {} } : null; if (mastEl) mastEl._h = null; dirty = true; },

@@ -7,10 +7,10 @@ import { nearestField } from './nearestgo.js';
 import { state, setState } from './state.js';
 
 const N = 800;
-let pushTime = true, frame = null, rects = [], go = null, rank = [], pin = null, photos = [], listeners = [], onPE = '', flyFn = null;
+let pushTime = true, frame = null, rects = [], go = null, rank = [], pin = null, listeners = [], onPE = '', flyFn = null;
 export function onFly(fn) { flyFn = fn; }
 let hlFn = null; export function onHl(fn) { hlFn = fn; }
-export const data = () => ({ go, rank, pin, photos });
+export const data = () => ({ go, rank, pin });
 export function onChange(fn) { listeners.push(fn); }
 const changed = what => listeners.forEach(f => f(what));
 
@@ -52,7 +52,6 @@ addEventListener('message', e => {
   else if (m.type === 'out') setPE('none');
   else if (m.type === 'mask') { go = m.go || null; nearF = go ? nearestField(i => go[i] === 1) : null; changed('mask'); }
   else if (m.type === 'fx') { fx = m.rgba || null; changed('fx'); }
-  else if (m.type === 'photos') { photos = m.list || []; changed('photos'); }
   else if (m.type === 'rank') { rank = m.list || []; changed('rank'); }
   else if (m.type === 'pin') { pin = m.pin; changed('pin'); }
   else if (m.type === 'time') { if (active() && (m.day !== state.day || m.mission !== state.mission || m.hour !== state.hour)) setState({ day: m.day, mission: m.mission === 6 ? 6 : 14, hour: m.hour }); }   // the map shows Find a site's hour

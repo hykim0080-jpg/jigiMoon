@@ -9,7 +9,6 @@ import { failCount, sample } from './compose.js';
 import { tripRanked, statsFor, whyNoFix } from './trip.js';
 import { pending } from './window.js';
 import { fxImage } from './factor.js';
-import { photosOn, photoList } from './photos.js';
 import { lang } from './strings.js';
 import { cellToXY, xyToCell } from './geo.js';
 import { SETS, frameFor } from '../../js/frames3d.js';
@@ -188,7 +187,7 @@ function insetsNow() {
   }
   return out;
 }
-let lastIns = '', lastPhotos = '';
+let lastIns = '';
 function sync(st) {
   if (!ready) return;
   { const ins = insetsNow(), k = ins.join(','); if (k !== lastIns) { lastIns = k; map.setInsets(ins[0], ins[1]); } }
@@ -199,8 +198,6 @@ function sync(st) {
     note.hidden = f.exact;
     if (!f.exact) { const d = new Date(f.shown); note.textContent = tx('only', d.getUTCMonth() + 1, d.getUTCDate(), d.getUTCHours()); }
   }
-  { const l = photosOn(st) ? photoList(() => { lastPhotos = ''; sync(state); }) : null, k = l ? 'on' : '';   // ShadowCam photos with the Ice layer
-    if (k !== lastPhotos && map.setPhotos) { lastPhotos = k; map.setPhotos(l ? l.map(({ x0, y0, x1, y1, url }) => ({ x0, y0, x1, y1, url })) : []); } }
   if (maskDirty) { maskDirty = false; const pd = pending(st), fx = st.factor ? fxImage(st) : null; if (map.setFx) map.setFx(fx ? fx.cv : null); map.setMask(pd || fx ? null : paintMask()); near = pd || !failCount ? null : nearestField(i => failCount[i] === 0); maskKeyNow++; }   // no GO outline from the yearly fallback while the stay is computed
   const tops = (tripRanked() || []).filter(r => r.go).slice(0, 5), pin = st.pin && !st.autoPin ? st.pin : null;
   const pk = tops.map(r => r.col + ',' + r.row).join(';') + '|' + (pin ? pin.col + ',' + pin.row : '');

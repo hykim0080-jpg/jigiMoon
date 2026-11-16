@@ -8,7 +8,6 @@ import { state, setState } from './state.js';
 import { failCount } from './compose.js';
 import { tripRanked, showRanks } from './trip.js';
 import { pending } from './window.js';
-import { photosOn, photoList } from './photos.js';
 import { fxImage } from './factor.js';
 import { xyToCell, cellToXY } from './geo.js';
 
@@ -17,7 +16,7 @@ const post = m => { try { parent.postMessage({ mj: 1, ...m }, location.origin); 
 const PANELS = 'header,.lyr-left,.lyr-pinp,.lyr-time,.lyr-pop,.lyr-hint,.lyr-cart,.lyr-home';
 const SEE_THROUGH = new Set(['HTML', 'BODY']), isMapArea = t => !t || SEE_THROUGH.has(t.tagName) || (t.classList && (t.classList.contains('lyr-app') || t.classList.contains('lyr-main') || t.classList.contains('lyr-map') || t.id === 'layers-root'));
 
-let lastFx = '', lastPh = '', lastRects = '', lastRank = '', lastPin = '', lastTime = '', lastView = '', maskDirty = true, synced = false;
+let lastFx = '', lastRects = '', lastRank = '', lastPin = '', lastTime = '', lastView = '', maskDirty = true, synced = false;
 function rects() {
   const out = [];
   for (const e of document.querySelectorAll(PANELS)) {
@@ -43,7 +42,7 @@ export function init() {
     const m = e.data;
     if (m.type === 'click' || m.type === 'pick') { showRanks(); const c = m.col != null ? { col: m.col, row: m.row } : xyToCell(m.x, m.y); if (c.col >= 0 && c.row >= 0 && c.col < N && c.row < N) setState({ pin: c, autoPin: false }, 'panel'); }
     if (m.type === 'settime') { synced = true; const mi = m.mission === 6 ? 6 : 14, d = Math.max(0, Math.min(364, m.day)), h = Math.max(0, Math.min(mi * 24 - 1, m.hour)); lastTime = `${d}|${mi}|${h}`; if (d !== state.tDay || mi !== state.mission || h !== state.tHour) setState({ tDay: d, plan: d, tHour: h, mission: mi, tTouched: true }, 'time'); }
-    if (m.type === 'hello') { lastFx = '-'; lastPh = '-'; lastRects = ''; lastRank = ''; lastPin = ''; lastTime = ''; maskDirty = true; render(state); }
+    if (m.type === 'hello') { lastFx = '-'; lastRects = ''; lastRank = ''; lastPin = ''; lastTime = ''; maskDirty = true; render(state); }
   });
   // a ranked spot under the pointer in the list: its marker on the map stands out
   let hl = '';
@@ -66,8 +65,6 @@ export function render(st) {
   } else if (pending(st)) { maskDirty = true; post({ type: 'mask', go: null }); }
   // one factor on the map (factor.js): its colour steps, dimmed where it misses the limit
   { const fx = st.factor ? fxImage(st) : null, k = fx ? fx.key : ''; if (k !== lastFx) { lastFx = k; post({ type: 'fx', rgba: fx ? fx.rgba.slice() : null }); } }
-  // ShadowCam photos with the Ice layer (photos.js): the main page's 3D map lays them on the terrain
-  { const l = photosOn(st) ? photoList(() => setState({}, 'pixels')) : null, k = l ? 'on' : ''; if (k !== lastPh) { lastPh = k; post({ type: 'photos', list: l ? l.map(({ x0, y0, x1, y1, url }) => ({ x0, y0, x1, y1, url })) : [] }); } }
   // the 2D view this page would show (region, picked spot): the main page's 3D camera flies there
   const v = st.view, vk = v ? `${v.k.toFixed(2)},${v.cx.toFixed(1)},${v.cy.toFixed(1)}` : '';
   if (vk && vk !== lastView) {
