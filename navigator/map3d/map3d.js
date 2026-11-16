@@ -578,8 +578,10 @@ export function mountLunarMap(container, options = {}) {
   // Earth: a globe with the NASA Blue Marble texture, lit from the Sun's direction so its phase is right.
   const sunMat = new THREE.SpriteMaterial({ map: glowTex('#fff8e0', 'rgba(255,190,80,.35)', 0.22), sizeAttenuation: false, depthWrite: false, transparent: true });
   if (opt.sunUrl) new THREE.TextureLoader().load(opt.sunUrl, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; sunMat.map = tx; sunMat.needsUpdate = true; dirty = true; });
-  const earthMat = new THREE.MeshLambertMaterial({ map: earthTex(), color: 0xffffff });
-  if (opt.earthUrl) new THREE.TextureLoader().load(opt.earthUrl, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; earthMat.map = tx; earthMat.needsUpdate = true; dirty = true; });
+  // brighter than plain lighting: the texture also glows a little (emissive), so the lit side is vivid and the night side stays visible
+  const earthMat = new THREE.MeshLambertMaterial({ map: earthTex(), color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.45 });
+  earthMat.emissiveMap = earthMat.map;
+  if (opt.earthUrl) new THREE.TextureLoader().load(opt.earthUrl, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; earthMat.map = tx; earthMat.emissiveMap = tx; earthMat.needsUpdate = true; dirty = true; });
   const SKY_D0 = 3400, EARTH_R = SKY_D0 * Math.tan(3.5 * DEG);   // drawn about 7 times its real size
   const earthMesh = new THREE.Mesh(new THREE.SphereGeometry(EARTH_R, 48, 24), earthMat);
   const sunLight = new THREE.DirectionalLight(0xffffff, 2.2);
