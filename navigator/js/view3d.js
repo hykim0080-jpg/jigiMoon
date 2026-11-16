@@ -162,14 +162,13 @@ function syncMask(st) {
   gomask.load(set).then(() => { if (maskKey === k) { map.setMask(gomask.maskFor(st.day, set)); rankKey = ''; syncRank(state); } });
 }
 // Find a site tab: its GO ground, ranked spots and picked spot on this map (js/findlink.js)
-let findShown = false, photosCur = null;
+let findShown = false;
 function syncFind() {
   findShown = true;
   const d = findlink.data();
   const fx = map.setFx ? findlink.fxCanvas() : null;   // a factor on the map replaces the GO ground
   if (map.setFx) map.setFx(fx);
   map.setMask(fx ? null : findlink.mask());
-  if (map.setPhotos && d.photos !== photosCur) { photosCur = d.photos; map.setPhotos(d.photos); }   // ShadowCam photos with the Ice layer
   const pins = d.rank.slice(0, 5).map(r => { const x = (r.col + .5) * 500 - 200000, y = 200000 - (r.row + .5) * 500; return { x, y, col: r.col, row: r.row, label: '#' + r.id, kind: 'rank' }; });
   if (d.pin && !d.rank.slice(0, 5).some(r => r.col === d.pin.col && r.row === d.pin.row)) pins.push({ x: (d.pin.col + .5) * 500 - 200000, y: 200000 - (d.pin.row + .5) * 500, col: d.pin.col, row: d.pin.row, kind: 'pin' });
   map.setPins(pins);
@@ -211,7 +210,7 @@ function syncRank(st) {
 }
 function sync(st) {
   if (!map || !mapReady || !data.index) return;
-  if (map.setMask) { if (st.view === 'find') syncFind(); else { if (findShown) { findShown = false; maskKey = ''; rankKey = ''; if (map.setFx) map.setFx(null); if (map.setPhotos && photosCur && photosCur.length) map.setPhotos([]); photosCur = null; } syncMask(st); syncRank(st); syncLink(st); } }
+  if (map.setMask) { if (st.view === 'find') syncFind(); else { if (findShown) { findShown = false; maskKey = ''; rankKey = ''; if (map.setFx) map.setFx(null); } syncMask(st); syncRank(st); syncLink(st); } }
   const f = frameFor(st.day, st.hour), key = `${f.k}:${f.i}`;
   if (key !== lastKey) {
     lastKey = key;
