@@ -1,0 +1,269 @@
+{
+ "projection": "+proj=stere +lat_0=-90 +lon_0=0 +R=1737400 (same as all Navigator layers)",
+ "bounds_m": "[x_min, y_min, x_max, y_max]; +y = Earth side (map up)",
+ "credit": "KPLO ShadowCam (NASA instrument on KARI's Korea Pathfinder Lunar Orbiter; Malin Space Science Systems / Arizona State University). NAC mosaics also use LRO LROC NAC (NASA/GSFC/ASU).",
+ "license": "NASA-funded PDS data, no U.S. copyright restriction; credit as above",
+ "archive": "https://pds.shadowcam.im-ldi.com/derived/",
+ "items": [
+  {
+   "id": "amundsen01",
+   "file": "amundsen01.webp",
+   "px": [
+    1191,
+    1703
+   ],
+   "m_per_px": 80.0,
+   "bounds_m": [
+    132471,
+    -32904,
+    227751,
+    103396
+   ],
+   "in_window": true,
+   "product": "ShadowCam controlled mosaic",
+   "season": "fall",
+   "local_time": "09am",
+   "source": "https://pds.shadowcam.im-ldi.com/derived/cmosaic/amundsen01/shadowcam_cmosaic_amundsen01_p840s0789_fall_09am_20m_cog.tif"
+  },
+  {
+   "id": "faustini01",
+   "file": "faustini01.webp",
+   "px": [
+    1249,
+    1229
+   ],
+   "m_per_px": 40.0,
+   "bounds_m": [
+    62251,
+    -25250,
+    112211,
+    23930
+   ],
+   "in_window": true,
+   "product": "ShadowCam controlled mosaic",
+   "season": "summer",
+   "local_time": "10am",
+   "source": "https://pds.shadowcam.im-ldi.com/derived/cmosaic/faustini01/shadowcam_cmosaic_faustini01_p871s0904_summer_10am_20m_cog.tif"
+  },
+  {
+   "id": "idelsonl01",
+   "file": "idelsonl01.webp",
+   "px": [
+    1004,
+    1072
+   ],
+   "m_per_px": 40.02,
+   "bounds_m": [
+    135852,
+    -106929,
+    176032,
+    -64029
+   ],
+   "in_window": true,
+   "product": "ShadowCam controlled mosaic",
+   "season": "summer",
+   "local_time": "10am",
+   "source": "https://pds.shadowcam.im-ldi.com/derived/cmosaic/idelsonl01/shadowcam_cmosaic_idelsonl01_p841s1187_summer_10am_20m_cog.tif"
+  },
+  {
+   "id": "kocher01",
+   "file": "kocher01.webp",
+   "px": [
+    1594,
+    1588
+   ],
+   "m_per_px": 20.0,
+   "bounds_m": [
+    -139500,
+    -133186,
+    -107620,
+    -101426
+   ],
+   "in_window": true,
+   "product": "ShadowCam controlled mosaic",
+   "season": "fall",
+   "local_time": "09am",
+   "source": "https://pds.shadowcam.im-ldi.com/derived/cmosaic/kocher01/shadowcam_cmosaic_kocher01_p844s2265_fall_09am_20m_cog.tif"
+  },
+  {
+   "id": "kuhn01",
+   "file": "kuhn01.webp",
+   "px": [
+    935,
+    884
+   ],
+   "m_per_px": 20.0,
+   "bounds_m": [
+    -89876,
+    -156840,
+    -71176,
+    -139160
+   ],
+   "in_window": true,
+   "product": "ShadowCam controlled mosaic",
+   "season": "fall",
+   "local_time": "10am",
+   "source": "https://pds.shadowcam.im-ldi.com/derived/cmosaic/kuhn01/shadowcam_cmosaic_kuhn01_p844s2085_fall_10am_20m_cog.tif"
+  },
+  {
+   "id": "shackleton01",
+   "file": "shackleton01.webp",
+   "px": [
+    1246,
+    1246
+   ],
+   "m_per_px": 20.0,
+   "bounds_m": [
+    -3686,
+    -21235,
+    21234,
+    3685
+   ],
+   "in_window": true,
+   "product": "ShadowCam controlled mosaic",
+   "season": "summer",
+   "local_time": "11am",
+   "source": "https://pds.shadowcam.im-ldi.com/derived/cmosaic/shackleton01/shadowcam_cmosaic_shackleton01_p896s1350_summer_11am_20m_cog.tif"
+  },
+  {
+   "id": "shackleton02",
+   "file": "shackleton02.webp",
+   "px": [
+    1246,
+    1246
+   ],
+   "m_per_px": 20.0,
+   "bounds_m": [
+    -3686,
+    -21234,
+    21234,
+    3686
+   ],
+   "in_window": true,
+   "product": "ShadowCam controlled mosaic",
+   "season": "fall",
+   "local_time": "03pm",
+   "source": "https://pds.shadowcam.im-ldi.com/derived/cmosaic/shackleton02/shadowcam_cmosaic_shackleton02_p896s1350_fall_03pm_20m_cog.tif"
+  },
+  {
+   "id": "shoemaker01",
+   "file": "shoemaker01.webp",
+   "px": [
+    1187,
+    1230
+   ],
+   "m_per_px": 40.0,
+   "bounds_m": [
+    21736,
+    18732,
+    69216,
+    67952
+   ],
+   "in_window": true,
+   "product": "ShadowCam controlled mosaic",
+   "season": "summer",
+   "local_time": "12pm",
+   "source": "https://pds.shadowcam.im-ldi.com/derived/cmosaic/shoemaker01/shadowcam_cmosaic_shoemaker01_p879s0464_summer_12pm_20m_cog.tif"
+  },
+  {
+   "id": "wiechertj01",
+   "file": "wiechertj01.webp",
+   "px": [
+    1994,
+    1620
+   ],
+   "m_per_px": 20.0,
+   "bounds_m": [
+    -28455,
+    -163861,
+    11425,
+    -131461
+   ],
+   "in_window": true,
+   "product": "ShadowCam controlled mosaic",
+   "season": "winter",
+   "local_time": "11am",
+   "source": "https://pds.shadowcam.im-ldi.com/derived/cmosaic/wiechertj01/shadowcam_cmosaic_wiechertj01_p851s1833_winter_11am_20m_cog.tif"
+  },
+  {
+   "id": "amundrim_nac",
+   "file": "amundrim_nac.webp",
+   "px": [
+    1000,
+    1000
+   ],
+   "m_per_px": 20.0,
+   "bounds_m": [
+    154000,
+    51500,
+    174000,
+    71500
+   ],
+   "in_window": true,
+   "product": "ShadowCam + LRO NAC controlled mosaic",
+   "season": null,
+   "local_time": null,
+   "source": "https://pds.shadowcam.im-ldi.com/derived/lronac_cmosaic/amundrim/shadowcam_lronac_cmosaic_amundrim_p842s0693_20m_cog.tif"
+  },
+  {
+   "id": "haworth_nac",
+   "file": "haworth_nac.webp",
+   "px": [
+    1490,
+    1490
+   ],
+   "m_per_px": 20.0,
+   "bounds_m": [
+    -52900,
+    75600,
+    -23100,
+    105400
+   ],
+   "in_window": true,
+   "product": "ShadowCam + LRO NAC controlled mosaic",
+   "season": null,
+   "local_time": null,
+   "source": "https://pds.shadowcam.im-ldi.com/derived/lronac_cmosaic/haworth/shadowcam_lronac_cmosaic_haworth_p867s3363_20m_cog.tif"
+  },
+  {
+   "id": "malapert_nac",
+   "file": "malapert_nac.webp",
+   "px": [
+    1050,
+    1050
+   ],
+   "m_per_px": 20.0,
+   "bounds_m": [
+    -11000,
+    111000,
+    10000,
+    132000
+   ],
+   "in_window": true,
+   "product": "ShadowCam + LRO NAC controlled mosaic",
+   "season": null,
+   "local_time": null,
+   "source": "https://pds.shadowcam.im-ldi.com/derived/lronac_cmosaic/malapert/shadowcam_lronac_cmosaic_malapert_p860s0003_20m_cog.tif"
+  },
+  {
+   "id": "nobile02_nac",
+   "file": "nobile02_nac.webp",
+   "px": [
+    1000,
+    1000
+   ],
+   "m_per_px": 20.0,
+   "bounds_m": [
+    147000,
+    85000,
+    167000,
+    105000
+   ],
+   "in_window": true,
+   "product": "ShadowCam + LRO NAC controlled mosaic",
+   "season": null,
+   "local_time": null,
+   "source": "https://pds.shadowcam.im-ldi.com/derived/lronac_cmosaic/nobile02/shadowcam_lronac_cmosaic_nobile02_p839s0587_20m_cog.tif"
+  }
+ ]
+}

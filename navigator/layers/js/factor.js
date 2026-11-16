@@ -53,18 +53,21 @@ function valuesOf(st, k) {
   vCache = { key, v }; return v;
 }
 
-// Ice: where water ice can last, from LRO Diviner's south polar resource product (Paige et al. 2010; PDS
-// LRO-L-DLRE-5-PRP-V2.0): the highest surface temperature over the year, averaged into our 500 m cells. At or below
-// 110 K surface ice is stable; the colder, the brighter. Warmer ground is darkened. (The limit stays the distance to
-// permanent shadow, layers 'ice'.)
+// Ice: how deep water ice can last, from LRO Diviner's south polar resource product (Paige et al. 2010; PDS
+// LRO-L-DLRE-5-PRP-V2.0) in VIPER's ice-stability classes (data/ice_grade.json): 3 at the surface (brightest),
+// 2 within 0.5 m, 1 at 0.5-1 m, 0 dry (dark). A 500 m cell takes a class when half its facets reach it. Without that
+// file: the highest surface temperature (ice_tmax.wasm), at or below 110 K brighter when colder. (The limit stays the
+// distance to permanent shadow, layers 'ice'.)
 export const ICE_T = { stable: 110, coldest: 40 };
-let tmax = null, tmaxLoad = null;
+let tmax = null, tmaxLoad = null, grade = false;
+const bytesOf = f => fetch(new URL('../data/' + f, import.meta.url)).then(r => r.ok ? r.arrayBuffer() : null).then(b => b && b.byteLength === NPX ? new Uint8Array(b) : null);
 function tmaxBytes() {
   if (tmax || tmaxLoad) return tmax;
-  tmaxLoad = fetch(new URL('../data/ice_tmax.wasm', import.meta.url)).then(r => r.ok ? r.arrayBuffer() : null)
-    .then(b => { if (b && b.byteLength === NPX) { tmax = new Uint8Array(b); setStateLater(); } }).catch(() => {});
+  tmaxLoad = bytesOf('ice_grade.wasm').then(g => g ? (grade = true, g) : bytesOf('ice_tmax.wasm'))
+    .then(b => { if (b) { tmax = b; setStateLater(); } }).catch(() => {});
   return null;
 }
+const GRADE = () => [[6, 9, 14], colorAt(FX.ice.ramp, .3), colorAt(FX.ice.ramp, .52), colorAt(FX.ice.ramp, 1)];   // dry, deep, shallow, surface
 let redraw = null; export const onFactorData = fn => { redraw = fn; };
 const setStateLater = () => { out.key = ''; if (redraw) redraw(); };
 function iceColor(T) {   // T in K (255 = no data)
@@ -84,7 +87,7 @@ export function fxImage(st) {
   if (out.key === key) return out;
   if (!cv) { cv = document.createElement('canvas'); cv.width = cv.height = N; }
   const g = cv.getContext('2d'), im = g.createImageData(N, N), d = im.data, f = FX[k];
-  const lut = tb ? Array.from({ length: 256 }, (_, T) => iceColor(T)) : Array.from({ length: 256 }, (_, j) => colorT(k, j / 255));
+  const G = grade && GRADE(), lut = tb ? Array.from({ length: 256 }, (_, T) => grade ? G[T] || null : iceColor(T)) : Array.from({ length: 256 }, (_, j) => colorT(k, j / 255));
   for (let i = 0; i < NPX; i++) {
     const x = v[i]; if (x !== x) continue;
     const c = tb ? lut[tb[i]] : lut[Math.round(tOf(k, x) * 255)], o = i * 4; if (!c) continue;

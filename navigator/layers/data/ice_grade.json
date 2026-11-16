@@ -1,0 +1,35 @@
+{
+ "grid": "800x800, 500 m, +-200 km, row 0 = +y",
+ "values": {
+  "3": "surface: ice stable at the surface",
+  "2": "shallow: ice stable within 0.5 m",
+  "1": "deep: ice stable at 0.5-1 m",
+  "0": "dry: no ice stable within 1 m",
+  "255": "no data"
+ },
+ "rule": "Diviner PRP ice_depth per facet; a 500 m cell takes a class when >= 50 % of its facets reach it. Classes follow the VIPER Ice Stability Regions.",
+ "share_in_permanent_shadow_pct": {
+  "0": 0.1,
+  "1": 0.3,
+  "2": 3.5,
+  "3": 84.4
+ },
+ "cells": {
+  "0": 276319,
+  "1": 25930,
+  "2": 288461,
+  "3": 49090,
+  "255": 200
+ },
+ "area_km2": {
+  "0": 69079.75,
+  "1": 6482.5,
+  "2": 72115.25,
+  "3": 12272.5,
+  "255": 50.0
+ },
+ "sources": [
+  "LRO Diviner South Polar Resource Product, Paige et al. 2010 Science 330:479, https://pds-geosciences.wustl.edu/lro/urn-nasa-pds-lro_diviner_derived1/data_derived_prp/",
+  "PGDA Lunar Polar Illumination AVGVISIB_85S_060M / 75S_120M, Mazarico et al. 2011 Icarus 211:1066, https://pgda.gsfc.nasa.gov/products/69"
+ ]
+}

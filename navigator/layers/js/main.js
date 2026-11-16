@@ -67,6 +67,7 @@ export async function mount(root, opts = {}) {
   if (h.get('st') === '6') state.mission = 6;
   if (['sun', 'earth', 'dark', 'slope', 'ice'].includes(h.get('fx'))) state.factor = h.get('fx');   // one factor on the map (factor.js)
   if (h.get('fl') === '0') state.fxLimit = false;
+  if (h.get('sc') === '1') state.photos = true;
   state.d3 = h.get('d3') !== '0';   // 3D is the default view; d3=0 opens the flat map
   pn.init();   // ?panels=1: panels only, over the main page's 3D map
   if (state.adv && h.get('jb') === 'y') state.basis = 'year';
@@ -138,6 +139,7 @@ export async function mount(root, opts = {}) {
     if (state.mission !== 14) q.set('st', state.mission);
     if (state.factor) q.set('fx', state.factor);
     if (state.factor && state.fxLimit === false) q.set('fl', 0);
+    if (state.factor === 'ice' && state.photos) q.set('sc', 1);
     if (state.d3 === false) q.set('d3', 0);
     if (state.adv && state.basis === 'year') q.set('jb', 'y');
     if (state.region) q.set('r', state.region);
